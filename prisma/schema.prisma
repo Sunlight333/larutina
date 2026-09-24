@@ -1,0 +1,172 @@
+// Demo subset of the engineering spec §4. Field names match the real schema so
+// this code carries into sprint 1. Deliberate simplifications are listed in the
+// README under "Diferencias con el esquema real".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  products Product[]
+
+  @@map("brands")
+}
+
+model SkinType {
+  id       String            @id @default(cuid())
+  slug     String            @unique
+  name     String
+  products ProductSkinType[]
+
+  @@map("skin_types")
+}
+
+model Concern {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  name        String
+  shortLabel  String           @map("short_label")
+  description String?
+  products    ProductConcern[]
+
+  @@map("concerns")
+}
+
+model Ingredient {
+  id          String               @id @default(cuid())
+  slug        String               @unique
+  inciName    String               @map("inci_name")
+  commonName  String               @map("common_name")
+  description String?
+  isKeyActive Boolean              @default(false) @map("is_key_active")
+  isIrritant  Boolean              @default(false) @map("is_irritant") // demo shortcut for sensitivity exclusion
+  products    ProductIngredient[]
+  conflictsA  IngredientConflict[] @relation("A")
+  conflictsB  IngredientConflict[] @relation("B")
+
+  @@map("ingredients")
+}
+
+model IngredientConflict {
+  id            String     @id @default(cuid())
+  ingredientAId String     @map("ingredient_a_id")
+  ingredientBId String     @map("ingredient_b_id")
+  severity      String // AVOID | CAUTION | ALTERNATE_DAYS
+  note          String
+  ingredientA   Ingredient @relation("A", fields: [ingredientAId], references: [id])
+  ingredientB   Ingredient @relation("B", fields: [ingredientBId], references: [id])
+
+  @@unique([ingredientAId, ingredientBId])
+  @@map("ingredient_conflicts")
+}
+
+model Product {
+  id               String              @id @default(cuid())
+  slug             String              @unique
+  name             String
+  brandId          String              @map("brand_id")
+  brand            Brand               @relation(fields: [brandId], references: [id])
+  shortDescription String              @map("short_description")
+  description      String
+  whyWeChose       String              @map("why_we_chose")
+  ourRating        Int                 @map("our_rating")
+  ratingNotes      String              @map("rating_notes")
+  howToUse         String              @map("how_to_use")
+  precautions      String?
+  texture          String
+  fragranceFree    Boolean             @default(true) @map("fragrance_free")
+  routineStepType  String              @map("routine_step_type") // CLEANSER | TONER | EXFOLIANT | SERUM | TREATMENT | MOISTURIZER | SUNSCREEN
+  routineMoment    String              @map("routine_moment") // AM | PM | BOTH
+  sizeLabel        String              @map("size_label")
+  priceCents       Int                 @map("price_cents")
+  color            String // backdrop colour of the packshot, used behind the image while it loads
+  avgRating        Float               @map("avg_rating")
+  reviewCount      Int                 @map("review_count")
+  skinTypes        ProductSkinType[]
+  concerns         ProductConcern[]
+  ingredients      ProductIngredient[]
+
+  @@index([brandId])
+  @@map("products")
+}
+
+model ProductSkinType {
+  productId   String   @map("product_id")
+  skinTypeId  String   @map("skin_type_id")
+  suitability String // IDEAL | SUITABLE | CAUTION | NOT_RECOMMENDED
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  skinType    SkinType @relation(fields: [skinTypeId], references: [id])
+
+  @@id([productId, skinTypeId])
+  @@index([skinTypeId])
+  @@map("product_skin_types")
+}
+
+model ProductConcern {
+  productId String  @map("product_id")
+  concernId String  @map("concern_id")
+  relevance Int // 0–100
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  concern   Concern @relation(fields: [concernId], references: [id])
+
+  @@id([productId, concernId])
+  @@index([concernId, relevance])
+  @@map("product_concerns")
+}
+
+model ProductIngredient {
+  productId     String     @map("product_id")
+  ingredientId  String     @map("ingredient_id")
+  isKeyActive   Boolean    @default(false) @map("is_key_active")
+  concentration String?
+  position      Int        @default(0)
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@id([productId, ingredientId])
+  @@index([ingredientId])
+  @@map("product_ingredients")
+}
+
+model Diagnosis {
+  id          String            @id @default(cuid())
+  answers     DiagnosisAnswer[]
+  result      DiagnosisResult?
+  ruleVersion Int               @default(1) @map("rule_version")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@map("diagnoses")
+}
+
+model DiagnosisAnswer {
+  id          String    @id @default(cuid())
+  diagnosisId String    @map("diagnosis_id")
+  diagnosis   Diagnosis @relation(fields: [diagnosisId], references: [id], onDelete: Cascade)
+  questionKey String    @map("question_key")
+  values      String[]
+
+  @@unique([diagnosisId, questionKey])
+  @@map("diagnosis_answers")
+}
+
+model DiagnosisResult {
+  id            String    @id @default(cuid())
+  diagnosisId   String    @unique @map("diagnosis_id")
+  diagnosis     Diagnosis @relation(fields: [diagnosisId], references: [id], onDelete: Cascade)
+  skinTypeSlug  String    @map("skin_type_slug")
+  concernScores Json      @map("concern_scores")
+  attributes    Json
+  routine       Json // { am: Step[], pm: Step[], notes: Note[] }
+  computedAt    DateTime  @default(now()) @map("computed_at")
+
+  @@map("diagnosis_results")
+}
