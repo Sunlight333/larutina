@@ -5,7 +5,8 @@
 // the product is detected against its backdrop, then a 4:5 crop is cut around
 // it. That is what makes a grid of 18 generated images read as one shoot.
 import sharp from 'sharp'
-import { mkdir, readdir, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const root = process.cwd()
@@ -81,34 +82,38 @@ async function processPackshot(file, slug) {
   left = Math.max(0, Math.min(left, meta.width - Math.round(cropW)))
   top = Math.max(0, Math.min(top, meta.height - Math.round(cropH)))
 
-  const outFile = path.join(OUT, 'products', `${slug}.jpg`)
-  await sharp(file)
+  const buffer = await sharp(file)
     .extract({ left, top, width: Math.round(cropW), height: Math.round(cropH) })
     .resize(PACKSHOT.width, PACKSHOT.height, { fit: 'cover' })
     .jpeg({ quality: 84, mozjpeg: true })
-    .toFile(outFile)
+    .toBuffer()
 
   // Backdrop colour: the mean of the paper strips either side of the product.
   const strip = { top: 300, width: 70, height: 600 }
   const sides = await Promise.all(
-    [0, PACKSHOT.width - strip.width].map(async (x) => (await sharp(outFile).extract({ left: x, ...strip }).stats()).channels),
+    [0, PACKSHOT.width - strip.width].map(async (x) => (await sharp(buffer).extract({ left: x, ...strip }).stats()).channels),
   )
   const color = hex([0, 1, 2].map((c) => (sides[0][c].mean + sides[1][c].mean) / 2))
 
   const fill = ((ph / cropH) * 100).toFixed(0)
   console.log(`products/${slug.padEnd(32)} product ${Math.round(pw)}x${Math.round(ph)} -> crop ${Math.round(cropW)}x${Math.round(cropH)} (fills ${fill}% height) ${color}`)
-  return { src: `/images/products/${slug}.jpg`, ...PACKSHOT, color, blur: await blurData(sharp(outFile)) }
+  return { src: await writeHashed(buffer, 'products', slug), ...PACKSHOT, color, blur: await blurData(sharp(buffer)) }
 }
 
-async function processSquare(file, name, { size = 900, brighten = 1 } = {}) {
-  let img = sharp(file).resize(size, size, { fit: 'cover' })
-  if (brighten !== 1) img = img.modulate({ brightness: brighten })
-  await img.clone().jpeg({ quality: 80, mozjpeg: true }).toFile(path.join(OUT, 'concerns', `${name}.jpg`))
-  return { src: `/images/concerns/${name}.jpg`, width: size, height: size, blur: await blurData(img) }
+// File names carry a content hash, so a changed image always gets a new URL
+// and no image cache (the Next.js optimizer, Vercel, browsers) can serve the
+// old one.
+async function writeHashed(buffer, dir, name) {
+  const hash = createHash('sha1').update(buffer).digest('hex').slice(0, 8)
+  const file = `${name}.${hash}.jpg`
+  await writeFile(path.join(OUT, dir, file), buffer)
+  return `/images/${dir}/${file}`
 }
 
 async function main() {
-  for (const d of ['products', 'concerns', 'editorial']) await mkdir(path.join(OUT, d), { recursive: true })
+  // Start clean: stale files would otherwise linger under old hashes.
+  await rm(OUT, { recursive: true, force: true })
+  for (const d of ['products', 'lifestyle']) await mkdir(path.join(OUT, d), { recursive: true })
   await mkdir(path.join(root, 'src/app'), { recursive: true })
   const manifest = {}
 
@@ -117,29 +122,21 @@ async function main() {
     manifest[`products/${slug}`] = await processPackshot(path.join(RAW, 'products', f), slug)
   }
 
-  for (const f of (await readdir(path.join(RAW, 'concerns'))).sort()) {
-    const slug = path.basename(f, path.extname(f))
-    manifest[`concerns/${slug}`] = await processSquare(path.join(RAW, 'concerns', f), slug, {
-      brighten: slug === 'lineas' ? 1.07 : 1,
-    })
+  // Campaign images: the products advertised in use. Wide at 2400px, portraits at 1200x1500.
+  for (const f of (await readdir(path.join(RAW, 'lifestyle'))).sort()) {
+    const name = path.basename(f, path.extname(f))
+    const file = path.join(RAW, 'lifestyle', f)
+    const meta = await sharp(file).metadata()
+    const wide = meta.width / meta.height > 1.2
+    const size = wide ? { width: 2400, height: Math.round((2400 * meta.height) / meta.width) } : { width: 1200, height: 1500 }
+    const buffer = await sharp(file).resize(size.width, size.height, { fit: 'cover' }).jpeg({ quality: 78, mozjpeg: true }).toBuffer()
+    manifest[`lifestyle/${name}`] = { src: await writeHashed(buffer, 'lifestyle', name), ...size, blur: await blurData(sharp(buffer)) }
+    console.log(`lifestyle/${name.padEnd(16)} ${size.width}x${size.height}`)
   }
 
-  // Home hero, 4:5.
-  const hero = sharp(path.join(RAW, 'editorial/hero.png')).resize(1440, 1800, { fit: 'cover' })
-  await hero.clone().jpeg({ quality: 80, mozjpeg: true }).toFile(path.join(OUT, 'editorial/hero.jpg'))
-  manifest['editorial/hero'] = { src: '/images/editorial/hero.jpg', width: 1440, height: 1800, blur: await blurData(hero) }
-
-  // Wide still life for the about page, and the 1200x630 share image.
-  const wideFile = path.join(RAW, 'editorial/still-life-wide.png')
-  const wide = sharp(wideFile).resize(2000, null)
-  const wideMeta = await wide.clone().jpeg({ quality: 80, mozjpeg: true }).toFile(path.join(OUT, 'editorial/still-life-wide.jpg'))
-  manifest['editorial/still-life-wide'] = { src: '/images/editorial/still-life-wide.jpg', width: wideMeta.width, height: wideMeta.height, blur: await blurData(wide) }
-
-  const m = await sharp(wideFile).metadata()
-  const ogH = Math.round((m.width * 630) / 1200)
-  await sharp(wideFile)
-    .extract({ left: 0, top: Math.round((m.height - ogH) * 0.55), width: m.width, height: ogH })
-    .resize(1200, 630)
+  // Share image (1200x630): the first hero campaign.
+  await sharp(path.join(RAW, 'lifestyle/hero-1.png'))
+    .resize(1200, 630, { fit: 'cover', position: 'centre' })
     .jpeg({ quality: 82, mozjpeg: true })
     .toFile(path.join(root, 'src/app/opengraph-image.jpg'))
 

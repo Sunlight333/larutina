@@ -1,15 +1,18 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AddToCartButton } from '@/components/add-to-cart-button'
-import { Alert, ArrowRight, ChevronDown, Moon, Star, Sun } from '@/components/icons'
+import { Alert, ArrowRight, Award, Bulb, Chat, ChevronDown, Droplet, Flask, Hand, IconBadge, Layers, Leaf, Moon, ShieldCheck, Sparkle, Star, StepIcon, Sun } from '@/components/icons'
+import { ProductCard } from '@/components/product-card'
 import { ProductImage } from '@/components/product-image'
 import { sampleReviews } from '@/content/sample-reviews'
 import { routineCoverage, summariseCoverage } from '@/lib/catalog/coverage'
 import { pairings, productConflicts } from '@/lib/catalog/pairings'
+import { ConcernIcon } from '@/components/icons'
 import { CONCERN, SKIN_TYPE, STEP, joinEs, lowerFirst, type StepType } from '@/lib/diagnosis/copy'
 import { featuredActives, TEMPLATES } from '@/lib/diagnosis/engine'
-import { productImage } from '@/lib/images'
+import { lifestyleImage, productImage } from '@/lib/images'
 import { formatARS } from '@/lib/money'
 import { getCatalog, getProductSlugs, toEngineConflicts, toEngineProduct } from '@/server/services/catalog'
 
@@ -38,6 +41,24 @@ const SEVERITY_LABEL: Record<string, string> = {
   ALTERNATE_DAYS: 'En noches alternas con',
   CAUTION: 'En otro momento del día que',
   AVOID: 'No combinar con',
+}
+
+// Campaign images that show a given product in use, with the crop that keeps
+// the model and the product in frame.
+const IN_USE: Record<string, { image: string; position?: string }> = {
+  'serum-acido-hialuronico': { image: 'hero-1', position: 'object-[64%_30%]' },
+  'serum-vitamina-c-15': { image: 'hero-2', position: 'object-[90%_30%]' },
+  'crema-reparadora-barrera': { image: 'hero-3', position: 'object-[68%_30%]' },
+  'exfoliante-bha-2': { image: 'acne' },
+  'serum-acido-azelaico-10': { image: 'manchas' },
+  'tonico-hidratante': { image: 'deshidratacion' },
+  'tonico-calmante-centella': { image: 'sensibilidad' },
+  'crema-con-peptidos': { image: 'lineas' },
+  'mascarilla-de-arcilla': { image: 'poros' },
+  'fluido-protector-fps-50': { image: 'manana' },
+  'retinol-03-escualano': { image: 'noche' },
+  'serum-niacinamida-10-zinc': { image: 'ficha' },
+  'gel-crema-ligero': { image: 'diagnostico' },
 }
 
 const CONCERN_SHORT: Record<string, string> = {
@@ -76,6 +97,7 @@ export default async function ProductPage({ params }: Props) {
   const slot: 'AM' | 'PM' = product.routineMoment === 'PM' ? 'PM' : 'AM'
   const placement = TEMPLATES.complete[slot].map((spec) => ({
     label: spec.types.includes('TREATMENT') ? STEP.TREATMENT.name : STEP[spec.types[0] as StepType].name,
+    type: spec.types.includes('TREATMENT') ? 'TREATMENT' : (spec.types[0] as StepType),
     current: spec.types.includes(product.routineStepType as StepType),
   }))
 
@@ -94,6 +116,8 @@ export default async function ProductPage({ params }: Props) {
   const inci = product.ingredients.filter((pi) => pi.ingredient.inciName !== '(varios)')
 
   const img = productImage(product.slug)
+  const inUseEntry = IN_USE[product.slug]
+  const inUse = inUseEntry ? { ...lifestyleImage(inUseEntry.image), position: inUseEntry.position ?? 'object-center' } : null
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -140,10 +164,34 @@ export default async function ProductPage({ params }: Props) {
         <div className="lg:pt-2">
           <p className="text-[0.9375rem] font-medium text-ink-soft">{product.brand.name}</p>
           <h1 className="mt-2 font-display text-display-md text-balance">{product.name}</h1>
-          <p className="mt-3 text-sm text-ink-muted">
-            {product.sizeLabel} · {product.texture}
-            {product.fragranceFree && ' · Sin fragancia'}
-          </p>
+          <ul className="mt-4 flex flex-wrap gap-2 text-[0.8125rem]" aria-label="Características">
+            <li className="inline-flex items-center gap-2 rounded-full bg-shell py-1 pr-3 pl-1">
+              <IconBadge size="sm" tone="paper" className="size-7">
+                <StepIcon type={product.routineStepType} size={15} />
+              </IconBadge>
+              {STEP[product.routineStepType as StepType]?.name} · {product.sizeLabel}
+            </li>
+            <li className="inline-flex items-center gap-2 rounded-full bg-shell py-1 pr-3 pl-1">
+              <IconBadge size="sm" tone="paper" className="size-7">
+                <Droplet size={15} />
+              </IconBadge>
+              {product.texture}
+            </li>
+            {product.fragranceFree && (
+              <li className="inline-flex items-center gap-2 rounded-full bg-shell py-1 pr-3 pl-1">
+                <IconBadge size="sm" tone="paper" className="size-7">
+                  <Leaf size={15} />
+                </IconBadge>
+                Sin fragancia
+              </li>
+            )}
+            <li className="inline-flex items-center gap-2 rounded-full bg-shell py-1 pr-3 pl-1">
+              <IconBadge size="sm" tone="paper" className="size-7">
+                {product.routineMoment === 'PM' ? <Moon size={14} /> : <Sun size={15} />}
+              </IconBadge>
+              {product.routineMoment === 'PM' ? 'De noche' : product.routineMoment === 'AM' ? 'De mañana' : 'Mañana y noche'}
+            </li>
+          </ul>
           <a href="#resenas" className="mt-4 inline-flex items-center gap-2 text-sm">
             <Stars value={product.avgRating} />
             <span className="tabular font-medium">{product.avgRating.toLocaleString('es-AR')}</span>
@@ -163,7 +211,12 @@ export default async function ProductPage({ params }: Props) {
             <h2 className="sr-only">Para qué sirve</h2>
             <ul className="flex flex-wrap gap-2" aria-label="Necesidades">
               {mainConcerns.map((c) => (
-                <li key={c.concernId} className="rounded-full bg-shell px-3.5 py-1.5 text-sm">{c.concern.name}</li>
+                <li key={c.concernId}>
+                  <Link href={`/productos?necesidad=${c.concern.slug}`} className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3.5 py-1.5 text-sm hover:border-ink">
+                    <ConcernIcon slug={c.concern.slug} size={16} className="text-accent-ink" />
+                    {c.concern.name}
+                  </Link>
+                </li>
               ))}
             </ul>
             <p className="mt-3 text-sm text-ink-muted">
@@ -178,7 +231,10 @@ export default async function ProductPage({ params }: Props) {
               {actives.map((a) => (
                 <details key={a.slug} className="group border-b border-line">
                   <summary className="flex items-center justify-between gap-4 py-4">
-                    <span className="flex items-baseline gap-3">
+                    <span className="flex items-center gap-3">
+                      <IconBadge size="sm">
+                        <Flask size={17} />
+                      </IconBadge>
                       <span className="font-display text-[1.25rem] leading-tight">{a.commonName}</span>
                       {a.concentration && <span className="tabular text-sm text-ink-muted">{a.concentration}</span>}
                     </span>
@@ -194,11 +250,11 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Blocks 5–12 */}
       <div className="container-page mt-16 md:mt-24">
-        <Block title="Por qué lo elegimos">
+        <Block title="Por qué lo elegimos" icon={<Bulb size={22} />}>
           <p className="max-w-2xl font-display text-[1.45rem] leading-[1.4] text-ink md:text-[1.6rem]">{product.whyWeChose}</p>
         </Block>
 
-        <Block title="Nuestra evaluación">
+        <Block title="Nuestra evaluación" icon={<Award size={22} />}>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
             <ScoreRing score={product.ourRating} />
             <div className="max-w-xl">
@@ -208,7 +264,8 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </Block>
 
-        <Block title="Modo de uso">
+        <Block title="Modo de uso" icon={<Hand size={22} />}>
+          <div className={inUse ? 'grid gap-8 md:grid-cols-[1fr_15rem] md:gap-10 lg:grid-cols-[1fr_17rem]' : ''}>
           <div className="max-w-2xl">
             <ul className="flex flex-wrap gap-2" aria-label="Momento del día">
               {(product.routineMoment === 'PM' ? ['PM'] : product.routineMoment === 'AM' ? ['AM'] : ['AM', 'PM']).map((m) => (
@@ -227,9 +284,10 @@ export default async function ProductPage({ params }: Props) {
                 {placement.map((s, i) => (
                   <li key={s.label} className="flex items-center gap-1.5">
                     <span
-                      className={`rounded-full px-3 py-1.5 ${s.current ? 'bg-ink font-medium text-paper' : 'bg-shell text-ink-muted'}`}
+                      className={`inline-flex items-center gap-1.5 rounded-full py-1.5 pr-3 pl-2 ${s.current ? 'bg-ink font-medium text-paper' : 'bg-shell text-ink-muted'}`}
                       aria-current={s.current ? 'step' : undefined}
                     >
+                      <StepIcon type={s.type} size={15} />
                       {s.label}
                     </span>
                     {i < placement.length - 1 && <ArrowRight size={14} className="text-line-strong" />}
@@ -238,9 +296,18 @@ export default async function ProductPage({ params }: Props) {
               </ol>
             </div>
           </div>
+          {inUse && (
+            <figure>
+              <div className="shape-arch relative aspect-[4/5] overflow-hidden bg-sand">
+                <Image src={inUse.src} alt={`${product.name}, en uso`} fill sizes="(min-width: 1024px) 272px, (min-width: 768px) 240px, 100vw" placeholder="blur" blurDataURL={inUse.blur} className={`object-cover ${inUse.position}`} />
+              </div>
+              <figcaption className="mt-3 text-center text-[0.8125rem] text-ink-muted">En uso</figcaption>
+            </figure>
+          )}
+          </div>
         </Block>
 
-        <Block title="Precauciones">
+        <Block title="Precauciones" icon={<ShieldCheck size={22} />}>
           <div className="max-w-2xl">
             {product.precautions && <p className="text-[1rem] leading-relaxed text-ink-soft">{product.precautions}</p>}
             {productConflictList.length > 0 && (
@@ -270,7 +337,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </Block>
 
-        <Block title="Aparece en estas rutinas">
+        <Block title="Aparece en estas rutinas" icon={<Layers size={22} />}>
           {coverage.routineCount > 0 ? (
             <div className="max-w-2xl">
               <p className="text-[1rem] leading-relaxed text-ink-soft">
@@ -299,32 +366,20 @@ export default async function ProductPage({ params }: Props) {
         </Block>
 
         {pairs.length > 0 && (
-          <Block title="Combina bien con">
+          <Block title="Combina bien con" icon={<Sparkle size={22} />}>
             <p className="mb-6 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">
               Productos de otros pasos de la rutina que también trabajan sobre {joinEs(pairConcerns.map((c) => CONCERN[c]?.phrase ?? c))}, y que se
               pueden usar junto con este.
             </p>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 sm:gap-x-6">
               {pairs.map(({ product: q }) => {
                 const full = bySlug.get(q.id)!
                 const qActives = featuredActives(q.ingredients)
                   .slice(0, 2)
                   .map((i) => (i.concentration ? `${lowerFirst(i.commonName)} al ${i.concentration}` : lowerFirst(i.commonName)))
                 return (
-                  <li key={q.id} className={pairs.length === 3 ? 'last:col-span-2 last:max-w-[calc(50%-0.5rem)] sm:last:col-span-1 sm:last:max-w-none' : ''}>
-                    <Link href={`/producto/${q.slug}`} className="group block">
-                      <ProductImage slug={q.slug} name={q.name} sizes="(min-width: 1024px) 240px, (min-width: 640px) 30vw, 45vw" className="transition-opacity group-hover:opacity-90" />
-                      <p className="mt-3 text-[0.8125rem] text-ink-muted">
-                        {STEP[q.stepType].name} · {full.brand.name}
-                      </p>
-                      <p className="mt-0.5 font-display text-[1.15rem] leading-snug group-hover:underline group-hover:decoration-line-strong group-hover:underline-offset-4">
-                        {q.name}
-                      </p>
-                      <p className="tabular mt-1 text-sm text-ink-soft">{formatARS(q.priceCents)}</p>
-                      {qActives.length > 0 && (
-                        <p className="mt-2 text-[0.8125rem] leading-snug text-ink-muted">Con {joinEs(qActives)}.</p>
-                      )}
-                    </Link>
+                  <li key={q.id}>
+                    <ProductCard product={full} sizes="(min-width: 1024px) 260px, (min-width: 640px) 30vw, 45vw" note={qActives.length ? `Con ${joinEs(qActives)}.` : undefined} />
                   </li>
                 )
               })}
@@ -332,7 +387,7 @@ export default async function ProductPage({ params }: Props) {
           </Block>
         )}
 
-        <Block title="Reseñas" id="resenas">
+        <Block title="Reseñas" id="resenas" icon={<Chat size={22} />}>
           <div className="max-w-2xl">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <p className="tabular font-display text-[3rem] leading-none">{product.avgRating.toLocaleString('es-AR')}</p>
@@ -344,7 +399,7 @@ export default async function ProductPage({ params }: Props) {
             </div>
             <ul className="mt-8 space-y-4">
               {reviews.map((r) => (
-                <li key={r.author + r.title} className="rounded-2xl border border-line p-5 sm:p-6">
+                <li key={r.author + r.title} className="rounded-[1.75rem] bg-shell p-5 sm:p-6">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Stars value={r.rating} />
                     <p className="text-[0.8125rem] text-ink-muted">
@@ -363,8 +418,8 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </Block>
 
-        <Block title="Ingredientes completos">
-          <details className="group max-w-2xl rounded-2xl border border-line">
+        <Block title="Ingredientes completos" icon={<Flask size={22} />}>
+          <details className="group max-w-2xl rounded-[1.75rem] border border-line">
             <summary className="flex items-center justify-between gap-4 px-5 py-4 text-[0.9375rem]">
               <span>
                 Ver lista INCI <span className="text-ink-muted">({inci.length} ingredientes)</span>
@@ -390,10 +445,13 @@ export default async function ProductPage({ params }: Props) {
   )
 }
 
-function Block({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
+function Block({ title, id, icon, children }: { title: string; id?: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section id={id} className="grid scroll-mt-8 gap-5 border-t border-line py-10 md:grid-cols-[13rem_1fr] md:gap-12 md:py-14 lg:grid-cols-[16rem_1fr]">
-      <h2 className="font-display text-display-sm">{title}</h2>
+    <section id={id} className="grid scroll-mt-24 gap-5 border-t border-line py-10 md:grid-cols-[13rem_1fr] md:gap-12 md:py-14 lg:grid-cols-[16rem_1fr]">
+      <h2 className="flex items-center gap-3 font-display text-display-sm md:flex-col md:items-start md:gap-4">
+        {icon && <IconBadge size="lg">{icon}</IconBadge>}
+        {title}
+      </h2>
       <div className="min-w-0">{children}</div>
     </section>
   )

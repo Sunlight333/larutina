@@ -19,12 +19,22 @@ export function productImage(slug: string): ImageAsset | undefined {
   return assets[`products/${slug}`]
 }
 
-export function concernImage(slug: string): ImageAsset | undefined {
-  return assets[`concerns/${slug}`]
-}
+export type LifestyleName =
+  | 'hero'
+  | 'manana'
+  | 'noche'
+  | 'ficha'
+  | 'diagnostico'
+  | 'acne'
+  | 'manchas'
+  | 'deshidratacion'
+  | 'sensibilidad'
+  | 'lineas'
+  | 'poros'
 
-export function editorialImage(name: 'hero' | 'still-life-wide'): ImageAsset {
-  const asset = assets[`editorial/${name}`]
-  if (!asset) throw new Error(`Missing editorial image ${name}; run npm run images`)
+/** Scenes of the products in use: the imagery for everything that is not a product display. */
+export function lifestyleImage(name: LifestyleName | string): ImageAsset {
+  const asset = assets[`lifestyle/${name}`]
+  if (!asset) throw new Error(`Missing lifestyle image ${name}; run npm run images`)
   return asset
 }

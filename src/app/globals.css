@@ -17,10 +17,16 @@
   --color-accent-soft: oklch(0.95 0.025 45);
   --color-night: oklch(0.3 0.03 275);
   --color-night-soft: oklch(0.955 0.012 275);
+  --color-night-deep: oklch(0.2 0.018 285);
+  --color-sage-soft: oklch(0.94 0.022 150);
+  --color-sage-ink: oklch(0.42 0.05 150);
 
   --font-display: var(--font-newsreader), 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
+  --text-display-hero: clamp(2.85rem, 1.75rem + 4.4vw, 5.6rem);
+  --text-display-hero--line-height: 0.98;
+  --text-display-hero--letter-spacing: -0.028em;
   --text-display-xl: clamp(3.25rem, 2.2rem + 4.6vw, 6rem);
   --text-display-xl--line-height: 0.95;
   --text-display-xl--letter-spacing: -0.025em;
@@ -44,6 +50,7 @@
   --animate-rise: rise 0.5s var(--ease-out-soft) both;
   --animate-fade: fade 0.35s ease-out both;
   --animate-toast: toast 0.4s var(--ease-out-soft) both;
+  --animate-slide-in: slide-in 0.4s var(--ease-out-soft) both;
 
   @keyframes rise {
     from { opacity: 0; transform: translateY(10px); }
@@ -52,6 +59,10 @@
   @keyframes fade {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+  @keyframes slide-in {
+    from { transform: translateX(100%); }
+    to { transform: none; }
   }
   @keyframes toast {
     from { opacity: 0; transform: translateY(12px) scale(0.98); }
@@ -118,6 +129,32 @@
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Shapes. The demo avoids one uniform rectangle: arches for people and
+   products, leaf corners for editorial panels, circles for icons and faces. */
+@utility shape-arch {
+  border-radius: 999px 999px var(--radius-image) var(--radius-image);
+}
+@utility shape-leaf {
+  border-radius: 6rem var(--radius-image) 6rem var(--radius-image);
+  @media (width < 48rem) { border-radius: 3.5rem var(--radius-image) 3.5rem var(--radius-image); }
+}
+@utility shape-leaf-alt {
+  border-radius: var(--radius-image) 6rem var(--radius-image) 6rem;
+  @media (width < 48rem) { border-radius: var(--radius-image) 3.5rem var(--radius-image) 3.5rem; }
+}
+@utility shape-blob {
+  border-radius: 58% 42% 47% 53% / 46% 55% 45% 54%;
+}
+
+/* Horizontal scrollers on phones: snap, no visible bar. */
+@utility scroller {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar { display: none; }
+  & > * { scroll-snap-align: start; }
 }
 
 /* Disclosure chevron rotates with the open state of the parent <details>. */

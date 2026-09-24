@@ -6,9 +6,9 @@ A small, finished slice of the proposed store, built to prove three claims from 
 2. **The product page is an advisory page.** All 12 blocks of spec §7.2, statically generated.
 3. **Next.js pages load fast on mobile.** Measure it on a phone or in PageSpeed Insights.
 
-Routes: `/` · `/diagnostico` · `/diagnostico/resultado/[id]` · `/producto/[slug]` (18) · `/sobre-esta-demo`
+Routes: `/` · `/productos` (filterable catalog) · `/diagnostico` · `/diagnostico/resultado/[id]` · `/producto/[slug]` (18) · `/sobre-esta-demo`
 
-Brands, products, prices, reviews and product photos are sample content. The photos are AI-generated (see [Imagery](#imagery)). The whole site is `noindex`.
+Brands, products, prices and reviews are sample content, and every image, models included, is AI-generated (see [Imagery](#imagery)). The whole site is `noindex`.
 
 ## Stack
 
@@ -76,6 +76,7 @@ src/lib/diagnosis/engine.ts       pure scoring and routine generation (no I/O)
 src/lib/diagnosis/questions.ts    questionnaire v1 and weights
 src/lib/catalog/coverage.ts       "Aparece en estas rutinas": runs the engine over 60 profiles
 src/lib/catalog/pairings.ts       "Combina bien con" and per-product conflicts
+src/server/services/catalog.ts    catalog reads, including the filtered listing (the EXISTS query of spec §6.1)
 src/server/services/              catalog and diagnosis services; app/ holds no business logic
 src/app/                          routes
 tests/unit/                       engine tests, built on the seed dataset
@@ -85,21 +86,20 @@ scripts/process-images.mjs        raw generations → public/images + src/conten
 
 ## Imagery
 
-Every image was generated for this demo on Replicate, so nothing is copyrighted by a third party and the five fictional brands each have a consistent packaging system.
+Every image was generated for this demo on Replicate, so nothing is copyrighted by a third party. The models in the campaign images are AI-generated too: they are not real people, and the about page says so.
 
-- **Packshots (18) and editorial stills (2):** `google/nano-banana-pro`, chosen after rendering the same packshot on nano-banana-pro, gpt-image-2, flux-2-max and seedream-4.5. It had the most accurate label typography (accents included) and a truly seamless backdrop, and it accepts reference images, so the hero scenes are composed from the actual packshots.
-- **Concern textures (6):** `black-forest-labs/flux-2-max`, the most photographic material detail; no text involved.
+- **Packshots (18):** `google/nano-banana-pro`, chosen after rendering the same packshot on nano-banana-pro, gpt-image-2, flux-2-max and seedream-4.5: the most accurate label typography (accents included) and a truly seamless backdrop. Each fictional brand has its own packaging system. Used only where a product is displayed.
+- **Campaign images (13):** `google/nano-banana-pro` again, with the product's own packshot passed as a reference image, so the product the model holds is the catalog's. Every image is an "after": women in their twenties with healthy, glowing skin, the product held beside the face with its label to camera, on a backdrop tinted to the product. Three wide ones rotate in the home hero; the rest illustrate concerns, the morning and night routines, the product page's "en uso" and the diagnosis.
 
 ```bash
 npm run images:generate -- packshots [slug ...]     # needs REPLICATE_API_TOKEN in .env
-npm run images:generate -- concerns [slug ...]
-npm run images:generate -- editorial [hero|still-life-wide]
-npm run images                                      # crop, compress, write the manifest
+npm run images:generate -- lifestyle [name ...]     # campaign images; prompts in scripts/images/prompts.mjs
+npm run images                                      # crop, compress, hash, write the manifest
 ```
 
-Raw generations go to `images-raw/` (git-ignored, ~100 MB). `npm run images` detects each product against its backdrop and re-frames it to the same scale and baseline, which is what makes 18 separate generations read as one shoot. It also records each photo's backdrop colour and a blur preview, so frames never flash or shift while loading.
+Raw generations go to `images-raw/` (git-ignored). `npm run images` re-frames every packshot to the same scale and baseline (it detects the product against its backdrop), compresses everything, and names each file with a content hash (`hero-1.054419de.jpg`), so a changed image always gets a new URL and no cache can serve the old one. It also records each packshot's backdrop colour and a blur preview for every image, so frames never flash or shift while loading.
 
-**Swapping in real photos:** replace `public/images/products/<slug>.jpg` (or the raw file and rerun `npm run images`). No code changes.
+**Swapping in real photos:** put the client's files in `images-raw/products/<slug>.png` and rerun `npm run images`. No code changes.
 
 ## Performance notes
 

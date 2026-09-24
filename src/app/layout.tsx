@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
-import { DemoBanner, SiteFooter, SiteHeader } from '@/components/site/site-chrome'
+import { SiteHeader, type NavConcern } from '@/components/site/header'
+import { DemoBanner, SiteFooter } from '@/components/site/site-chrome'
+import { CONCERNS } from '@/lib/catalog/coverage'
+import { lifestyleImage } from '@/lib/images'
+import { getCatalog } from '@/server/services/catalog'
 import { ToastProvider } from '@/components/toast'
 import './globals.css'
 
@@ -45,10 +49,20 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The menu's concern links carry their portrait so the mega menu can show it.
+  const { concerns } = await getCatalog()
+  const navConcerns: NavConcern[] = CONCERNS.flatMap((slug) => {
+    const c = concerns.find((x) => x.slug === slug)
+    if (!c) return []
+    const img = lifestyleImage(slug)
+    return [{ slug, name: c.name, description: c.description ?? '', image: { src: img.src, blur: img.blur } }]
+  })
+  const diagnosis = lifestyleImage('diagnostico')
+
   return (
     <html lang="es-AR" className={newsreader.variable}>
-      <body className="flex min-h-dvh flex-col">
+      <body className="flex min-h-dvh flex-col overflow-x-clip">
         <a
           href="#contenido"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
@@ -57,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <ToastProvider>
           <DemoBanner />
-          <SiteHeader />
+          <SiteHeader concerns={navConcerns} diagnosisImage={{ src: diagnosis.src, blur: diagnosis.blur }} />
           <main id="contenido" className="flex-1">
             {children}
           </main>

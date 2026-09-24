@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { ArrowRight } from '@/components/icons'
+import { ArrowRight, Clock, Close, FaceScan, Flask, IconBadge, Layers, ShieldCheck } from '@/components/icons'
 import { ButtonLink } from '@/components/ui/button'
-import { editorialImage } from '@/lib/images'
+import { lifestyleImage } from '@/lib/images'
 import { usingDatabase } from '@/server/db'
 
 export const metadata: Metadata = {
@@ -17,100 +17,111 @@ const STACK = usingDatabase
 
 const SHOWS = [
   {
+    icon: FaceScan,
     title: 'Un diagnóstico que arma la rutina con datos',
     body: 'Seis preguntas se traducen en tipo de piel y necesidades. La rutina sale de cruzar eso con los datos de cada producto: para qué piel es ideal, sobre qué trabaja, qué activos lleva y con cuáles no combina. Cada producto elegido trae el motivo.',
   },
   {
+    icon: Flask,
     title: 'Una ficha de producto que asesora',
     body: 'La estructura completa que propongo, con sus doce bloques: activos, evaluación propia, modo de uso, precauciones, rutinas en las que aparece y con qué combina.',
   },
+  { icon: Clock, title: 'El stack de la propuesta, medible', body: STACK },
+]
+
+const ROWS = [
   {
-    title: 'El stack de la propuesta, medible',
-    body: STACK,
+    icon: ShieldCheck,
+    title: 'Qué es de ejemplo',
+    body: 'Las marcas, los productos, los precios y las reseñas son inventados. Todas las imágenes se generaron con IA para esta demo, incluidas las modelos de las campañas: no son personas reales, y así no se usa material con derechos de terceros. Si LaRutina comparte su catálogo y sus fotos, se cargan en lugar de estos sin tocar el código.',
+  },
+  {
+    icon: Close,
+    title: 'Qué dejé afuera a propósito',
+    body: 'Checkout, pagos, cuentas, panel de administración y embajadoras. Están resueltos en el documento y en los diagramas. Armarlos a medias no aportaba nada a la evaluación. Por eso los botones de compra muestran un aviso en lugar de agregar al carrito.',
+  },
+  {
+    icon: Layers,
+    title: 'Cómo medirla',
+    body: 'Abran cualquier ficha en el celular, o córranla en PageSpeed Insights. Los números del documento salen de ahí.',
   },
 ]
 
 export default function AboutPage() {
-  const wide = editorialImage('still-life-wide')
+  const banner = lifestyleImage('hero-2')
   return (
     <>
-      <section className="container-page pt-10 md:pt-16">
-        <p className="eyebrow">Sobre esta demo</p>
-        <h1 className="mt-4 max-w-3xl font-display text-display-lg text-balance">Una muestra acotada, para ver y medir en lugar de creer.</h1>
-        <p className="mt-6 max-w-2xl text-lede text-ink-soft">
-          Esta demo acompaña la respuesta al challenge técnico de LaRutina Beauty. No es la tienda: es una muestra acotada para que puedan ver y
-          medir tres puntos del documento.
-        </p>
-      </section>
-
-      <div className="container-page mt-10 md:mt-14">
-        <div className="relative aspect-[16/9] overflow-hidden rounded-[var(--radius-card)] bg-sand">
+      <section className="container-page pt-6 md:pt-10">
+        <div className="shape-leaf relative flex min-h-[34rem] flex-col justify-end overflow-hidden bg-sand p-6 sm:p-10 lg:min-h-[36rem] lg:justify-center lg:p-16">
           <Image
-            src={wide.src}
-            alt="Cinco productos de las marcas de ejemplo sobre bloques de travertino"
+            src={banner.src}
+            alt=""
             fill
+            loading="eager"
+            fetchPriority="high"
             sizes="(min-width: 1216px) 1152px, 100vw"
             placeholder="blur"
-            blurDataURL={wide.blur}
-            className="object-cover"
+            blurDataURL={banner.blur}
+            className="object-cover object-[92%_25%] lg:object-[70%_30%]"
           />
-        </div>
-      </div>
-
-      <div className="container-page mt-4">
-        <Row title="Qué muestra">
-          <ol className="grid gap-8 md:grid-cols-3 md:gap-6">
-            {SHOWS.map((s, i) => (
-              <li key={s.title}>
-                <span className="tabular font-display text-[2rem] leading-none text-accent-ink">{i + 1}</span>
-                <h3 className="mt-3 text-[1.0625rem] font-medium leading-snug">{s.title}</h3>
-                <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{s.body}</p>
-              </li>
-            ))}
-          </ol>
-        </Row>
-
-        <Row title="Qué es de ejemplo">
-          <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-ink-soft">
-            Las marcas, los productos, los precios y las reseñas son inventados. Las fotos de producto se generaron con IA para esta demo, así no
-            se usa material con derechos de terceros. Si LaRutina comparte su catálogo y sus fotos, se cargan en lugar de estos sin tocar el
-            código.
-          </p>
-        </Row>
-
-        <Row title="Qué dejé afuera a propósito">
-          <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-ink-soft">
-            Checkout, pagos, cuentas, panel de administración y embajadoras. Están resueltos en el documento y en los diagramas. Armarlos a medias
-            no aportaba nada a la evaluación. Por eso los botones de compra muestran un aviso en lugar de agregar al carrito.
-          </p>
-        </Row>
-
-        <Row title="Cómo medirla">
-          <div className="max-w-2xl">
-            <p className="text-[1.0625rem] leading-relaxed text-ink-soft">
-              Abran cualquier ficha en el celular, o córranla en PageSpeed Insights. Los números del documento salen de ahí.
+          <div className="absolute inset-0 bg-linear-to-t from-paper via-paper/70 to-paper/0 lg:bg-linear-to-r lg:from-paper/95 lg:via-paper/60 lg:to-paper/0" />
+          <div className="relative max-w-xl">
+            <p className="eyebrow">Sobre esta demo</p>
+            <h1 className="mt-4 font-display text-display-lg text-balance">Una muestra acotada, para ver y medir en lugar de creer.</h1>
+            <p className="mt-5 text-lede text-ink-soft">
+              Esta demo acompaña la respuesta al challenge técnico de LaRutina Beauty. No es la tienda: es una muestra acotada para que puedan ver y
+              medir tres puntos del documento.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/diagnostico">
-                Hacer el diagnóstico
-                <ArrowRight size={18} />
-              </ButtonLink>
-              <ButtonLink href="/producto/serum-niacinamida-10-zinc" variant="secondary">
-                Ver una ficha
-              </ButtonLink>
-            </div>
           </div>
-        </Row>
-      </div>
-    </>
-  )
-}
+        </div>
+      </section>
 
-function Row({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="grid gap-5 border-b border-line py-10 md:grid-cols-[13rem_1fr] md:gap-12 md:py-14 lg:grid-cols-[16rem_1fr]">
-      <h2 className="font-display text-display-sm">{title}</h2>
-      <div>{children}</div>
-    </section>
+      <section className="container-page mt-16 md:mt-24" aria-labelledby="muestra">
+        <h2 id="muestra" className="font-display text-display-md">
+          Qué muestra
+        </h2>
+        <ol className="mt-8 grid gap-5 md:grid-cols-3">
+          {SHOWS.map(({ icon: I, title, body }, i) => (
+            <li key={title} className="relative rounded-t-[10rem] rounded-b-[2rem] bg-shell px-6 pt-10 pb-8 text-center">
+              <span className="relative mx-auto block w-fit">
+                <IconBadge size="xl" tone="ink">
+                  <I size={30} />
+                </IconBadge>
+                <span className="tabular absolute -top-1 -right-1 grid size-6 place-items-center rounded-full bg-accent text-[0.75rem] font-medium text-paper ring-2 ring-shell">
+                  {i + 1}
+                </span>
+              </span>
+              <h3 className="mt-6 font-display text-[1.35rem] leading-snug text-balance">{title}</h3>
+              <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-soft">{body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="container-page mt-16 md:mt-24">
+        <ul className="divide-y divide-line border-y border-line">
+          {ROWS.map(({ icon: I, title, body }) => (
+            <li key={title} className="grid gap-5 py-10 md:grid-cols-[16rem_1fr] md:gap-12">
+              <h2 className="flex items-center gap-4 font-display text-display-sm md:flex-col md:items-start">
+                <IconBadge size="lg">
+                  <I size={24} />
+                </IconBadge>
+                {title}
+              </h2>
+              <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-ink-soft">{body}</p>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-10 flex flex-wrap gap-3">
+          <ButtonLink href="/diagnostico">
+            Hacer el diagnóstico
+            <ArrowRight size={18} />
+          </ButtonLink>
+          <ButtonLink href="/producto/serum-niacinamida-10-zinc" variant="secondary">
+            Ver una ficha
+          </ButtonLink>
+        </div>
+      </section>
+    </>
   )
 }

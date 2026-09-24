@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { CopyLinkButton } from '@/components/copy-link-button'
-import { Alert, ChevronDown, Info, Moon, Refresh, Sun } from '@/components/icons'
+import { Alert, Bulb, ChevronDown, ConcernIcon, FaceScan, IconBadge, Info, Moon, Refresh, ShieldCheck, StepIcon, Sun } from '@/components/icons'
 import { ProductImage } from '@/components/product-image'
 import { ButtonLink } from '@/components/ui/button'
+import { Curve } from '@/components/ui/curve'
 import { CONCERN, SKIN_TYPE, STEP, joinEs } from '@/lib/diagnosis/copy'
 import type { RoutineStep } from '@/lib/diagnosis/engine'
-import { concernImage } from '@/lib/images'
+import { lifestyleImage } from '@/lib/images'
 import { formatARS, sumCents } from '@/lib/money'
 import { getCatalog, type CatalogProduct } from '@/server/services/catalog'
 import { getDiagnosisResult } from '@/server/services/diagnosis'
@@ -84,10 +85,15 @@ export default async function ResultPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-shell">
-        <div className="container-page grid gap-10 py-12 md:py-16 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-16">
+      <section className="relative overflow-hidden bg-shell">
+        <div className="container-page grid gap-10 pt-10 pb-20 md:pt-14 md:pb-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16">
           <div className="animate-rise">
-            <p className="eyebrow">Tu diagnóstico</p>
+            <p className="inline-flex items-center gap-2 rounded-full bg-paper py-1.5 pr-3.5 pl-1.5 text-[0.8125rem] font-medium ring-1 ring-line">
+              <span className="grid size-6 place-items-center rounded-full bg-accent text-paper">
+                <FaceScan size={14} />
+              </span>
+              Tu diagnóstico
+            </p>
             <p className="mt-8 font-display text-display-sm text-ink-soft italic">Tu piel es</p>
             <h1 className="font-display text-display-xl">{skin.name}</h1>
             {interp.sensitive && result.skinType !== 'sensible' && (
@@ -95,8 +101,10 @@ export default async function ResultPage({ params }: Props) {
             )}
             <p className="mt-6 max-w-xl text-lede text-ink-soft">{skin.summary}</p>
             {interp.sensitive && (
-              <p className="mt-5 flex max-w-xl gap-3 text-[0.9375rem] leading-relaxed text-ink-soft">
-                <Info size={20} className="mt-0.5 shrink-0 text-accent-ink" />
+              <p className="mt-6 flex max-w-xl items-start gap-3 rounded-[1.5rem] bg-paper p-4 text-[0.9375rem] leading-relaxed text-ink-soft">
+                <IconBadge size="sm">
+                  <ShieldCheck size={18} />
+                </IconBadge>
                 Como tu piel reacciona con facilidad, dejamos afuera el retinol, los ácidos exfoliantes y la vitamina C pura.
               </p>
             )}
@@ -107,23 +115,20 @@ export default async function ResultPage({ params }: Props) {
               <h2 className="eyebrow">En qué nos vamos a enfocar</h2>
               <ul className="mt-4 grid gap-3">
                 {concerns.map((c) => {
-                  const img = concernImage(c.slug)
+                  const img = lifestyleImage(c.slug)
                   return (
-                    <li key={c.slug} className="flex items-center gap-4 rounded-2xl bg-paper p-3 pr-5 shadow-[0_1px_0_var(--color-line)]">
-                      {img && (
-                        <Image
-                          src={img.src}
-                          alt=""
-                          width={72}
-                          height={72}
-                          placeholder="blur"
-                          blurDataURL={img.blur}
-                          className="size-16 shrink-0 rounded-xl object-cover sm:size-[4.5rem]"
-                        />
-                      )}
+                    <li key={c.slug} className="flex items-center gap-4 rounded-full bg-paper p-2 pr-6 shadow-[0_18px_40px_-30px_rgb(40_30_20/0.45)]">
+                      <span className="relative size-20 shrink-0 sm:size-24">
+                        <span className="absolute inset-0 overflow-hidden rounded-full">
+                          <Image src={img.src} alt="" fill sizes="96px" placeholder="blur" blurDataURL={img.blur} className="object-cover" />
+                        </span>
+                        <span className="absolute -right-1 -bottom-1 grid size-8 place-items-center rounded-full bg-paper text-accent-ink ring-2 ring-paper">
+                          <ConcernIcon slug={c.slug} size={17} />
+                        </span>
+                      </span>
                       <div>
-                        <p className="font-medium">{CONCERN[c.slug]!.name}</p>
-                        <p className="mt-0.5 text-sm leading-snug text-ink-muted">{CONCERN[c.slug]!.focus}</p>
+                        <p className="font-display text-[1.25rem] leading-tight">{CONCERN[c.slug]!.name}</p>
+                        <p className="mt-1 text-sm leading-snug text-ink-muted">{CONCERN[c.slug]!.focus}</p>
                       </div>
                     </li>
                   )
@@ -132,53 +137,61 @@ export default async function ResultPage({ params }: Props) {
             </div>
           )}
         </div>
+        <Curve className="absolute inset-x-0 -bottom-px text-paper" />
       </section>
 
-      <section className="container-page py-14 md:py-20" aria-labelledby="rutina">
-        <p className="eyebrow">{interp.steps === 'complete' ? 'Rutina completa' : 'Rutina de tres pasos'}</p>
-        <h2 id="rutina" className="mt-3 max-w-2xl font-display text-display-md text-balance">
-          Paso por paso, con el motivo de cada producto
-        </h2>
+      <section className="container-page pt-10 pb-16 md:pt-14 md:pb-20" aria-labelledby="rutina-manana">
+        <RoutineHeader moment="AM" count={am.length} />
+        <RoutineSteps steps={am} byId={byId} moment="AM" />
+      </section>
 
-        <div className="mt-10 grid gap-14 lg:grid-cols-2 lg:gap-12">
-          <RoutineColumn moment="AM" steps={am} byId={byId} />
-          <RoutineColumn moment="PM" steps={pm} byId={byId} />
-        </div>
+      <section className="relative" aria-labelledby="rutina-noche">
+        <Curve className="text-night-deep" />
+        <div className="bg-night-deep text-paper">
+          <div className="container-page pt-8 pb-16 md:pb-20">
+            <RoutineHeader moment="PM" count={pm.length} />
+            <RoutineSteps steps={pm} byId={byId} moment="PM" />
 
-        {result.routine.notes.length > 0 && (
-          <aside className="mt-10 flex gap-3 rounded-2xl border border-line bg-paper p-5 text-[0.9375rem] leading-relaxed">
-            <Info size={20} className="mt-0.5 shrink-0 text-accent-ink" />
-            <div>
-              <p className="font-medium">Sobre las combinaciones</p>
-              {result.routine.notes.map((n) => (
-                <p key={n} className="mt-1 text-ink-soft">{n}</p>
-              ))}
+            {result.routine.notes.length > 0 && (
+              <aside className="mx-auto mt-10 flex max-w-3xl gap-4 rounded-[1.75rem] bg-paper/6 p-5 text-[0.9375rem] leading-relaxed ring-1 ring-paper/12">
+                <IconBadge size="sm" tone="night">
+                  <Info size={18} />
+                </IconBadge>
+                <div>
+                  <p className="font-medium">Sobre las combinaciones</p>
+                  {result.routine.notes.map((n) => (
+                    <p key={n} className="mt-1 text-paper/75">
+                      {n}
+                    </p>
+                  ))}
+                </div>
+              </aside>
+            )}
+
+            <div className="mx-auto mt-10 flex max-w-3xl flex-col gap-6 rounded-[2rem] bg-paper p-6 text-ink sm:flex-row sm:items-center sm:justify-between md:p-8">
+              <div>
+                <p className="text-sm text-ink-muted">Total de la rutina · {unique.length} productos</p>
+                <p className="tabular mt-1 font-display text-display-md">{formatARS(totalCents)}</p>
+                <p className="mt-2 max-w-sm text-[0.8125rem] text-ink-muted">Precios de ejemplo. Lo que usás de mañana y de noche se cuenta una sola vez.</p>
+              </div>
+              <AddToCartButton count={unique.length} label="Agregar rutina completa" className="w-full sm:w-auto" />
             </div>
-          </aside>
-        )}
-      </section>
-
-      <section className="container-page" aria-label="Total de la rutina">
-        <div className="flex flex-col gap-6 rounded-[var(--radius-card)] bg-ink p-6 text-paper sm:flex-row sm:items-center sm:justify-between md:p-9">
-          <div>
-            <p className="text-sm text-paper/70">
-              Total de la rutina · {unique.length} productos
-            </p>
-            <p className="tabular mt-1 font-display text-display-md">{formatARS(totalCents)}</p>
-            <p className="mt-2 max-w-md text-sm text-paper/60">
-              Precios de ejemplo. Lo que usás de mañana y de noche se cuenta una sola vez.
-            </p>
           </div>
-          <AddToCartButton count={unique.length} label="Agregar rutina completa" variant="inverse" className="w-full sm:w-auto" />
         </div>
+        <Curve className="text-night-deep" flip />
       </section>
 
       <section className="container-page mt-10">
-        <details className="group rounded-[var(--radius-card)] border border-line bg-paper">
+        <details className="group rounded-[2rem] border border-line bg-paper">
           <summary className="flex items-center justify-between gap-6 p-6 md:p-8">
-            <span>
+            <span className="flex items-center gap-4">
+              <IconBadge size="lg">
+                <Bulb size={24} />
+              </IconBadge>
+              <span>
               <span className="block font-display text-display-sm">Por qué esta rutina</span>
               <span className="mt-1 block text-[0.9375rem] text-ink-muted">Lo que dedujimos de tus respuestas y cómo elegimos cada producto.</span>
+              </span>
             </span>
             <span className="grid size-10 shrink-0 place-items-center rounded-full border border-line-strong">
               <ChevronDown size={18} className="chevron" />
@@ -242,56 +255,84 @@ export default async function ResultPage({ params }: Props) {
   )
 }
 
-function RoutineColumn({ moment, steps, byId }: { moment: 'AM' | 'PM'; steps: RoutineStep[]; byId: Map<string, CatalogProduct> }) {
+function RoutineHeader({ moment, count }: { moment: 'AM' | 'PM'; count: number }) {
   const am = moment === 'AM'
   return (
-    <div>
-      <div className="flex items-center gap-4 border-b border-ink pb-5">
-        <span className={`grid size-11 place-items-center rounded-full ${am ? 'bg-accent-soft text-accent-ink' : 'bg-night-soft text-night'}`}>
-          {am ? <Sun size={22} /> : <Moon size={21} />}
-        </span>
-        <div>
-          <h3 className="font-display text-display-sm">{am ? 'Tu rutina de mañana' : 'Tu rutina de noche'}</h3>
-          <p className="text-sm text-ink-muted">{steps.length} pasos</p>
-        </div>
+    <div className="mx-auto flex max-w-3xl items-center gap-5">
+      <IconBadge size="xl" tone={am ? 'accent' : 'night'}>
+        {am ? <Sun size={30} /> : <Moon size={28} />}
+      </IconBadge>
+      <div>
+        <h2 id={am ? 'rutina-manana' : 'rutina-noche'} className="font-display text-display-md">
+          {am ? 'Tu rutina de mañana' : 'Tu rutina de noche'}
+        </h2>
+        <p className={`mt-1 text-[0.9375rem] ${am ? 'text-ink-muted' : 'text-paper/65'}`}>
+          {count} pasos · {am ? 'para empezar el día con la piel protegida' : 'para tratar y reparar mientras dormís'}
+        </p>
       </div>
-      <ol>
-        {steps.map((step, i) => {
-          const p = byId.get(step.productId)!
-          return (
-            <li key={step.productId} className="grid grid-cols-[5.5rem_1fr] gap-4 border-b border-line py-6 sm:grid-cols-[7rem_1fr] sm:gap-6">
+    </div>
+  )
+}
+
+/** Steps as a timeline: the step icon on the line, the product card beside it. */
+function RoutineSteps({ steps, byId, moment }: { steps: RoutineStep[]; byId: Map<string, CatalogProduct>; moment: 'AM' | 'PM' }) {
+  const dark = moment === 'PM'
+  return (
+    <ol className="relative mx-auto mt-10 max-w-3xl space-y-5">
+      <span aria-hidden="true" className={`absolute top-8 bottom-8 left-7 border-l border-dashed sm:left-8 ${dark ? 'border-paper/20' : 'border-line-strong'}`} />
+      {steps.map((step, i) => {
+        const p = byId.get(step.productId)!
+        return (
+          <li key={step.productId} className="relative grid grid-cols-[3.5rem_1fr] gap-3 sm:grid-cols-[4rem_1fr] sm:gap-5">
+            <span className="relative pt-3">
+              <span
+                className={`grid size-14 place-items-center rounded-full sm:size-16 ${
+                  dark ? 'bg-night-deep text-paper ring-1 ring-paper/20' : 'bg-paper text-ink shadow-[0_10px_24px_-16px_rgb(40_30_20/0.5)] ring-1 ring-line'
+                }`}
+              >
+                <StepIcon type={step.stepType} size={26} />
+              </span>
+              <span
+                className={`tabular absolute top-1 -right-1 grid size-6 place-items-center rounded-full text-[0.75rem] font-medium ${
+                  dark ? 'bg-paper text-ink' : 'bg-ink text-paper'
+                }`}
+              >
+                {i + 1}
+              </span>
+            </span>
+            <article className={`grid grid-cols-[5rem_1fr] gap-4 rounded-[1.75rem] p-4 sm:grid-cols-[7rem_1fr] sm:gap-6 sm:p-5 ${dark ? 'bg-paper/6 ring-1 ring-paper/10' : 'bg-shell'}`}>
               <Link href={`/producto/${p.slug}`} tabIndex={-1} aria-hidden="true" className="self-start">
-                <ProductImage slug={p.slug} name={p.name} sizes="(min-width: 640px) 112px, 88px" rounded="rounded-xl" />
+                <ProductImage slug={p.slug} name={p.name} sizes="(min-width: 640px) 112px, 80px" rounded="shape-arch" />
               </Link>
               <div className="min-w-0">
-                <p className="flex items-center gap-2.5 text-sm">
-                  <span className="tabular grid size-6 place-items-center rounded-full bg-ink text-[0.75rem] font-medium text-paper">{i + 1}</span>
-                  <span className="font-medium">{STEP[step.stepType]?.name}</span>
+                <p className={`text-[0.8125rem] font-medium ${dark ? 'text-paper/65' : 'text-ink-muted'}`}>
+                  Paso {i + 1} · {STEP[step.stepType]?.name}
                 </p>
-                <p className="mt-3 text-[0.8125rem] text-ink-muted">{p.brand.name}</p>
-                <h4 className="font-display text-[1.3rem] leading-tight">
-                  <Link href={`/producto/${p.slug}`} className="hover:underline hover:decoration-line-strong hover:underline-offset-4">
+                <h3 className="mt-1.5 font-display text-[1.3rem] leading-tight">
+                  <Link href={`/producto/${p.slug}`} className="hover:underline hover:underline-offset-4">
                     {p.name}
                   </Link>
-                </h4>
-                <p className="tabular mt-1 text-sm text-ink-soft">
-                  {formatARS(p.priceCents)} · {p.sizeLabel}
+                </h3>
+                <p className={`tabular mt-1 text-sm ${dark ? 'text-paper/70' : 'text-ink-soft'}`}>
+                  {p.brand.name} · {formatARS(p.priceCents)} · {p.sizeLabel}
                 </p>
-                <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-soft">{step.explanation}</p>
+                <p className={`mt-3 text-[0.9375rem] leading-relaxed ${dark ? 'text-paper/85' : 'text-ink-soft'}`}>{step.explanation}</p>
                 {step.frequency && (
-                  <p className="mt-3 inline-flex rounded-full bg-shell px-3 py-1 text-[0.8125rem] leading-snug">{step.frequency}</p>
+                  <p className={`mt-3 inline-flex rounded-full px-3 py-1 text-[0.8125rem] leading-snug ${dark ? 'bg-paper/10 text-paper' : 'bg-paper'}`}>
+                    {step.frequency}
+                  </p>
                 )}
                 {step.conflictNote && (
-                  <p className="mt-2 flex gap-2 text-sm leading-snug text-accent-ink">
+                  <p className={`mt-2 flex gap-2 text-sm leading-snug ${dark ? 'text-accent' : 'text-accent-ink'}`}>
                     <Alert size={16} className="mt-0.5 shrink-0" />
                     {step.conflictNote}
                   </p>
                 )}
               </div>
-            </li>
-          )
-        })}
-      </ol>
-    </div>
+            </article>
+          </li>
+        )
+      })}
+    </ol>
   )
 }

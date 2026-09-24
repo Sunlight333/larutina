@@ -81,3 +81,62 @@ export function toEngineConflicts(conflicts: CatalogConflict[]): EngineConflict[
     note: c.note,
   }))
 }
+
+export type ProductFilter = { skinTypes: string[]; concerns: string[] }
+
+// A concern filter lists products that actually work on it, the same bar the
+// product page uses for its "para qué sirve" chips.
+const MIN_RELEVANCE = 50
+const STEP_ORDER = ['CLEANSER', 'TONER', 'EXFOLIANT', 'SERUM', 'TREATMENT', 'MOISTURIZER', 'SUNSCREEN']
+
+/**
+ * The filtered catalog (spec §6.1). With PostgreSQL this is the EXISTS query:
+ * OR within a facet, AND across facets, and a skin type matches products that
+ * are IDEAL or SUITABLE for it. Without a database the same rules run in
+ * memory. Ordered by relevance to the chosen concerns, then by routine step.
+ */
+export async function listProducts(filter: ProductFilter): Promise<CatalogProduct[]> {
+  const { products } = await getCatalog()
+  let ids: Set<string>
+
+  if (db) {
+    const rows = await db.$queryRaw<{ id: string }[]>`
+      SELECT p.id
+      FROM products p
+      WHERE (cardinality(${filter.concerns}::text[]) = 0 OR EXISTS (
+              SELECT 1 FROM product_concerns pc
+              JOIN concerns c ON c.id = pc.concern_id
+              WHERE pc.product_id = p.id
+                AND c.slug = ANY(${filter.concerns}::text[])
+                AND pc.relevance >= ${MIN_RELEVANCE}))
+        AND (cardinality(${filter.skinTypes}::text[]) = 0 OR EXISTS (
+              SELECT 1 FROM product_skin_types pst
+              JOIN skin_types st ON st.id = pst.skin_type_id
+              WHERE pst.product_id = p.id
+                AND st.slug = ANY(${filter.skinTypes}::text[])
+                AND pst.suitability IN ('IDEAL', 'SUITABLE')))`
+    ids = new Set(rows.map((r) => r.id))
+  } else {
+    ids = new Set(
+      products
+        .filter(
+          (p) =>
+            (filter.concerns.length === 0 || p.concerns.some((c) => filter.concerns.includes(c.concern.slug) && c.relevance >= MIN_RELEVANCE)) &&
+            (filter.skinTypes.length === 0 ||
+              p.skinTypes.some((s) => filter.skinTypes.includes(s.skinType.slug) && (s.suitability === 'IDEAL' || s.suitability === 'SUITABLE'))),
+        )
+        .map((p) => p.id),
+    )
+  }
+
+  const relevance = (p: CatalogProduct) =>
+    Math.max(0, ...p.concerns.filter((c) => filter.concerns.includes(c.concern.slug)).map((c) => c.relevance))
+  return products
+    .filter((p) => ids.has(p.id))
+    .sort(
+      (a, b) =>
+        relevance(b) - relevance(a) ||
+        STEP_ORDER.indexOf(a.routineStepType) - STEP_ORDER.indexOf(b.routineStepType) ||
+        a.name.localeCompare(b.name, 'es'),
+    )
+}

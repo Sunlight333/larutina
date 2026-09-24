@@ -5,10 +5,11 @@
 //   node --env-file=.env scripts/images/generate.mjs packshots [slug ...]
 //   node --env-file=.env scripts/images/generate.mjs concerns  [slug ...]
 //   node --env-file=.env scripts/images/generate.mjs editorial [hero|still-life-wide]
+//   node --env-file=.env scripts/images/generate.mjs lifestyle [name ...]
 //
 // Models, chosen by comparing the top text-to-image models on Replicate on
 // the same packshot prompt (September 2026):
-//   - Packshots and editorial: google/nano-banana-pro. Best label typography
+//   - Packshots, editorial and lifestyle scenes: google/nano-banana-pro. Best label typography
 //     (accents included), a true seamless backdrop, and reference-image input
 //     so editorial scenes reuse the real packshots.
 //   - Concern textures: black-forest-labs/flux-2-max. Most photographic
@@ -16,7 +17,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { EDITORIAL, EDITORIAL_REFERENCES, PRODUCTS, TEXTURES, packshotPrompt, texturePrompt } from './prompts.mjs'
+import { EDITORIAL, EDITORIAL_REFERENCES, LIFESTYLE, PRODUCTS, TEXTURES, lifestylePrompt, packshotPrompt, texturePrompt } from './prompts.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const RAW = path.join(root, 'images-raw')
@@ -92,7 +93,22 @@ function jobsFor(kind, only) {
         }),
       }))
   }
-  throw new Error(`Unknown kind "${kind}". Use packshots, concerns or editorial.`)
+  if (kind === 'lifestyle') {
+    return Object.entries(LIFESTYLE)
+      .filter(([name]) => pick(name))
+      .map(([name, l]) => ({
+        out: path.join(RAW, 'lifestyle', `${name}.png`),
+        model: 'google/nano-banana-pro',
+        input: async () => ({
+          prompt: lifestylePrompt(name),
+          image_input: await Promise.all(l.refs.map((s) => dataUri(path.join(RAW, 'products', `${s}.png`)))),
+          aspect_ratio: l.aspect,
+          resolution: '2K',
+          output_format: 'png',
+        }),
+      }))
+  }
+  throw new Error(`Unknown kind "${kind}". Use packshots, concerns, editorial or lifestyle.`)
 }
 
 const [kind, ...only] = process.argv.slice(2)

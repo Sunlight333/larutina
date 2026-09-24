@@ -109,3 +109,87 @@ export const EDITORIAL = {
     prompt: `Landscape editorial still life photograph for a skincare advice store. ${EDITORIAL_PRODUCTS} Composition: the five products stand in one relaxed row on two travertine blocks, occupying the right two thirds of the frame and filling about 55% of the image height, so the labels are large and sharp. Left to right: pump bottle, green glass bottle, amber dropper, jar, upright tube. The left third is calm empty plaster wall. ${EDITORIAL_SCENE}`,
   },
 }
+
+// Campaign imagery: the products advertised by models, for everything on the
+// site that is not a product display. Every image is an "after": healthy,
+// glowing skin, the result the products promise. Each scene gets the packshot
+// it shows as a reference image, so the product is the catalog's own.
+const CAMPAIGN_STYLE =
+  'High-end beauty campaign photograph for a skincare brand advertisement. The model is a strikingly beautiful woman in her mid-twenties with luminous, healthy, glowing skin: the result the product promises. Fresh natural makeup, real fine skin texture, never plastic. The product from the reference image is the hero of the advertisement: held clearly toward the camera with its label readable, in sharp focus, identical to the reference in shape, colour, material and label typography. Soft, flattering beauty lighting, polished and aspirational, magazine quality, photorealistic. No text overlays, no watermark, no extra logos.'
+
+const HERO_FRAME =
+  'Wide composition: the model and the product fill the right 45% of the frame, framed from the shoulders up and turned slightly toward the left. The left 55% of the frame is a clean seamless studio backdrop with a soft, even gradient and nothing else in it: empty space for a headline.'
+
+const PORTRAIT_FRAME = 'Portrait composition, framed from the chest up, the product held beside her face at cheek level.'
+
+export const LIFESTYLE = {
+  'hero-1': {
+    aspect: '16:9',
+    refs: ['serum-acido-hialuronico'],
+    prompt: `An Argentine woman with long dark wavy hair and warm olive skin, bare shoulders, dewy radiant skin, holding the pale ice-blue dropper bottle from the reference ("nube skin / ácido hialurónico") beside her cheek with a soft smile. Seamless backdrop in a soft powder blue fading to warm cream. ${HERO_FRAME}`,
+  },
+  'hero-2': {
+    aspect: '16:9',
+    refs: ['serum-vitamina-c-15'],
+    prompt: `A woman with honey-brown hair in a sleek low bun, sun-kissed light-medium skin with an even, luminous tone, small gold earrings, holding the amber dropper bottle from the reference ("AUREA LAB / Vitamina C 15%") near her cheekbone, eyes to camera. Warm golden-hour light with a gentle sun glow. Seamless backdrop in warm apricot fading to soft peach. ${HERO_FRAME}`,
+  },
+  'hero-3': {
+    aspect: '16:9',
+    refs: ['crema-reparadora-barrera'],
+    prompt: `An Afro-Latina woman with deep brown glowing skin and short natural curls, holding the open ivory jar from the reference ("Clara Botánica / Crema reparadora de barrera") near her face, a small swipe of cream on the fingertip of her other hand, joyful and serene. Seamless backdrop in warm sand fading to soft terracotta. ${HERO_FRAME}`,
+  },
+  acne: {
+    aspect: '4:5',
+    refs: ['exfoliante-bha-2'],
+    prompt: `A woman with dark straight hair in a high ponytail, light-tan skin with a flawless clear, smooth, softly matte complexion, holding the slate-blue bottle from the reference ("Mar de Sal / EXFOLIANTE BHA 2%"). Seamless backdrop in misty blue-grey. ${PORTRAIT_FRAME}`,
+  },
+  manchas: {
+    aspect: '4:5',
+    refs: ['serum-acido-azelaico-10'],
+    prompt: `A woman with light brown shoulder-length hair and fair skin with a perfectly even, luminous tone, holding the slim ivory airless bottle with the blush-pink collar from the reference ("Clara Botánica / Sérum ácido azelaico 10%"). Seamless backdrop in soft blush pink. ${PORTRAIT_FRAME}`,
+  },
+  deshidratacion: {
+    aspect: '4:5',
+    refs: ['tonico-hidratante'],
+    prompt: `A woman of East Asian descent with long black hair and plump, dewy, glass-like skin, holding the frosted lilac bottle from the reference ("nube skin / tónico hidratante"). Seamless backdrop in pale lilac. ${PORTRAIT_FRAME}`,
+  },
+  sensibilidad: {
+    aspect: '4:5',
+    refs: ['tonico-calmante-centella'],
+    prompt: `A woman with auburn hair and fair skin that looks calm, even and comfortable, with no redness, holding the green glass bottle from the reference ("VERDE RAÍZ / Tónico calmante de centella"). Seamless backdrop in soft sage green. ${PORTRAIT_FRAME}`,
+  },
+  lineas: {
+    aspect: '4:5',
+    refs: ['crema-con-peptidos'],
+    prompt: `A woman in her late twenties with a dark blonde bob and smooth, firm, radiant skin, holding the open dusty rose jar from the reference ("VERDE RAÍZ / Crema con péptidos"), a touch of cream on her fingertip. Seamless backdrop in dusty rose. ${PORTRAIT_FRAME}`,
+  },
+  poros: {
+    aspect: '4:5',
+    refs: ['mascarilla-de-arcilla'],
+    prompt: `A woman with curly brown hair and tan skin with a smooth, refined, poreless-looking complexion, holding the open terracotta-pink jar from the reference ("Mar de Sal / MASCARILLA DE ARCILLA"). Seamless backdrop in pale clay pink. ${PORTRAIT_FRAME}`,
+  },
+  manana: {
+    aspect: '4:5',
+    refs: ['fluido-protector-fps-50'],
+    prompt: `Bright morning campaign: a woman with long dark hair and olive skin, fresh and glowing, dotting sunscreen on her cheekbone with one finger while holding the butter-yellow tube from the reference ("Mar de Sal / Fluido protector FPS 50") in her other hand. Seamless backdrop in sunny butter yellow with a crisp palm-leaf shadow and clean morning sunlight. ${PORTRAIT_FRAME}`,
+  },
+  noche: {
+    aspect: '4:5',
+    refs: ['retinol-03-escualano'],
+    prompt: `Evening campaign: a woman with sleek black hair and warm brown glowing skin, calm and radiant, letting a drop fall from the dark amber dropper from the reference ("VERDE RAÍZ / Retinol 0.3% en escualano") onto her fingertips. Seamless backdrop in deep plum-mauve with a warm amber rim light and a soft candle glow. ${PORTRAIT_FRAME}`,
+  },
+  ficha: {
+    aspect: '4:5',
+    refs: ['serum-niacinamida-10-zinc'],
+    prompt: `A woman with a brunette pixie cut and light skin with a clear, refined, luminous complexion, holding the frosted glass dropper bottle from the reference ("AUREA LAB / Niacinamida 10% + Zinc") toward the camera, a single drop of serum on the fingertip of her other hand. Seamless backdrop in warm stone greige. ${PORTRAIT_FRAME}`,
+  },
+  diagnostico: {
+    aspect: '4:5',
+    refs: ['gel-crema-ligero'],
+    prompt: `A woman with wavy chestnut hair and medium skin, glowing and healthy, gently touching her cheek with her fingertips and smiling at the camera, holding the frosted mint-green jar from the reference ("nube skin / gel crema ligero") in her other hand. Seamless backdrop in pale mint. ${PORTRAIT_FRAME}`,
+  },
+}
+
+export function lifestylePrompt(name) {
+  return `${LIFESTYLE[name].prompt} ${CAMPAIGN_STYLE}`
+}
