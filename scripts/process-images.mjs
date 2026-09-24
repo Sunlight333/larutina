@@ -18,6 +18,9 @@ const PRODUCT_HEIGHT = 0.6 // share of the frame height the product fills
 const PRODUCT_WIDTH = 0.56 // cap for wide packs such as jars
 const BASELINE = 0.83 // where the bottom of the product sits
 const PACKSHOT = { width: 1200, height: 1500 }
+// Where the phone crop of each hero sits, as object-position x: all three
+// models and their products fall inside it.
+const PHONE_CROPS = { 'hero-1': 0.94, 'hero-2': 1, 'hero-3': 0.94 }
 
 const hex = ([r, g, b]) => '#' + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase()
 
@@ -122,16 +125,40 @@ async function main() {
     manifest[`products/${slug}`] = await processPackshot(path.join(RAW, 'products', f), slug)
   }
 
-  // Campaign images: the products advertised in use. Wide at 2400px, portraits at 1200x1500.
+  // Campaign images: the products advertised in use. Wide ones at full size (up to 3200px), portraits at 1200x1500.
   for (const f of (await readdir(path.join(RAW, 'lifestyle'))).sort()) {
     const name = path.basename(f, path.extname(f))
     const file = path.join(RAW, 'lifestyle', f)
     const meta = await sharp(file).metadata()
     const wide = meta.width / meta.height > 1.2
-    const size = wide ? { width: 2400, height: Math.round((2400 * meta.height) / meta.width) } : { width: 1200, height: 1500 }
+    const w = Math.min(meta.width, 3200)
+    const size = wide ? { width: w, height: Math.round((w * meta.height) / meta.width) } : { width: 1200, height: 1500 }
     const buffer = await sharp(file).resize(size.width, size.height, { fit: 'cover' }).jpeg({ quality: 78, mozjpeg: true }).toBuffer()
     manifest[`lifestyle/${name}`] = { src: await writeHashed(buffer, 'lifestyle', name), ...size, blur: await blurData(sharp(buffer)) }
     console.log(`lifestyle/${name.padEnd(16)} ${size.width}x${size.height}`)
+  }
+
+  // Phone crops of the hero campaigns: the 4:5 window on the group, so phones
+  // download a small image instead of a wide one they would show a third of.
+  // `crop` (fractions of the wide image) lets the page move the hotspots.
+  for (const [name, x] of Object.entries(PHONE_CROPS)) {
+    const file = path.join(RAW, 'lifestyle', `${name}.png`)
+    const meta = await sharp(file).metadata()
+    const width = Math.round(meta.height * 0.8)
+    const left = Math.round(x * (meta.width - width))
+    const buffer = await sharp(file)
+      .extract({ left, top: 0, width, height: meta.height })
+      .resize(1080, 1350)
+      .jpeg({ quality: 78, mozjpeg: true })
+      .toBuffer()
+    manifest[`lifestyle/${name}-phone`] = {
+      src: await writeHashed(buffer, 'lifestyle', `${name}-phone`),
+      width: 1080,
+      height: 1350,
+      blur: await blurData(sharp(buffer)),
+      crop: { left: +(left / meta.width).toFixed(4), width: +(width / meta.width).toFixed(4) },
+    }
+    console.log(`lifestyle/${`${name}-phone`.padEnd(16)} 1080x1350 from x ${left}`)
   }
 
   // Share image (1200x630): the first hero campaign.

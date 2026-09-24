@@ -56,7 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const c = concerns.find((x) => x.slug === slug)
     if (!c) return []
     const img = lifestyleImage(slug)
-    return [{ slug, name: c.name, description: c.description ?? '', image: { src: img.src, blur: img.blur } }]
+    return [{ slug, name: c.name, description: c.description ?? '', image: { src: img.src, blur: img.blur, width: img.width, height: img.height, face: img.face } }]
   })
   const diagnosis = lifestyleImage('diagnostico')
 

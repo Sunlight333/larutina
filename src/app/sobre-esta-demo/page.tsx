@@ -48,7 +48,7 @@ const ROWS = [
 ]
 
 export default function AboutPage() {
-  const banner = lifestyleImage('hero-2')
+  const banner = lifestyleImage('bodegon')
   return (
     <>
       <section className="container-page pt-6 md:pt-10">
@@ -62,7 +62,7 @@ export default function AboutPage() {
             sizes="(min-width: 1216px) 1152px, 100vw"
             placeholder="blur"
             blurDataURL={banner.blur}
-            className="object-cover object-[92%_25%] lg:object-[70%_30%]"
+            className="object-cover object-[84%_center] lg:object-[64%_center]"
           />
           <div className="absolute inset-0 bg-linear-to-t from-paper via-paper/70 to-paper/0 lg:bg-linear-to-r lg:from-paper/95 lg:via-paper/60 lg:to-paper/0" />
           <div className="relative max-w-xl">

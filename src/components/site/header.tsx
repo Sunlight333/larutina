@@ -7,13 +7,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowRight, ArrowUpRight, Bag, ChevronDown, Close, ConcernIcon, FaceScan, Menu, Search } from '@/components/icons'
 import { buttonClasses } from '@/components/ui/button'
 import { useToast } from '@/components/toast'
+import { faceCrop } from '@/lib/images'
 import { Wordmark } from './wordmark'
 
 export type NavConcern = {
   slug: string
   name: string
   description: string
-  image: { src: string; blur: string }
+  image: { src: string; blur: string; width: number; height: number; face?: [number, number] }
 }
 
 const LINKS = [
@@ -171,7 +172,7 @@ export function SiteHeader({ concerns, diagnosisImage }: { concerns: NavConcern[
         hidden={!mega}
         onMouseEnter={openMega}
         onMouseLeave={closeMegaSoon}
-        className="absolute inset-x-0 top-full hidden border-b border-line/70 bg-paper/96 shadow-[0_40px_60px_-40px_rgb(40_30_20/0.4)] backdrop-blur-xl lg:block"
+        className="absolute inset-x-0 top-full hidden border-b border-line/70 bg-paper shadow-[0_40px_60px_-40px_rgb(40_30_20/0.4)] lg:block"
       >
         <div className="container-page animate-fade grid grid-cols-[1fr_20rem] gap-12 py-9">
           <div>
@@ -181,7 +182,7 @@ export function SiteHeader({ concerns, diagnosisImage }: { concerns: NavConcern[
                 <li key={c.slug}>
                   <Link href={`/productos?necesidad=${c.slug}`} className="group -m-2 flex items-center gap-4 rounded-2xl p-2 transition-colors hover:bg-shell">
                     <span className="relative size-16 shrink-0 overflow-hidden rounded-full ring-1 ring-line">
-                      <Image src={c.image.src} alt="" fill sizes="64px" placeholder="blur" blurDataURL={c.image.blur} className="object-cover" />
+                      <Image src={c.image.src} alt="" fill sizes="128px" placeholder="blur" blurDataURL={c.image.blur} className="object-cover" style={faceCrop(c.image, 1.9)} />
                     </span>
                     <span className="min-w-0">
                       <span className="flex items-center gap-2 font-display text-[1.15rem] leading-tight">
@@ -236,7 +237,7 @@ export function SiteHeader({ concerns, diagnosisImage }: { concerns: NavConcern[
                   <li key={c.slug}>
                     <Link href={`/productos?necesidad=${c.slug}`} className="flex items-center gap-3 rounded-full bg-shell p-1.5 pr-3">
                       <span className="relative size-10 shrink-0 overflow-hidden rounded-full">
-                        <Image src={c.image.src} alt="" fill sizes="40px" placeholder="blur" blurDataURL={c.image.blur} className="object-cover" />
+                        <Image src={c.image.src} alt="" fill sizes="80px" placeholder="blur" blurDataURL={c.image.blur} className="object-cover" style={faceCrop(c.image, 1.9)} />
                       </span>
                       <span className="text-sm leading-tight font-medium">{c.name}</span>
                     </Link>

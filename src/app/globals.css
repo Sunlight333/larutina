@@ -24,7 +24,7 @@
   --font-display: var(--font-newsreader), 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  --text-display-hero: clamp(2.85rem, 1.75rem + 4.4vw, 5.6rem);
+  --text-display-hero: clamp(2.85rem, 1.75rem + 4vw, 5rem);
   --text-display-hero--line-height: 0.98;
   --text-display-hero--letter-spacing: -0.028em;
   --text-display-xl: clamp(3.25rem, 2.2rem + 4.6vw, 6rem);
@@ -51,6 +51,17 @@
   --animate-fade: fade 0.35s ease-out both;
   --animate-toast: toast 0.4s var(--ease-out-soft) both;
   --animate-slide-in: slide-in 0.4s var(--ease-out-soft) both;
+  --animate-progress: progress 1s linear both;
+  --animate-halo: halo 2.4s ease-out infinite;
+
+  @keyframes progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes halo {
+    from { opacity: 0.9; transform: scale(1); }
+    70%, to { opacity: 0; transform: scale(1.9); }
+  }
 
   @keyframes rise {
     from { opacity: 0; transform: translateY(10px); }
@@ -148,6 +159,44 @@
   border-radius: 58% 42% 47% 53% / 46% 55% 45% 54%;
 }
 
+/* A box with the image's own aspect ratio (--ar) that covers its size
+   container exactly as object-cover would, positioned by --px/--py like
+   object-position. Anything placed inside in percentages (hotspots on a
+   product) stays on the same spot of the photo at any viewport. Phones show
+   a 4:5 crop (--ar-phone); from 40rem the wide image (--ar-wide), framed
+   by --px-t/--py-t on tablets and --px-d/--py-d on desktop. */
+@utility cover-box {
+  --ar: var(--ar-phone, var(--ar-wide));
+  --px: 0.5;
+  --py: 0.5;
+  --w: max(100cqw, calc(100cqh * var(--ar)));
+  --h: max(100cqh, calc(100cqw / var(--ar)));
+  position: absolute;
+  width: var(--w);
+  height: var(--h);
+  left: calc((100cqw - var(--w)) * var(--px));
+  top: calc((100cqh - var(--h)) * var(--py));
+  @media (width >= 40rem) {
+    --ar: var(--ar-wide);
+    --px: var(--px-t, 0.5);
+    --py: var(--py-t, 0.5);
+  }
+  @media (width >= 64rem) {
+    --px: var(--px-d, 0.5);
+    --py: var(--py-d, 0.5);
+  }
+}
+
+/* A point on a cover-box photograph: --x/--y on the wide image, --x-phone/--y-phone on the phone crop. */
+@utility spot {
+  left: calc(var(--x-phone, var(--x)) * 100%);
+  top: calc(var(--y-phone, var(--y)) * 100%);
+  @media (width >= 40rem) {
+    left: calc(var(--x) * 100%);
+    top: calc(var(--y) * 100%);
+  }
+}
+
 /* Horizontal scrollers on phones: snap, no visible bar. */
 @utility scroller {
   scroll-snap-type: x mandatory;
@@ -161,4 +210,12 @@
 @utility chevron {
   transition: transform 0.25s var(--ease-out-soft);
   details[open] > summary & { transform: rotate(180deg); }
+}
+
+/* Below-the-fold sections: skip their style and layout until they come near
+   the viewport, so the first paint only pays for the hero. Only for sections
+   whose content stays inside their box (paint containment clips overflow). */
+@utility defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60rem;
 }

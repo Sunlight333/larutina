@@ -1,0 +1,29 @@
+{
+  "image": "hero-1",
+  "crop": {
+    "left": 1392,
+    "top": 440,
+    "width": 640,
+    "height": 800
+  },
+  "aspect": "4:5",
+  "refs": [
+    "serum-vitamina-c-15",
+    "fluido-protector-fps-50"
+  ],
+  "patches": [
+    {
+      "left": 1548,
+      "top": 596,
+      "width": 80,
+      "height": 138
+    },
+    {
+      "left": 1746,
+      "top": 1076,
+      "width": 108,
+      "height": 160
+    }
+  ],
+  "prompt": "Reference image 1 is a close crop of a campaign photograph. Change only the text on the two product labels and keep every other pixel identical: same framing, same bottle and tube shapes and positions, same hands, fingers, hair, clothes and light. Reference image 2 is the amber dropper bottle: the white label on the amber dropper bottle must read exactly 'AUREA LAB' in small widely spaced capitals with 'Vitamina C 15%' below it, as on reference image 2. Reference image 3 is the butter-yellow tube: the yellow tube must read exactly 'Mar de Sal' in the elegant white serif, with 'FLUIDO PROTECTOR FPS 50' in small capitals below it, as on reference image 3. Crisp, legible, photorealistic, printed on the packaging with the same lighting."
+}

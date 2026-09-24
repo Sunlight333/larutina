@@ -3,21 +3,20 @@
 // environment and never prints it.
 //
 //   node --env-file=.env scripts/images/generate.mjs packshots [slug ...]
-//   node --env-file=.env scripts/images/generate.mjs concerns  [slug ...]
-//   node --env-file=.env scripts/images/generate.mjs editorial [hero|still-life-wide]
-//   node --env-file=.env scripts/images/generate.mjs lifestyle [name ...]
+//   node --env-file=.env scripts/images/generate.mjs campaigns [name ...]
+//   node --env-file=.env scripts/images/generate.mjs edit <name> "<instruction>" [packshot slug ...]
 //
-// Models, chosen by comparing the top text-to-image models on Replicate on
-// the same packshot prompt (September 2026):
-//   - Packshots, editorial and lifestyle scenes: google/nano-banana-pro. Best label typography
-//     (accents included), a true seamless backdrop, and reference-image input
-//     so editorial scenes reuse the real packshots.
-//   - Concern textures: black-forest-labs/flux-2-max. Most photographic
-//     material detail; no text involved.
+// Model: google/nano-banana-pro, chosen by comparing the top text-to-image
+// models on Replicate on the same packshot prompt (September 2026): the best
+// label typography (accents included), a true seamless backdrop, and
+// reference-image input, so campaign photographs reuse the real packshots and
+// the cast sheet keeps the same three models in every image. Small labels
+// that come out garbled are fixed with scripts/images/retouch-labels.mjs.
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { EDITORIAL, EDITORIAL_REFERENCES, LIFESTYLE, PRODUCTS, TEXTURES, lifestylePrompt, packshotPrompt, texturePrompt } from './prompts.mjs'
+import sharp from 'sharp'
+import { CAMPAIGNS, PRODUCTS, campaignPrompt, packshotPrompt } from './prompts.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const RAW = path.join(root, 'images-raw')
@@ -28,6 +27,8 @@ if (!token) {
 }
 const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const ASPECTS = ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']
+const ratio = (a) => a.split(':').reduce((w, h) => w / h)
 
 async function dataUri(file) {
   const buf = await readFile(file)
@@ -69,46 +70,49 @@ function jobsFor(kind, only) {
       input: async () => ({ prompt: packshotPrompt(p), aspect_ratio: '4:5', resolution: '2K', output_format: 'png' }),
     }))
   }
-  if (kind === 'concerns') {
-    return Object.keys(TEXTURES)
-      .filter(pick)
-      .map((slug) => ({
-        out: path.join(RAW, 'concerns', `${slug}.png`),
-        model: 'black-forest-labs/flux-2-max',
-        input: async () => ({ prompt: texturePrompt(slug), aspect_ratio: '1:1', resolution: '1 MP', output_format: 'png' }),
-      }))
-  }
-  if (kind === 'editorial') {
-    return Object.entries(EDITORIAL)
+  if (kind === 'campaigns') {
+    // The cast sheet goes first, so the prompts can call it reference image 1.
+    return Object.entries(CAMPAIGNS)
       .filter(([name]) => pick(name))
-      .map(([name, e]) => ({
-        out: path.join(RAW, 'editorial', `${name}.png`),
-        model: 'google/nano-banana-pro',
-        input: async () => ({
-          prompt: e.prompt,
-          image_input: await Promise.all(EDITORIAL_REFERENCES.map((s) => dataUri(path.join(RAW, 'products', `${s}.png`)))),
-          aspect_ratio: e.aspect,
-          resolution: '2K',
-          output_format: 'png',
-        }),
-      }))
-  }
-  if (kind === 'lifestyle') {
-    return Object.entries(LIFESTYLE)
-      .filter(([name]) => pick(name))
-      .map(([name, l]) => ({
+      .map(([name, c]) => ({
         out: path.join(RAW, 'lifestyle', `${name}.png`),
         model: 'google/nano-banana-pro',
         input: async () => ({
-          prompt: lifestylePrompt(name),
-          image_input: await Promise.all(l.refs.map((s) => dataUri(path.join(RAW, 'products', `${s}.png`)))),
-          aspect_ratio: l.aspect,
+          prompt: campaignPrompt(name),
+          image_input: await Promise.all([
+            ...(c.cast ? [dataUri(path.join(RAW, 'cast.png'))] : []),
+            ...c.refs.map((s) => dataUri(path.join(RAW, 'products', `${s}.png`))),
+          ]),
+          aspect_ratio: c.aspect,
           resolution: '2K',
           output_format: 'png',
         }),
       }))
   }
-  throw new Error(`Unknown kind "${kind}". Use packshots, concerns, editorial or lifestyle.`)
+  if (kind === 'edit') {
+    // Retouch one campaign image in place, keeping the original in images-raw/retouch/:
+    //   generate.mjs edit hero-1 "Remove the seam on the left…"
+    // Packshot slugs after the instruction are passed as references 2, 3…
+    const [name, instruction, ...refs] = only
+    const file = path.join(RAW, 'lifestyle', `${name}.png`)
+    return [
+      {
+        out: file,
+        model: 'google/nano-banana-pro',
+        input: async () => {
+          const original = await readFile(file)
+          await mkdir(path.join(RAW, 'retouch'), { recursive: true })
+          await writeFile(path.join(RAW, 'retouch', `${name}.${Date.now()}.png`), original)
+          const images = [file, ...refs.map((s) => path.join(RAW, 'products', `${s}.png`))]
+          // Pin the frame to the image being retouched: 'match_input_image' can follow a packshot instead.
+          const { width, height } = await sharp(file).metadata()
+          const aspect = ASPECTS.reduce((best, a) => (Math.abs(ratio(a) - width / height) < Math.abs(ratio(best) - width / height) ? a : best))
+          return { prompt: instruction, image_input: await Promise.all(images.map(dataUri)), aspect_ratio: aspect, resolution: '2K', output_format: 'png' }
+        },
+      },
+    ]
+  }
+  throw new Error(`Unknown kind "${kind}". Use packshots, campaigns or edit.`)
 }
 
 const [kind, ...only] = process.argv.slice(2)

@@ -1,6 +1,6 @@
 // Art direction for every generated image in the demo. Packshots share one
-// studio setup so the 18 products read as a single shoot; textures and
-// editorial stills use the same soft morning light from the left.
+// studio setup so the 18 products read as a single shoot; everything else is
+// one campaign (below): one apartment, one light, the same three models.
 
 export const BRANDS = {
   'aurea-lab': {
@@ -66,130 +66,100 @@ export function packshotPrompt(p) {
   ].join(' ')
 }
 
-// One macro texture per concern, for the home page tiles.
-const TEXTURE_STYLE =
-  'Soft diffused morning daylight from the left, very shallow depth of field, photorealistic macro photography for a premium skincare brand, calm and restrained, pale desaturated palette, no text, no logos, no packaging, no hands, no people.'
+// The campaign. Every photograph on the site outside the product displays
+// comes from one shoot: one sunlit apartment, one palette, one light and the
+// same three models, so the images read as a single campaign. The first hero
+// establishes the cast; every later image gets a sheet of their faces
+// (images-raw/cast.png) as a reference so they stay the same women.
 
-export const TEXTURES = {
-  acne: 'Top-down macro photograph of a clear, lightly aqua-tinted skincare gel spread in one smooth swirl across a pale sea-glass green surface, tiny suspended air bubbles inside the gel, glossy highlights.',
-  manchas: 'Macro photograph of glossy golden-amber serum droplets resting on a pale warm cream glass surface, a few perfectly round drops of different sizes and one soft elongated drip, light glowing through the amber liquid.',
-  deshidratacion: 'Macro photograph of a translucent hydrating water-gel texture in pale ice-blue, with fine clear water droplets beaded on its glossy surface, gentle ripples.',
-  sensibilidad: 'Macro photograph of a soft pale sage-green soothing balm swatch with a smooth creamy stroke, a single fresh round centella asiatica leaf resting beside it on a pale sage surface.',
-  lineas: 'Macro photograph of a single smooth, flat stroke of rich ivory face cream swept across a dusty rose surface with a knife-like edge, fine soft ridges in the texture, satin sheen, a small pearl of cream at the end of the stroke.',
-  poros: 'Macro photograph of a smooth matte swirl of pale pink kaolin clay mask texture with a fine velvety grain, on a pale clay-pink surface.',
+const WORLD =
+  'The set is a sunlit, airy apartment in Buenos Aires styled for a skincare campaign: warm limewashed plaster walls in cream and soft peach, tall French windows with sheer ivory linen curtains glowing in the light, a honed travertine vanity and low travertine benches, clear glass vases with olive branches and a few pale peach garden roses, clear glass spheres and water glasses that throw rippling caustic light across the surfaces, soft palm-leaf shadows on the walls. Palette: cream, ivory, peach, blush, apricot, warm sand and soft gold, with small touches of sage green. Luminous, softly filmic colour with creamy highlights.'
+
+const CAST = {
+  sofia: 'Sofía, with long glossy dark-brown waves, warm olive skin and dark brown eyes',
+  valentina: 'Valentina, with honey-blonde shoulder-length hair in a soft wave, light skin with a few faint freckles and hazel eyes',
+  maia: 'Maia, with deep brown skin, high cheekbones and short defined dark curls',
 }
 
-export function texturePrompt(slug) {
-  return `${TEXTURES[slug]} ${TEXTURE_STYLE}`
-}
+const BEAUTY =
+  'Every woman is strikingly beautiful and aged 22 to 26, with luminous, dewy, healthy glowing skin: flawless, even and radiant, the result the products promise, with real fine skin texture, fresh minimal makeup, glossy lips and natural brows.'
 
-// Editorial stills are composed from five finished packshots passed as
-// reference images, so the products in the scene are the catalog's own.
-export const EDITORIAL_REFERENCES = [
-  'gel-limpiador-purificante',
-  'tonico-calmante-centella',
-  'serum-vitamina-c-15',
-  'crema-reparadora-barrera',
-  'fluido-protector-fps-50',
-]
+const PRODUCT_FIDELITY =
+  'Each product appears exactly once and is identical to its reference image in shape, colour, material, proportions and label typography, held with the label facing the camera, legible and in crisp focus. Never duplicate a product and never add other products or packaging.'
 
-const EDITORIAL_PRODUCTS =
-  'The scene contains exactly five objects, one of each product shown in the five reference images. Never duplicate a product. Keep every product identical to its reference: same shape, colour, material, proportions and label typography, with the label text reproduced exactly and legibly: the sea-glass green pump bottle reads "Mar de Sal / GEL LIMPIADOR PURIFICANTE", the green glass bottle reads "VERDE RAÍZ / Tónico calmante de centella", the amber dropper reads "AUREA LAB / Vitamina C 15%", the ivory jar reads "Clara Botánica / Crema reparadora de barrera", the butter-yellow tube reads "Mar de Sal / Fluido protector FPS 50".'
+const QUALITY =
+  'Luxury beauty advertising campaign photograph for a skincare store, shot by a top fashion photographer on a medium-format camera, magazine quality, photorealistic, natural anatomy with correct hands and fingers. No text overlays, no watermark, no extra logos.'
 
-const EDITORIAL_SCENE =
-  'Low stepped blocks of pale honed travertine against a warm off-white limewashed plaster wall. Soft early-morning sunlight from the left, long gentle shadows, a faint dappled shadow of palm leaves on the wall. Calm, airy, premium and understated editorial still life, photorealistic, natural colour, crisp detail on the labels. No people, no hands, no props, no extra objects, no text other than the product labels, no watermark.'
+const CAST_REFERENCE =
+  'Reference image 1 is the cast sheet: Sofía on the left, Valentina in the middle, Maia on the right. Keep each woman exactly as she appears there: same face, hair, skin tone and features. The dab of cream on the cheek of Maia belongs to that one photograph only.'
 
-export const EDITORIAL = {
-  hero: {
-    aspect: '4:5',
-    prompt: `Portrait editorial still life photograph for the home page of a skincare advice store. ${EDITORIAL_PRODUCTS} Composition: a close, tight group filling the lower 60% of the frame. Back row on the higher block: the green glass bottle on the left and the pump bottle on the right, both labels fully visible. Middle: the amber dropper bottle. Front row on the lower block: the jar on the left and the upright tube on the right. No product may cover another product's label. ${EDITORIAL_SCENE}`,
-  },
-  'still-life-wide': {
-    aspect: '16:9',
-    prompt: `Landscape editorial still life photograph for a skincare advice store. ${EDITORIAL_PRODUCTS} Composition: the five products stand in one relaxed row on two travertine blocks, occupying the right two thirds of the frame and filling about 55% of the image height, so the labels are large and sharp. Left to right: pump bottle, green glass bottle, amber dropper, jar, upright tube. The left third is calm empty plaster wall. ${EDITORIAL_SCENE}`,
-  },
-}
+// The group sits in the right half, so the headline can use the left half on
+// desktop and a 4:5 crop of that half carries the whole group on phones.
+const GROUP_FRAME =
+  'Landscape composition: the three women form a close, dynamic group in the right half of the frame, from about 50% to 96% of the width, close enough that faces and products read large, with comfortable headroom and all faces in the upper half of the frame. Each woman is in a different pose and at a different height, interacting like close friends. The left half of the frame is the same room with no people and no products: bright, calm, low in contrast and softly out of focus, leaving clean space for a headline. All three faces and all products are in sharp focus.'
 
-// Campaign imagery: the products advertised by models, for everything on the
-// site that is not a product display. Every image is an "after": healthy,
-// glowing skin, the result the products promise. Each scene gets the packshot
-// it shows as a reference image, so the product is the catalog's own.
-const CAMPAIGN_STYLE =
-  'High-end beauty campaign photograph for a skincare brand advertisement. The model is a strikingly beautiful woman in her mid-twenties with luminous, healthy, glowing skin: the result the product promises. Fresh natural makeup, real fine skin texture, never plastic. The product from the reference image is the hero of the advertisement: held clearly toward the camera with its label readable, in sharp focus, identical to the reference in shape, colour, material and label typography. Soft, flattering beauty lighting, polished and aspirational, magazine quality, photorealistic. No text overlays, no watermark, no extra logos.'
-
-const HERO_FRAME =
-  'Wide composition: the model and the product fill the right 45% of the frame, framed from the shoulders up and turned slightly toward the left. The left 55% of the frame is a clean seamless studio backdrop with a soft, even gradient and nothing else in it: empty space for a headline.'
-
-const PORTRAIT_FRAME = 'Portrait composition, framed from the chest up, the product held beside her face at cheek level.'
-
-export const LIFESTYLE = {
+export const CAMPAIGNS = {
   'hero-1': {
     aspect: '16:9',
-    refs: ['serum-acido-hialuronico'],
-    prompt: `An Argentine woman with long dark wavy hair and warm olive skin, bare shoulders, dewy radiant skin, holding the pale ice-blue dropper bottle from the reference ("nube skin / ácido hialurónico") beside her cheek with a soft smile. Seamless backdrop in a soft powder blue fading to warm cream. ${HERO_FRAME}`,
+    cast: false,
+    refs: ['serum-vitamina-c-15', 'fluido-protector-fps-50', 'crema-reparadora-barrera'],
+    prompt: `Scene: morning at the long travertine vanity in front of the tall window, the sheer curtains glowing with warm golden sunlight from the left, a glass vase of olive branches and peach roses on the vanity, caustic light rippling across the travertine and the wall. Reference image 1 is the amber dropper bottle ("AUREA LAB / Vitamina C 15%"), reference image 2 the butter-yellow squeeze tube ("Mar de Sal / Fluido protector FPS 50"), reference image 3 the ivory jar with the sand lid ("Clara Botánica / Crema reparadora de barrera"). The three women are ${CAST.valentina}; ${CAST.sofia}; and ${CAST.maia}. Within the group, from left to right: Valentina, in an ivory linen shirt, sits sideways on the edge of the vanity holding the amber dropper bottle up beside her cheek with the pipette lifted, smiling softly at the camera; Sofía, in a pale blue cotton shirt worn open over a white tank, leans on the vanity on her forearms in front of the others, chin resting on one hand like a magazine cover, holding the butter-yellow tube upright in her other hand; Maia, in a sand silk slip dress, stands behind them laughing, holding the open ivory jar at chest height with a swipe of cream on her fingertip.`,
   },
   'hero-2': {
     aspect: '16:9',
-    refs: ['serum-vitamina-c-15'],
-    prompt: `A woman with honey-brown hair in a sleek low bun, sun-kissed light-medium skin with an even, luminous tone, small gold earrings, holding the amber dropper bottle from the reference ("AUREA LAB / Vitamina C 15%") near her cheekbone, eyes to camera. Warm golden-hour light with a gentle sun glow. Seamless backdrop in warm apricot fading to soft peach. ${HERO_FRAME}`,
+    cast: true,
+    refs: ['serum-acido-hialuronico', 'tonico-hidratante', 'gel-crema-ligero'],
+    prompt: `Scene: late morning in the living area of the same apartment: a low curved cream bouclé sofa and a travertine coffee table beside the sheer-curtained window, a clear glass bowl of water and glass spheres throwing caustic light, soft palm-leaf shadows on the peach plaster wall, warm sunlight from the left. ${CAST_REFERENCE} Reference image 2 is the frosted ice-blue dropper bottle ("nube skin / ácido hialurónico"), reference image 3 the frosted lilac bottle ("nube skin / tónico hidratante"), reference image 4 the frosted mint-green jar ("nube skin / gel crema ligero"). Within the group, from left to right: Maia, in a white ribbed tank, perches on the arm of the sofa holding the lilac bottle toward the camera; Sofía, in an ivory satin top, lies across the sofa on her front, propped on her elbows, holding the ice-blue dropper bottle beside her cheek and looking into the camera; Valentina, in a soft peach knit, sits behind her with an arm around her shoulders, holding the open mint-green jar and laughing.`,
   },
   'hero-3': {
     aspect: '16:9',
-    refs: ['crema-reparadora-barrera'],
-    prompt: `An Afro-Latina woman with deep brown glowing skin and short natural curls, holding the open ivory jar from the reference ("Clara Botánica / Crema reparadora de barrera") near her face, a small swipe of cream on the fingertip of her other hand, joyful and serene. Seamless backdrop in warm sand fading to soft terracotta. ${HERO_FRAME}`,
-  },
-  acne: {
-    aspect: '4:5',
-    refs: ['exfoliante-bha-2'],
-    prompt: `A woman with dark straight hair in a high ponytail, light-tan skin with a flawless clear, smooth, softly matte complexion, holding the slate-blue bottle from the reference ("Mar de Sal / EXFOLIANTE BHA 2%"). Seamless backdrop in misty blue-grey. ${PORTRAIT_FRAME}`,
-  },
-  manchas: {
-    aspect: '4:5',
-    refs: ['serum-acido-azelaico-10'],
-    prompt: `A woman with light brown shoulder-length hair and fair skin with a perfectly even, luminous tone, holding the slim ivory airless bottle with the blush-pink collar from the reference ("Clara Botánica / Sérum ácido azelaico 10%"). Seamless backdrop in soft blush pink. ${PORTRAIT_FRAME}`,
-  },
-  deshidratacion: {
-    aspect: '4:5',
-    refs: ['tonico-hidratante'],
-    prompt: `A woman of East Asian descent with long black hair and plump, dewy, glass-like skin, holding the frosted lilac bottle from the reference ("nube skin / tónico hidratante"). Seamless backdrop in pale lilac. ${PORTRAIT_FRAME}`,
-  },
-  sensibilidad: {
-    aspect: '4:5',
-    refs: ['tonico-calmante-centella'],
-    prompt: `A woman with auburn hair and fair skin that looks calm, even and comfortable, with no redness, holding the green glass bottle from the reference ("VERDE RAÍZ / Tónico calmante de centella"). Seamless backdrop in soft sage green. ${PORTRAIT_FRAME}`,
-  },
-  lineas: {
-    aspect: '4:5',
-    refs: ['crema-con-peptidos'],
-    prompt: `A woman in her late twenties with a dark blonde bob and smooth, firm, radiant skin, holding the open dusty rose jar from the reference ("VERDE RAÍZ / Crema con péptidos"), a touch of cream on her fingertip. Seamless backdrop in dusty rose. ${PORTRAIT_FRAME}`,
-  },
-  poros: {
-    aspect: '4:5',
-    refs: ['mascarilla-de-arcilla'],
-    prompt: `A woman with curly brown hair and tan skin with a smooth, refined, poreless-looking complexion, holding the open terracotta-pink jar from the reference ("Mar de Sal / MASCARILLA DE ARCILLA"). Seamless backdrop in pale clay pink. ${PORTRAIT_FRAME}`,
-  },
-  manana: {
-    aspect: '4:5',
-    refs: ['fluido-protector-fps-50'],
-    prompt: `Bright morning campaign: a woman with long dark hair and olive skin, fresh and glowing, dotting sunscreen on her cheekbone with one finger while holding the butter-yellow tube from the reference ("Mar de Sal / Fluido protector FPS 50") in her other hand. Seamless backdrop in sunny butter yellow with a crisp palm-leaf shadow and clean morning sunlight. ${PORTRAIT_FRAME}`,
-  },
-  noche: {
-    aspect: '4:5',
-    refs: ['retinol-03-escualano'],
-    prompt: `Evening campaign: a woman with sleek black hair and warm brown glowing skin, calm and radiant, letting a drop fall from the dark amber dropper from the reference ("VERDE RAÍZ / Retinol 0.3% en escualano") onto her fingertips. Seamless backdrop in deep plum-mauve with a warm amber rim light and a soft candle glow. ${PORTRAIT_FRAME}`,
-  },
-  ficha: {
-    aspect: '4:5',
-    refs: ['serum-niacinamida-10-zinc'],
-    prompt: `A woman with a brunette pixie cut and light skin with a clear, refined, luminous complexion, holding the frosted glass dropper bottle from the reference ("AUREA LAB / Niacinamida 10% + Zinc") toward the camera, a single drop of serum on the fingertip of her other hand. Seamless backdrop in warm stone greige. ${PORTRAIT_FRAME}`,
-  },
-  diagnostico: {
-    aspect: '4:5',
-    refs: ['gel-crema-ligero'],
-    prompt: `A woman with wavy chestnut hair and medium skin, glowing and healthy, gently touching her cheek with her fingertips and smiling at the camera, holding the frosted mint-green jar from the reference ("nube skin / gel crema ligero") in her other hand. Seamless backdrop in pale mint. ${PORTRAIT_FRAME}`,
+    cast: true,
+    refs: ['tonico-calmante-centella', 'crema-con-peptidos', 'retinol-03-escualano'],
+    prompt: `Scene: golden hour on the apartment's terrace: limewashed peach plaster walls with a rounded arch, potted olive trees, a travertine bench, warm low sunlight from the left with a gentle flare, long soft palm-leaf shadows. ${CAST_REFERENCE} Reference image 2 is the green glass bottle with the black cap ("VERDE RAÍZ / Tónico calmante de centella"), reference image 3 the dusty rose jar with the black lid ("VERDE RAÍZ / Crema con péptidos"), reference image 4 the dark amber dropper bottle ("VERDE RAÍZ / Retinol 0.3% en escualano"). Within the group, from left to right: Sofía, in a sage silk dress, sits on the travertine bench holding the green glass bottle toward the camera; Valentina, in a dusty rose satin shirt, sits beside her with her head resting on Sofía's shoulder, holding the open dusty rose jar; Maia, in ivory linen, stands leaning against the arch and lifts the dark amber dropper bottle at eye level, the glass glowing in the golden light.`,
   },
 }
 
-export function lifestylePrompt(name) {
-  return `${LIFESTYLE[name].prompt} ${CAMPAIGN_STYLE}`
+export function campaignPrompt(name) {
+  const c = CAMPAIGNS[name]
+  const frame = c.frame ?? (c.aspect === '16:9' ? GROUP_FRAME : SOLO_FRAME)
+  return [c.prompt, frame, WORLD, c.stillLife ? STILL_LIFE : BEAUTY, c.stillLife ? '' : PRODUCT_FIDELITY, QUALITY].filter(Boolean).join(' ')
+}
+
+// Single portraits for the concern cards, the menu, the routine panels and the
+// product showcase: one of the cast, one product, the same apartment and light.
+const SOLO_FRAME =
+  'Portrait composition: one woman framed from the chest up, her face in the upper half of the frame, the product held near her face with the label facing the camera, the room behind her softly out of focus. Face and product in sharp focus.'
+
+const solo = (who, product, label, scene) => ({
+  aspect: '4:5',
+  cast: true,
+  refs: [product],
+  prompt: `${scene} Reference image 1 is the cast sheet: Sofía on the left, Valentina in the middle, Maia on the right. The woman in this photograph is ${who}: keep her exactly as she appears there, with the same face, hair, skin tone and features, without the dab of cream from the sheet. Reference image 2 is the product she holds (${label}).`,
+})
+
+Object.assign(CAMPAIGNS, {
+  acne: solo('Sofía', 'exfoliante-bha-2', '"Mar de Sal / EXFOLIANTE BHA 2%"', 'Sofía stands by the tall window in a white ribbed tank, her skin clear, smooth and softly matte with a fresh glow, holding the slate-blue bottle beside her cheek with a relaxed, confident smile. Sheer curtains glow behind her and palm-leaf shadows fall across the peach plaster.'),
+  manchas: solo('Valentina', 'serum-acido-azelaico-10', '"Clara Botánica / Sérum ácido azelaico 10%"', 'Valentina in an ivory linen shirt, her skin perfectly even and luminous in the warm sunlight, a few faint freckles, holds the slim ivory airless bottle with the blush-pink collar beside her cheek, eyes to the camera. Olive branches and peach roses in a glass vase are softly out of focus behind her.'),
+  deshidratacion: solo('Maia', 'tonico-hidratante', '"nube skin / tónico hidratante"', 'Maia sits on the cream bouclé sofa in a white satin top, her skin plump, dewy and glass-like, catching the light, holding the frosted lilac bottle beside her face and laughing softly. Caustic water reflections ripple across the plaster wall behind her.'),
+  sensibilidad: solo('Valentina', 'tonico-calmante-centella', '"VERDE RAÍZ / Tónico calmante de centella"', 'Valentina in a sage silk slip rests her cheek on one hand, her skin calm, even and comfortable with no redness, holding the green glass bottle with the black cap in her other hand with a serene smile. A glass bowl with a few round centella leaves sits on the travertine beside her.'),
+  lineas: solo('Maia', 'crema-con-peptidos', '"VERDE RAÍZ / Crema con péptidos"', 'Maia in an ivory linen shirt at the travertine vanity, her skin smooth, firm and radiant, holds the open dusty rose jar with a touch of cream on her fingertip, looking into the camera with a warm smile.'),
+  poros: solo('Sofía', 'mascarilla-de-arcilla', '"Mar de Sal / MASCARILLA DE ARCILLA"', 'Sofía in a soft peach knit, her hair in a loose low bun and her complexion smooth and refined with a healthy glow, holds the open wide terracotta-pink jar at cheek level, smiling at the camera.'),
+  manana: solo('Sofía', 'fluido-protector-fps-50', '"Mar de Sal / Fluido protector FPS 50"', 'Bright morning at the vanity by the window: Sofía in a pale blue cotton shirt dots sunscreen onto her cheekbone with one finger while holding the butter-yellow tube in her other hand, fresh and glowing, crisp palm-leaf shadows and clean morning sun.'),
+  noche: solo('Maia', 'retinol-03-escualano', '"VERDE RAÍZ / Retinol 0.3% en escualano"', 'Evening in the same apartment: the window behind her shows a deep dusk blue, warm light comes from a small travertine table lamp and a candle on the vanity. Maia in a dusty rose satin robe lets a drop fall from the dark amber dropper onto her fingertips, calm and radiant, a warm amber glow on her skin.'),
+  ficha: solo('Valentina', 'serum-niacinamida-10-zinc', '"AUREA LAB / Niacinamida 10% + Zinc"', 'Valentina in a white tank holds the frosted glass dropper bottle with the black bulb toward the camera, a single drop of serum on the fingertip of her other hand, her skin luminous and refined in warm sunlight.'),
+  diagnostico: solo('Sofía', 'gel-crema-ligero', '"nube skin / gel crema ligero"', 'Sofía at the travertine vanity gently touches her cheek with her fingertips as if reading her skin, smiling at the camera, holding the frosted mint-green jar in her other hand, sheer curtains glowing behind her.'),
+})
+
+// The brand band: the products alone on the set, as the campaign's still life.
+const STILL_LIFE =
+  'No people and no hands. Each product appears exactly once and is identical to its reference image in shape, colour, material, proportions and label typography, standing upright with its label facing the camera, legible and in crisp focus. Never duplicate a product and never add other products or packaging.'
+
+CAMPAIGNS.bodegon = {
+  aspect: '21:9',
+  cast: false,
+  stillLife: true,
+  frame: '',
+  refs: ['serum-vitamina-c-15', 'crema-reparadora-barrera', 'fluido-protector-fps-50', 'serum-acido-hialuronico', 'tonico-calmante-centella'],
+  prompt:
+    'Still life for the same campaign: the long honed travertine vanity in front of the sheer-curtained window in warm golden morning sunlight. The five products from the reference images (an amber dropper bottle "AUREA LAB / Vitamina C 15%", an ivory jar "Clara Botánica / Crema reparadora de barrera", a butter-yellow tube "Mar de Sal / Fluido protector FPS 50", a frosted ice-blue dropper bottle "nube skin / ácido hialurónico", a green glass bottle "VERDE RAÍZ / Tónico calmante de centella") stand in a relaxed, close group on two low travertine blocks in the right third of the frame, filling about half of the image height, so the labels read large. A glass vase of olive branches and peach garden roses and two clear glass spheres beside them throw rippling caustic light across the travertine. The left two thirds of the frame are calm: warm peach limewashed plaster with soft palm-leaf shadows and sunlight, softly out of focus, leaving space for a headline.',
 }

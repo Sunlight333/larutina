@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import { ArrowRight, FaceScan } from '@/components/icons'
 import { ButtonLink } from '@/components/ui/button'
-import { lifestyleImage } from '@/lib/images'
+import { faceCrop, lifestyleImage } from '@/lib/images'
 
 export default function NotFound() {
   const img = lifestyleImage('diagnostico')
@@ -24,7 +24,7 @@ export default function NotFound() {
         </div>
       </div>
       <div className="relative mx-auto aspect-square w-64 overflow-hidden rounded-full ring-[10px] ring-shell md:w-full">
-        <Image src={img.src} alt="" fill sizes="(min-width: 768px) 416px, 256px" placeholder="blur" blurDataURL={img.blur} className="object-cover object-[50%_25%]" />
+        <Image src={img.src} alt="" fill sizes="(min-width: 768px) 600px, 360px" placeholder="blur" blurDataURL={img.blur} className="object-cover" style={faceCrop(img, 1.35)} />
       </div>
     </section>
   )

@@ -12,7 +12,7 @@ import { pairings, productConflicts } from '@/lib/catalog/pairings'
 import { ConcernIcon } from '@/components/icons'
 import { CONCERN, SKIN_TYPE, STEP, joinEs, lowerFirst, type StepType } from '@/lib/diagnosis/copy'
 import { featuredActives, TEMPLATES } from '@/lib/diagnosis/engine'
-import { lifestyleImage, productImage } from '@/lib/images'
+import { faceCrop, lifestyleImage, productImage, type LifestyleName } from '@/lib/images'
 import { formatARS } from '@/lib/money'
 import { getCatalog, getProductSlugs, toEngineConflicts, toEngineProduct } from '@/server/services/catalog'
 
@@ -45,10 +45,12 @@ const SEVERITY_LABEL: Record<string, string> = {
 
 // Campaign images that show a given product in use, with the crop that keeps
 // the model and the product in frame.
-const IN_USE: Record<string, { image: string; position?: string }> = {
-  'serum-acido-hialuronico': { image: 'hero-1', position: 'object-[64%_30%]' },
-  'serum-vitamina-c-15': { image: 'hero-2', position: 'object-[90%_30%]' },
-  'crema-reparadora-barrera': { image: 'hero-3', position: 'object-[68%_30%]' },
+// The campaign photograph each product appears in. Products shot only in a
+// group photograph zoom onto the model holding them (focus, as fractions).
+const IN_USE: Record<string, { image: LifestyleName; focus?: [number, number]; zoom?: number }> = {
+  'serum-vitamina-c-15': { image: 'hero-1', focus: [0.585, 0.36], zoom: 2 },
+  'crema-reparadora-barrera': { image: 'hero-1', focus: [0.855, 0.36], zoom: 2 },
+  'serum-acido-hialuronico': { image: 'hero-2', focus: [0.64, 0.52], zoom: 2 },
   'exfoliante-bha-2': { image: 'acne' },
   'serum-acido-azelaico-10': { image: 'manchas' },
   'tonico-hidratante': { image: 'deshidratacion' },
@@ -117,7 +119,14 @@ export default async function ProductPage({ params }: Props) {
 
   const img = productImage(product.slug)
   const inUseEntry = IN_USE[product.slug]
-  const inUse = inUseEntry ? { ...lifestyleImage(inUseEntry.image), position: inUseEntry.position ?? 'object-center' } : null
+  const inUseImage = inUseEntry ? lifestyleImage(inUseEntry.image) : null
+  // Group photographs are zoomed onto one model inside the 4:5 arch, so they load at the zoomed width.
+  const inUse =
+    inUseEntry && inUseImage
+      ? inUseEntry.focus
+        ? { ...inUseImage, style: faceCrop({ ...inUseImage, face: inUseEntry.focus }, inUseEntry.zoom, 4 / 5), sizes: '(min-width: 768px) 1220px, 400vw' }
+        : { ...inUseImage, style: undefined, sizes: '(min-width: 1024px) 272px, (min-width: 768px) 240px, 100vw' }
+      : null
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -299,7 +308,7 @@ export default async function ProductPage({ params }: Props) {
           {inUse && (
             <figure>
               <div className="shape-arch relative aspect-[4/5] overflow-hidden bg-sand">
-                <Image src={inUse.src} alt={`${product.name}, en uso`} fill sizes="(min-width: 1024px) 272px, (min-width: 768px) 240px, 100vw" placeholder="blur" blurDataURL={inUse.blur} className={`object-cover ${inUse.position}`} />
+                <Image src={inUse.src} alt={`${product.name}, en uso`} fill sizes={inUse.sizes} placeholder="blur" blurDataURL={inUse.blur} className="object-cover" style={inUse.style} />
               </div>
               <figcaption className="mt-3 text-center text-[0.8125rem] text-ink-muted">En uso</figcaption>
             </figure>

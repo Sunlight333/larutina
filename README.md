@@ -80,7 +80,7 @@ src/server/services/catalog.ts    catalog reads, including the filtered listing 
 src/server/services/              catalog and diagnosis services; app/ holds no business logic
 src/app/                          routes
 tests/unit/                       engine tests, built on the seed dataset
-scripts/images/                   Replicate generation (prompts + runner)
+scripts/images/                   Replicate generation (prompts, runner, label retouching)
 scripts/process-images.mjs        raw generations → public/images + src/content/image-manifest.json
 ```
 
@@ -89,21 +89,28 @@ scripts/process-images.mjs        raw generations → public/images + src/conten
 Every image was generated for this demo on Replicate, so nothing is copyrighted by a third party. The models in the campaign images are AI-generated too: they are not real people, and the about page says so.
 
 - **Packshots (18):** `google/nano-banana-pro`, chosen after rendering the same packshot on nano-banana-pro, gpt-image-2, flux-2-max and seedream-4.5: the most accurate label typography (accents included) and a truly seamless backdrop. Each fictional brand has its own packaging system. Used only where a product is displayed.
-- **Campaign images (13):** `google/nano-banana-pro` again, with the product's own packshot passed as a reference image, so the product the model holds is the catalog's. Every image is an "after": women in their twenties with healthy, glowing skin, the product held beside the face with its label to camera, on a backdrop tinted to the product. Three wide ones rotate in the home hero; the rest illustrate concerns, the morning and night routines, the product page's "en uso" and the diagnosis.
+- **The campaign (14):** everything outside the product displays is one shoot: the same sunlit Buenos Aires apartment, the same warm palette and light, and the same three models (Sofía, Valentina and Maia, women in their twenties), so the images read as one advertising campaign rather than a collection. `google/nano-banana-pro` again, with the real packshots passed as reference images so every product in a photo is the catalog's. The first hero established the cast; a sheet of their faces (`images-raw/cast.png`) goes into every later generation to keep them the same women. Every image is an "after": healthy, glowing skin, the result the products promise.
+  - Three group campaigns rotate in the home hero, each with three products; hotspots on the products link to them.
+  - Ten portraits, one model and one product each: concerns, morning and night, the product showcase, the diagnosis, and the product page's "en uso".
+  - A still life of five products on the set, for the brand band and the about page.
 
 ```bash
 npm run images:generate -- packshots [slug ...]     # needs REPLICATE_API_TOKEN in .env
-npm run images:generate -- lifestyle [name ...]     # campaign images; prompts in scripts/images/prompts.mjs
+npm run images:generate -- campaigns [name ...]     # prompts, set and cast in scripts/images/prompts.mjs
+node --env-file=.env scripts/images/retouch-labels.mjs scripts/images/retouch/hero-1.json   # fix garbled small labels
 npm run images                                      # crop, compress, hash, write the manifest
 ```
 
-Raw generations go to `images-raw/` (git-ignored). `npm run images` re-frames every packshot to the same scale and baseline (it detects the product against its backdrop), compresses everything, and names each file with a content hash (`hero-1.054419de.jpg`), so a changed image always gets a new URL and no cache can serve the old one. It also records each packshot's backdrop colour and a blur preview for every image, so frames never flash or shift while loading.
+Small labels sometimes come out garbled in group photos, and an edit of the whole image tends to fix one label while scrambling another. `retouch-labels.mjs` edits an enlarged crop instead, registers it back onto the original and blends in only the label patches; the configs used for the heroes are in `scripts/images/retouch/`.
+
+Raw generations go to `images-raw/` (git-ignored). `npm run images` re-frames every packshot to the same scale and baseline (it detects the product against its backdrop), compresses everything, cuts a 4:5 phone crop of each hero (phones download that instead of the wide image), and names each file with a content hash (`hero-1.572d23f5.jpg`), so a changed image always gets a new URL and no cache can serve the old one. It also records each packshot's backdrop colour and a blur preview for every image, so frames never flash or shift while loading.
 
 **Swapping in real photos:** put the client's files in `images-raw/products/<slug>.png` and rerun `npm run images`. No code changes.
 
 ## Performance notes
 
 - One font family, self-hosted and subset: Newsreader at weight 400 with its optical-size axis (56 KB) plus an italic cut to the few words set in italic (6 KB). The full variable family was 273 KB and cost ~0.9 s of LCP on slow 4G.
-- All images through `next/image` (AVIF/WebP), explicit `sizes`, the LCP image eager with `fetchPriority="high"`.
+- All images through `next/image` (AVIF/WebP), explicit `sizes`, the LCP image eager with `fetchPriority="high"`. The hero serves a 4:5 crop to phones through `<picture>` (26 KB instead of a 1920px wide image), and the second and third campaigns mount only after the page has loaded, so they never compete with the first.
+- Below-the-fold home sections use `content-visibility: auto`, so the first paint only pays for the hero's style and layout. (A screenshot tool that captures the full page without scrolling shows those sections blank; scrolling renders them.)
 - Client components only where interactive: the diagnosis flow, the toast, the two buttons. Disclosures are native `<details>`.
-- Local Lighthouse, mobile preset, production build: performance 92–94, accessibility 100, best practices 100, CLS 0. SEO reads 66 only because the demo is deliberately `noindex`. **Use the numbers measured on the deployed URL for the document, not these.**
+- Local Lighthouse, mobile preset, production build: performance 92–96 on the home page, accessibility 100, best practices 100, CLS 0. SEO reads 66 only because the demo is deliberately `noindex`. **Use the numbers measured on the deployed URL for the document, not these.**

@@ -10,7 +10,7 @@ import { ButtonLink } from '@/components/ui/button'
 import { Curve } from '@/components/ui/curve'
 import { CONCERN, SKIN_TYPE, STEP, joinEs } from '@/lib/diagnosis/copy'
 import type { RoutineStep } from '@/lib/diagnosis/engine'
-import { lifestyleImage } from '@/lib/images'
+import { faceCrop, lifestyleImage } from '@/lib/images'
 import { formatARS, sumCents } from '@/lib/money'
 import { getCatalog, type CatalogProduct } from '@/server/services/catalog'
 import { getDiagnosisResult } from '@/server/services/diagnosis'
@@ -120,7 +120,7 @@ export default async function ResultPage({ params }: Props) {
                     <li key={c.slug} className="flex items-center gap-4 rounded-full bg-paper p-2 pr-6 shadow-[0_18px_40px_-30px_rgb(40_30_20/0.45)]">
                       <span className="relative size-20 shrink-0 sm:size-24">
                         <span className="absolute inset-0 overflow-hidden rounded-full">
-                          <Image src={img.src} alt="" fill sizes="96px" placeholder="blur" blurDataURL={img.blur} className="object-cover" />
+                          <Image src={img.src} alt="" fill sizes="192px" placeholder="blur" blurDataURL={img.blur} className="object-cover" style={faceCrop(img, 1.7)} />
                         </span>
                         <span className="absolute -right-1 -bottom-1 grid size-8 place-items-center rounded-full bg-paper text-accent-ink ring-2 ring-paper">
                           <ConcernIcon slug={c.slug} size={17} />
