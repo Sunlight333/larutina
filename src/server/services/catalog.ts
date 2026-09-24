@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import type { Prisma } from '@prisma/client'
 import { db } from '@/server/db'
+import { sampleCatalog } from './sample-catalog'
 import type { EngineConflict, EngineProduct, Moment, Suitability } from '@/lib/diagnosis/engine'
 import type { StepType } from '@/lib/diagnosis/copy'
 
@@ -26,6 +27,7 @@ export type CatalogConflict = Prisma.IngredientConflictGetPayload<{ include: typ
  * Deduplicated per render with React's cache().
  */
 export const getCatalog = cache(async () => {
+  if (!db) return sampleCatalog()
   const [products, conflicts, concerns, skinTypes] = await Promise.all([
     db.product.findMany({ include: productInclude, orderBy: { name: 'asc' } }),
     db.ingredientConflict.findMany({ include: conflictInclude }),
@@ -40,6 +42,7 @@ export const getCatalog = cache(async () => {
  * with no product pages and no error, so it stops the build instead.
  */
 export async function getProductSlugs(): Promise<string[]> {
+  if (!db) return sampleCatalog().products.map((p) => p.slug)
   const rows = await db.product.findMany({ select: { slug: true } })
   if (rows.length === 0) {
     throw new Error(

@@ -216,8 +216,10 @@ export default async function ResultPage({ params }: Props) {
                 ))}
               </ol>
               <p className="mt-6 rounded-xl bg-shell p-4 text-sm leading-relaxed text-ink-muted">
-                Reglas versión {result.ruleVersion}. Tus respuestas se guardan aparte del resultado: si las reglas cambian, se puede recalcular sin
-                volver a preguntarte nada.
+                Reglas versión {result.ruleVersion}.{' '}
+                {result.stored
+                  ? 'Tus respuestas se guardan aparte del resultado: si las reglas cambian, se puede recalcular sin volver a preguntarte nada.'
+                  : 'El link lleva tus respuestas: con las mismas reglas, cualquier dispositivo arma exactamente la misma rutina.'}
               </p>
             </div>
           </div>

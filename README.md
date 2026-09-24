@@ -34,6 +34,12 @@ npm test                     # engine scenarios + invariants over all 3,240 answ
 npm run routines             # prints six sample routines to read as a skincare advisor would
 ```
 
+## Running without a database
+
+If no database URL is set, the site still builds and runs: it reads the same sample catalog from `prisma/seed/data.ts`, and a result link carries the answers as a short code (`/diagnostico/resultado/v1-2-0-01-0-1-1`). The engine is deterministic, so the link shows the same routine on any device. The build log says which mode it is in, and the "about" page and footer describe the deploy accurately in both modes. Connecting PostgreSQL later needs no code change: results are then stored, and the answer-code links keep working.
+
+The database URL is read from `DATABASE_URL`, or from the names Vercel's Neon integration creates (`POSTGRES_PRISMA_URL`, `POSTGRES_URL`; direct: `DATABASE_URL_UNPOOLED`, `POSTGRES_URL_NON_POOLING`).
+
 ## Deploy (Neon + Vercel)
 
 1. **Neon.** Create a project in **AWS São Paulo (`sa-east-1`)**. Copy the pooled connection string (add `&pgbouncer=true&connect_timeout=15`) as `DATABASE_URL` and the direct one as `DIRECT_URL`.

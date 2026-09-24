@@ -1,45 +1,29 @@
 import { cache } from 'react'
-import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 import { db } from '@/server/db'
-import { diagnose, type Routine } from '@/lib/diagnosis/engine'
+import { answersSchema, decodeAnswers, encodeAnswers } from '@/lib/diagnosis/answers'
+import { diagnose, type Answer, type Routine } from '@/lib/diagnosis/engine'
 import { questions, RULE_VERSION } from '@/lib/diagnosis/questions'
 import { getCatalog, toEngineConflicts, toEngineProduct } from './catalog'
 
-/**
- * Validates a full set of answers against questionnaire v1: every question
- * answered once, every value a real option, single questions with exactly one
- * value, multi questions within their limit.
- */
-export const answersSchema = z
-  .array(z.object({ questionKey: z.string(), values: z.array(z.string()).min(1) }))
-  .superRefine((answers, ctx) => {
-    for (const q of questions) {
-      const matching = answers.filter((a) => a.questionKey === q.key)
-      if (matching.length !== 1) {
-        ctx.addIssue({ code: 'custom', message: `Question ${q.key} must be answered exactly once` })
-        continue
-      }
-      const values = matching[0]!.values
-      const valid = new Set(q.options.map((o) => o.value))
-      if (values.some((v) => !valid.has(v)) || new Set(values).size !== values.length) {
-        ctx.addIssue({ code: 'custom', message: `Invalid option for ${q.key}` })
-      }
-      const max = q.type === 'single' ? 1 : (q.max ?? q.options.length)
-      if (values.length > max) ctx.addIssue({ code: 'custom', message: `Too many options for ${q.key}` })
-    }
-    if (answers.length !== questions.length) ctx.addIssue({ code: 'custom', message: 'Unknown question in answers' })
-  })
+export { answersSchema }
+
+async function compute(answers: Answer[]) {
+  const { products, conflicts } = await getCatalog()
+  return diagnose(answers, questions, products.map(toEngineProduct), toEngineConflicts(conflicts))
+}
 
 /**
- * Stores raw answers and the derived result together. Nested writes run in a
- * single transaction: a diagnosis never exists without its answers and result.
+ * Stores raw answers and the derived result together and returns the result
+ * id. Nested writes run in a single transaction: a diagnosis never exists
+ * without its answers and result. Without a database, the id is the answer
+ * code itself.
  */
 export async function createDiagnosis(input: unknown): Promise<string> {
   const answers = answersSchema.parse(input)
-  const { products, conflicts } = await getCatalog()
-  const result = diagnose(answers, questions, products.map(toEngineProduct), toEngineConflicts(conflicts))
+  if (!db) return encodeAnswers(answers)
 
+  const result = await compute(answers)
   const diagnosis = await db.diagnosis.create({
     data: {
       ruleVersion: RULE_VERSION,
@@ -66,11 +50,28 @@ export type StoredInterpretation = {
 }
 
 /**
- * Reads a stored result. The routine is read as saved, not recomputed: the
- * link shows the same routine on any device, and a rule change later does not
- * silently rewrite what someone was told.
+ * Reads a result. A stored result is read as saved, not recomputed: the link
+ * shows the same routine on any device, and a rule change later does not
+ * silently rewrite what someone was told. An answer-code link (no database)
+ * is recomputed, which is deterministic under the rule version in the code.
  */
 export const getDiagnosisResult = cache(async (id: string) => {
+  const decoded = decodeAnswers(id)
+  if (decoded) {
+    const result = await compute(decoded)
+    return {
+      id,
+      stored: false,
+      ruleVersion: RULE_VERSION,
+      answers: decoded,
+      skinType: result.interpretation.skinType,
+      interpretation: result.interpretation as StoredInterpretation,
+      attributes: result.attributes,
+      routine: result.routine,
+    }
+  }
+  if (!db) return null
+
   const diagnosis = await db.diagnosis.findUnique({
     where: { id },
     include: { answers: true, result: true },
@@ -82,8 +83,8 @@ export const getDiagnosisResult = cache(async (id: string) => {
   }
   return {
     id: diagnosis.id,
+    stored: true,
     ruleVersion: diagnosis.ruleVersion,
-    createdAt: diagnosis.createdAt,
     answers: diagnosis.answers.map((a) => ({ questionKey: a.questionKey, values: a.values })),
     skinType: diagnosis.result.skinTypeSlug,
     interpretation,

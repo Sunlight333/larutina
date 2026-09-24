@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Wordmark } from './wordmark'
 import { ArrowRight } from '@/components/icons'
+import { usingDatabase } from '@/server/db'
 
 /** Non-dismissible: nobody can mistake sample content for real products (plan §7.1). */
 export function DemoBanner() {
@@ -67,7 +68,11 @@ export function SiteFooter() {
         </nav>
         <div className="text-sm">
           <p className="font-medium">Cómo está hecha</p>
-          <p className="mt-3 leading-relaxed text-ink-muted">Next.js, PostgreSQL y Prisma, el mismo stack de la propuesta.</p>
+          <p className="mt-3 leading-relaxed text-ink-muted">
+            {usingDatabase
+              ? 'Next.js, PostgreSQL y Prisma, el mismo stack de la propuesta.'
+              : 'Next.js y el modelo de datos de la propuesta, sobre el catálogo de ejemplo.'}
+          </p>
         </div>
       </div>
     </footer>

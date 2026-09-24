@@ -3,11 +3,17 @@ import Image from 'next/image'
 import { ArrowRight } from '@/components/icons'
 import { ButtonLink } from '@/components/ui/button'
 import { editorialImage } from '@/lib/images'
+import { usingDatabase } from '@/server/db'
 
 export const metadata: Metadata = {
   title: 'Sobre esta demo',
   description: 'Qué muestra la demo, qué es contenido de ejemplo y qué quedó afuera a propósito.',
 }
+
+// Describes the deploy truthfully: with or without a connected database.
+const STACK = usingDatabase
+  ? 'Next.js, PostgreSQL y Prisma, con las fichas generadas de forma estática. Los números de rendimiento del documento salen de esta demo.'
+  : 'Next.js con las fichas generadas de forma estática, sobre el modelo de datos de la propuesta. Esta publicación lee el catálogo de ejemplo incluido en el código; con PostgreSQL conectado, lee y guarda en la base sin cambios. Los números de rendimiento del documento salen de esta demo.'
 
 const SHOWS = [
   {
@@ -20,7 +26,7 @@ const SHOWS = [
   },
   {
     title: 'El stack de la propuesta, medible',
-    body: 'Next.js, PostgreSQL y Prisma, con las fichas generadas de forma estática. Los números de rendimiento del documento salen de esta demo.',
+    body: STACK,
   },
 ]
 
