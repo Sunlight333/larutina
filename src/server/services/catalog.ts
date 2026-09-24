@@ -35,8 +35,17 @@ export const getCatalog = cache(async () => {
   return { products, conflicts, concerns, skinTypes }
 })
 
+/**
+ * Used by generateStaticParams. An empty catalog would otherwise build a site
+ * with no product pages and no error, so it stops the build instead.
+ */
 export async function getProductSlugs(): Promise<string[]> {
   const rows = await db.product.findMany({ select: { slug: true } })
+  if (rows.length === 0) {
+    throw new Error(
+      'The database has no products. Run `npx prisma migrate deploy` and `npm run db:seed` against it before building.',
+    )
+  }
   return rows.map((r) => r.slug)
 }
 
