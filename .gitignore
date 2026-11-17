@@ -1,10 +1,11 @@
+# ---------- code/ (the Next.js app) ----------
 # dependencies
-/node_modules
+/code/node_modules
 
 # next.js
-/.next/
-/out/
-next-env.d.ts
+/code/.next/
+/code/out/
+/code/next-env.d.ts
 *.tsbuildinfo
 
 # env files — never commit credentials
@@ -12,10 +13,17 @@ next-env.d.ts
 .env*.local
 
 # local tooling
-/.pgdata/
-/.vercel
+/code/.pgdata/
+/code/.vercel
 npm-debug.log*
 .DS_Store
 
-# raw image generations live outside the repo; only processed files in public/ are committed
-/images-raw/
+# raw image generations live outside the repo; only processed files in code/public/ are committed
+/code/images-raw/
+
+# ---------- docs/ ----------
+# The repository is public. Client documents, proposals and inputs stay local;
+# only the README index files are committed.
+/docs/**
+!/docs/**/
+!/docs/**/README.md
