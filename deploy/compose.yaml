@@ -1,5 +1,6 @@
-# Production stack on the VPS: the Next.js app behind Caddy (HTTPS).
-# Driven by deploy.sh, which sets TAG in deploy/.env. See README.md.
+# Production stack on the VPS: the Next.js app behind Caddy (HTTPS), and
+# PostgreSQL. Driven by deploy.sh, which writes TAG and POSTGRES_PASSWORD to
+# deploy/.env (server-only, git-ignored). See README.md.
 name: larutina
 
 x-logging: &logging
@@ -8,16 +9,60 @@ x-logging: &logging
     max-size: 10m
     max-file: "3"
 
+x-database-url: &database-url postgresql://larutina:${POSTGRES_PASSWORD:-}@db:5432/larutina
+
 services:
   web:
     image: larutina-web:${TAG:-latest}
     build:
       context: ../code
+      target: run
       args:
         NEXT_PUBLIC_SITE_URL: https://${SITE_DOMAIN:-larutinabeauty.com}
     restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+    # Start order only: the app opens its database connection on first use.
+    depends_on:
+      - db
     volumes:
       - next-cache:/app/.next/cache
+    logging: *logging
+
+  # Reachable only from the other containers; no port is published.
+  db:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: larutina
+      POSTGRES_DB: larutina
+      # Applies only when the data volume is first created.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U larutina -d larutina"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+      start_interval: 2s
+    logging: *logging
+
+  # One-shot `prisma migrate deploy` for the commit being deployed. Never
+  # started by `up`; deploy.sh runs it before switching the app.
+  migrate:
+    image: larutina-migrate:${TAG:-latest}
+    build:
+      context: ../code
+      target: migrate
+    profiles: [tools]
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
     logging: *logging
 
   caddy:
@@ -39,5 +84,6 @@ services:
 
 volumes:
   next-cache:
+  db-data:
   caddy-data:
   caddy-config:

@@ -3,25 +3,27 @@
 Production runs on a VPS in São Paulo (Vultr, Ubuntu 24.04) behind Cloudflare, at **https://larutinabeauty.com**.
 
 ```
-visitor ─► Cloudflare (DNS, proxy) ─► VPS :443 Caddy (Let's Encrypt) ─► web: Next.js standalone (Docker)
+visitor ─► Cloudflare (DNS, proxy) ─► VPS :443 Caddy (Let's Encrypt) ─► web: Next.js standalone ─► db: PostgreSQL 17
+                                                     (all in Docker; db is reachable only from the other containers)
 ```
 
 | File | Role |
 | --- | --- |
-| [`../code/Dockerfile`](../code/Dockerfile) | Builds the app into a small Node 24 image (`output: 'standalone'`) |
-| [`compose.yaml`](compose.yaml) | The stack: `web` (the app) and `caddy` (HTTPS, `www` → apex redirect) |
+| [`../code/Dockerfile`](../code/Dockerfile) | Builds the app into a small Node 24 image (`output: 'standalone'`), and the one-shot migration image |
+| [`compose.yaml`](compose.yaml) | The stack: `web` (the app), `db` (PostgreSQL), `caddy` (HTTPS, `www` → apex redirect), and `migrate` (run by the deploy only) |
 | [`Caddyfile`](Caddyfile) | Domain, certificate, reverse proxy |
-| [`deploy.sh`](deploy.sh) | Runs on the server: build, switch, health check, automatic rollback |
+| [`deploy.sh`](deploy.sh) | Runs on the server: build, backup, migrations, switch, health check, automatic rollback |
+| [`backup.sh`](backup.sh) | Database dumps: nightly, and before every deploy that migrates |
 | [`setup-server.sh`](setup-server.sh) | One-time server provisioning (Docker, firewall, fail2ban, clone, timer) |
-| [`systemd/`](systemd) | Timer that deploys `origin/main` within a minute of a push |
+| [`systemd/`](systemd) | Timers: deploy `origin/main` within a minute of a push; nightly backup |
 
-On the server: code in `/opt/larutina`, settings in `/opt/larutina/deploy/.env` (git-ignored; `SITE_DOMAIN`, and `TAG` written by the script), deploy state in `/var/lib/larutina`.
+On the server: code in `/opt/larutina`, settings in `/opt/larutina/deploy/.env` (git-ignored, readable by root only), deploy state in `/var/lib/larutina`, backups in `/var/backups/larutina`. The `.env` holds `SITE_DOMAIN`, the live image `TAG`, and `POSTGRES_PASSWORD`, which the first deploy creates. PostgreSQL takes that password when its data volume is created, so it must never be changed or removed from the file.
 
-The site currently runs **without a database**: it serves the bundled sample catalog and result links carry the answers (see `code/README.md`, "Running without a database"). Adding PostgreSQL is a later step of the real build.
+The demo storefront still serves its bundled sample catalog and does not use the database yet.
 
 ## How to deploy
 
-**Push to `main`. That's it.** The server checks `origin/main` every minute and deploys any new commit, so a deploy works from any machine or chat session that can push to GitHub, with no server access needed. The image is built while the current version keeps serving, and the switch happens only after the new container passes its health check. If it fails, the previous version is restored automatically, and that commit is not retried until a newer one arrives.
+**Push to `main`. That's it.** The server checks `origin/main` every minute and deploys any new commit, so a deploy works from any machine or chat session that can push to GitHub, with no server access needed. The image is built while the current version keeps serving, and the switch happens only after the new container passes its health check. Database migrations (`code/prisma/migrations`) run after the build and before the switch, preceded by a backup once the database holds data. If the build, the migrations or the health check fail, the previous version keeps serving or is restored automatically, and that commit is not retried until a newer one arrives. Changes to this `deploy/` folder apply the same way: a commit that changes it is deployed again by the new `deploy.sh` within a minute, which also installs new or changed timers.
 
 With SSH access (host alias `larutina-vps`, see below) you can also deploy immediately and watch the output:
 
@@ -37,6 +39,29 @@ ssh larutina-vps 'cd /opt/larutina/deploy && docker compose logs --tail 100 web'
 A deploy takes about two to three minutes, mostly `npm ci` and `next build`. While containers are swapped, Caddy holds requests for up to 30 seconds rather than failing them.
 
 To pause auto-deploys: `ssh larutina-vps systemctl disable --now larutina-deploy.timer` (`enable --now` to resume).
+
+## Database
+
+PostgreSQL 17 in the `db` container, data in the `larutina_db-data` volume. It publishes no port; only the app and the migration container reach it.
+
+**Migrations** are the files in `code/prisma/migrations` (create them locally with `npm run db:migrate`). The deploy applies the new ones before switching, while the previous version is still serving, and a rollback returns to that previous version without undoing them. So a migration must work with the app version before it: add a column or table first, start using it, and drop the old one in a later deploy.
+
+**Backups** go to `/var/backups/larutina` as `pg_dump` files: one every night at 03:30 Buenos Aires time, kept 14 days, and one before each deploy that runs migrations, newest 10 kept. They are on the VPS only for now; an off-site copy comes with object storage.
+
+```bash
+ssh larutina-vps /opt/larutina/deploy/backup.sh            # back up now
+ssh larutina-vps /opt/larutina/deploy/backup.sh --list     # list backups
+ssh larutina-vps 'cd /opt/larutina/deploy && docker compose exec db psql -U larutina'   # SQL console
+```
+
+To restore a backup, on the server:
+
+```bash
+cd /opt/larutina/deploy
+docker compose stop web
+docker compose exec -T db pg_restore -U larutina -d larutina --clean --if-exists --no-owner < /var/backups/larutina/<file>.dump
+docker compose start web
+```
 
 ## SSH access
 
@@ -78,4 +103,4 @@ curl -fsSL https://raw.githubusercontent.com/Sunlight333/larutina/main/deploy/se
 larutina-deploy
 ```
 
-Then point DNS at the new IP as above. To serve another domain, set `SITE_DOMAIN` in `/opt/larutina/deploy/.env` and run `larutina-deploy --force`.
+The first deploy creates an empty database with a new password. To move the data, copy a backup from the old server and restore it as above. Then point DNS at the new IP as above. To serve another domain, set `SITE_DOMAIN` in `/opt/larutina/deploy/.env` and run `larutina-deploy --force`.

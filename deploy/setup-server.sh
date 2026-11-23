@@ -4,7 +4,8 @@
 # or, with the repo already cloned:  bash /opt/larutina/deploy/setup-server.sh
 #
 # Installs Docker, opens only SSH/HTTP/HTTPS, enables fail2ban, clones the
-# repo to /opt/larutina and installs the auto-deploy timer. Safe to rerun.
+# repo to /opt/larutina and installs the auto-deploy and backup timers. The
+# first deploy creates the database password. Safe to rerun.
 set -euo pipefail
 
 REPO_URL=${REPO_URL:-https://github.com/Sunlight333/larutina.git}
@@ -40,7 +41,7 @@ systemctl enable --now fail2ban
 if [ ! -d "$APP_DIR/.git" ]; then
   git clone "$REPO_URL" "$APP_DIR"
 fi
-chmod +x "$APP_DIR/deploy/deploy.sh"
+chmod +x "$APP_DIR"/deploy/*.sh
 ln -sf "$APP_DIR/deploy/deploy.sh" /usr/local/bin/larutina-deploy
 
 # Server-local settings (git-ignored).
@@ -48,10 +49,12 @@ if [ ! -f "$APP_DIR/deploy/.env" ]; then
   echo "SITE_DOMAIN=$SITE_DOMAIN" > "$APP_DIR/deploy/.env"
 fi
 
-# Auto-deploy: every minute, deploy origin/main if it changed.
-install -m 0644 "$APP_DIR/deploy/systemd/larutina-deploy.service" /etc/systemd/system/
-install -m 0644 "$APP_DIR/deploy/systemd/larutina-deploy.timer" /etc/systemd/system/
+# Timers: auto-deploy (every minute, deploy origin/main if it changed) and the
+# nightly database backup. deploy.sh keeps these units up to date afterwards.
+install -m 0644 "$APP_DIR"/deploy/systemd/*.service "$APP_DIR"/deploy/systemd/*.timer /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now larutina-deploy.timer
+for timer in "$APP_DIR"/deploy/systemd/*.timer; do
+  systemctl enable --now "$(basename "$timer")"
+done
 
 echo "Server ready. First deploy: larutina-deploy"

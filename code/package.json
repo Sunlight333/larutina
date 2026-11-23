@@ -15,17 +15,17 @@
     "routines": "tsx tests/unit/print-routines.ts",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset --force",
     "images:generate": "node --env-file=.env scripts/images/generate.mjs",
     "images": "node scripts/process-images.mjs",
-    "postinstall": "prisma generate"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed/index.ts"
+    "postinstall": "prisma generate",
+    "db:dev": "tsx scripts/dev-db.ts",
+    "db:reset": "prisma migrate reset --force --skip-seed",
+    "catalog:import": "tsx --env-file=.env scripts/catalog-import.ts"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
+    "exceljs": "4.4.0",
+    "jszip": "3.10.2",
     "next": "16.3.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -36,11 +36,20 @@
     "@types/node": "24.13.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "embedded-postgres": "17.11.0-beta.19",
     "prisma": "6.19.3",
     "sharp": "0.35.4",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "5.0.1"
+  },
+  "allowScripts": {
+    "@embedded-postgres/linux-x64@17.11.0-beta.19": true,
+    "@embedded-postgres/windows-x64@17.11.0-beta.19": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "prisma@6.19.3": true
   }
 }

@@ -1,55 +1,72 @@
+// The demo storefront's catalog. It reads only the sample dataset bundled in
+// src/demo/data.ts; the real catalog lives in PostgreSQL (prisma/schema.prisma)
+// and replaces these pages in the Phase 1 storefront.
 import { cache } from 'react'
-import type { Prisma } from '@prisma/client'
-import { db } from '@/server/db'
 import { sampleCatalog } from './sample-catalog'
 import type { EngineConflict, EngineProduct, Moment, Suitability } from '@/lib/diagnosis/engine'
 import type { StepType } from '@/lib/diagnosis/copy'
 
-const productInclude = {
-  brand: true,
-  skinTypes: { include: { skinType: true } },
-  concerns: { include: { concern: true }, orderBy: { relevance: 'desc' } },
-  ingredients: { include: { ingredient: true }, orderBy: { position: 'asc' } },
-} satisfies Prisma.ProductInclude
+type Named = { id: string; slug: string; name: string }
 
-export type CatalogProduct = Prisma.ProductGetPayload<{ include: typeof productInclude }>
+export type CatalogConcern = Named & { shortLabel: string; description: string | null }
 
-const conflictInclude = {
-  ingredientA: true,
-  ingredientB: true,
-} satisfies Prisma.IngredientConflictInclude
+export type CatalogIngredient = {
+  id: string
+  slug: string
+  inciName: string
+  commonName: string
+  description: string | null
+  isKeyActive: boolean
+  isIrritant: boolean
+}
 
-export type CatalogConflict = Prisma.IngredientConflictGetPayload<{ include: typeof conflictInclude }>
+export type CatalogProduct = Named & {
+  brandId: string
+  brand: Named
+  shortDescription: string
+  description: string
+  whyWeChose: string
+  ourRating: number
+  ratingNotes: string
+  howToUse: string
+  precautions: string | null
+  texture: string
+  fragranceFree: boolean
+  routineStepType: string
+  routineMoment: string
+  sizeLabel: string
+  priceCents: number
+  color: string
+  avgRating: number
+  reviewCount: number
+  skinTypes: { productId: string; skinTypeId: string; suitability: string; skinType: Named }[]
+  concerns: { productId: string; concernId: string; relevance: number; concern: CatalogConcern }[]
+  ingredients: {
+    productId: string
+    ingredientId: string
+    isKeyActive: boolean
+    concentration: string | null
+    position: number
+    ingredient: CatalogIngredient
+  }[]
+}
 
-/**
- * The whole demo catalog in one round trip per table. At 18 products this is
- * the right call; the real build reads through filtered queries (spec §6.1).
- * Deduplicated per render with React's cache().
- */
-export const getCatalog = cache(async () => {
-  if (!db) return sampleCatalog()
-  const [products, conflicts, concerns, skinTypes] = await Promise.all([
-    db.product.findMany({ include: productInclude, orderBy: { name: 'asc' } }),
-    db.ingredientConflict.findMany({ include: conflictInclude }),
-    db.concern.findMany({ orderBy: { name: 'asc' } }),
-    db.skinType.findMany(),
-  ])
-  return { products, conflicts, concerns, skinTypes }
-})
+export type CatalogConflict = {
+  id: string
+  ingredientAId: string
+  ingredientBId: string
+  severity: string
+  note: string
+  ingredientA: CatalogIngredient
+  ingredientB: CatalogIngredient
+}
 
-/**
- * Used by generateStaticParams. An empty catalog would otherwise build a site
- * with no product pages and no error, so it stops the build instead.
- */
+/** The whole demo catalog, deduplicated per render with React's cache(). */
+export const getCatalog = cache(async () => sampleCatalog())
+
+/** Used by generateStaticParams. */
 export async function getProductSlugs(): Promise<string[]> {
-  if (!db) return sampleCatalog().products.map((p) => p.slug)
-  const rows = await db.product.findMany({ select: { slug: true } })
-  if (rows.length === 0) {
-    throw new Error(
-      'The database has no products. Run `npx prisma migrate deploy` and `npm run db:seed` against it before building.',
-    )
-  }
-  return rows.map((r) => r.slug)
+  return sampleCatalog().products.map((p) => p.slug)
 }
 
 export function toEngineProduct(p: CatalogProduct): EngineProduct {
@@ -90,49 +107,21 @@ const MIN_RELEVANCE = 50
 const STEP_ORDER = ['CLEANSER', 'TONER', 'EXFOLIANT', 'SERUM', 'TREATMENT', 'MOISTURIZER', 'SUNSCREEN']
 
 /**
- * The filtered catalog (spec §6.1). With PostgreSQL this is the EXISTS query:
- * OR within a facet, AND across facets, and a skin type matches products that
- * are IDEAL or SUITABLE for it. Without a database the same rules run in
- * memory. Ordered by relevance to the chosen concerns, then by routine step.
+ * The filtered catalog: OR within a facet, AND across facets, and a skin type
+ * matches products that are IDEAL or SUITABLE for it. Ordered by relevance to
+ * the chosen concerns, then by routine step.
  */
 export async function listProducts(filter: ProductFilter): Promise<CatalogProduct[]> {
   const { products } = await getCatalog()
-  let ids: Set<string>
-
-  if (db) {
-    const rows = await db.$queryRaw<{ id: string }[]>`
-      SELECT p.id
-      FROM products p
-      WHERE (cardinality(${filter.concerns}::text[]) = 0 OR EXISTS (
-              SELECT 1 FROM product_concerns pc
-              JOIN concerns c ON c.id = pc.concern_id
-              WHERE pc.product_id = p.id
-                AND c.slug = ANY(${filter.concerns}::text[])
-                AND pc.relevance >= ${MIN_RELEVANCE}))
-        AND (cardinality(${filter.skinTypes}::text[]) = 0 OR EXISTS (
-              SELECT 1 FROM product_skin_types pst
-              JOIN skin_types st ON st.id = pst.skin_type_id
-              WHERE pst.product_id = p.id
-                AND st.slug = ANY(${filter.skinTypes}::text[])
-                AND pst.suitability IN ('IDEAL', 'SUITABLE')))`
-    ids = new Set(rows.map((r) => r.id))
-  } else {
-    ids = new Set(
-      products
-        .filter(
-          (p) =>
-            (filter.concerns.length === 0 || p.concerns.some((c) => filter.concerns.includes(c.concern.slug) && c.relevance >= MIN_RELEVANCE)) &&
-            (filter.skinTypes.length === 0 ||
-              p.skinTypes.some((s) => filter.skinTypes.includes(s.skinType.slug) && (s.suitability === 'IDEAL' || s.suitability === 'SUITABLE'))),
-        )
-        .map((p) => p.id),
-    )
-  }
-
   const relevance = (p: CatalogProduct) =>
     Math.max(0, ...p.concerns.filter((c) => filter.concerns.includes(c.concern.slug)).map((c) => c.relevance))
   return products
-    .filter((p) => ids.has(p.id))
+    .filter(
+      (p) =>
+        (filter.concerns.length === 0 || p.concerns.some((c) => filter.concerns.includes(c.concern.slug) && c.relevance >= MIN_RELEVANCE)) &&
+        (filter.skinTypes.length === 0 ||
+          p.skinTypes.some((s) => filter.skinTypes.includes(s.skinType.slug) && (s.suitability === 'IDEAL' || s.suitability === 'SUITABLE'))),
+    )
     .sort(
       (a, b) =>
         relevance(b) - relevance(a) ||

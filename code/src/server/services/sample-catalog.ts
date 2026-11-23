@@ -9,7 +9,7 @@ import {
   products as seedProducts,
   skinTypes as seedSkinTypes,
   type Suitability,
-} from '../../../prisma/seed/data'
+} from '@/demo/data'
 import { productImage } from '@/lib/images'
 import type { CatalogConflict, CatalogProduct } from './catalog'
 

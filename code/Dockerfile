@@ -1,6 +1,8 @@
-# Production image for the VPS deploy (see ../deploy/README.md).
-# Build context is this folder. Without a database URL the build uses the
-# bundled sample catalog, so the image needs nothing but the source.
+# Production images for the VPS deploy (see ../deploy/README.md).
+# Build context is this folder.
+#   target run      the app (Next.js standalone)
+#   target migrate  one-shot `prisma migrate deploy`, run by deploy.sh before
+#                   the new app container goes live
 
 FROM node:24-bookworm-slim AS base
 RUN apt-get update \
@@ -11,9 +13,15 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-# postinstall runs `prisma generate`, which needs the schema.
-COPY prisma ./prisma
+# postinstall runs `prisma generate`, which needs the schema (only the schema,
+# so a new migration does not invalidate this layer).
+COPY prisma/schema.prisma ./prisma/schema.prisma
 RUN npm ci --no-audit --no-fund
+
+FROM deps AS migrate
+COPY prisma ./prisma
+USER node
+CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
 
 FROM deps AS build
 COPY . .

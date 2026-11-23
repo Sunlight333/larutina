@@ -4,7 +4,6 @@ import { ArrowRight, ConcernIcon, FaceScan, Layers, ShieldCheck } from '@/compon
 import { buttonClasses } from '@/components/ui/button'
 import { CONCERN } from '@/lib/diagnosis/copy'
 import { CONCERNS } from '@/lib/catalog/coverage'
-import { usingDatabase } from '@/server/db'
 
 /** Non-dismissible: nobody can mistake sample content for real products (plan §7.1). */
 export function DemoBanner() {
@@ -69,7 +68,7 @@ export function SiteFooter() {
             <ul className="mt-4 space-y-3 text-paper/70">
               <li className="flex gap-2.5">
                 <Layers size={17} className="mt-0.5 shrink-0" />
-                {usingDatabase ? 'Next.js, PostgreSQL y Prisma, el mismo stack de la propuesta.' : 'Next.js y el modelo de datos de la propuesta, sobre el catálogo de ejemplo.'}
+                Next.js y el modelo de datos de la propuesta, sobre el catálogo de ejemplo.
               </li>
               <li className="flex gap-2.5">
                 <ShieldCheck size={17} className="mt-0.5 shrink-0" />

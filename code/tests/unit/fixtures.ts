@@ -1,6 +1,6 @@
 // Builds engine inputs straight from the seed dataset, so the tests exercise
 // the same catalog the demo ships with. Product ids are the slugs.
-import { conflicts, ingredients, products, type Suitability } from '../../prisma/seed/data'
+import { conflicts, ingredients, products, type Suitability } from '../../src/demo/data'
 import type { EngineConflict, EngineProduct } from '../../src/lib/diagnosis/engine'
 
 const ingredientBySlug = new Map(ingredients.map((i) => [i.slug, i]))

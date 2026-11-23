@@ -1,172 +1,590 @@
-// Demo subset of the engineering spec §4. Field names match the real schema so
-// this code carries into sprint 1. Deliberate simplifications are listed in the
-// README under "Diferencias con el esquema real".
+// LaRutina platform schema. Phase 1 starts with the catalog of template v1.1
+// (docs: 03-data-model §1.1, A3 import contract). Conventions: opaque ids;
+// business codes (code, sku) unique and never reused; money as integer
+// centavos; timestamps in UTC; snake_case tables and columns; soft delete
+// (deleted_at) for admin-managed entities.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------------------- lists ----
+
+enum ProductStatus {
+  DRAFT // Borrador
+  ACTIVE // Activo
+  PRESALE // Preventa
+  SOLD_OUT // Agotado
+  ARCHIVED // Archivado
+}
+
+enum Aptitude {
+  IDEAL
+  SUITABLE // Apto
+  CAUTION // Con precaución
+  NOT_RECOMMENDED // No recomendado
+}
+
+enum Moment {
+  AM
+  PM
+  BOTH // AM y PM
+}
+
+enum RoutineStepType {
+  MAKEUP_REMOVER // Desmaquillante
+  CLEANSER // Limpiador
+  EXFOLIANT // Exfoliante
+  TONER // Tónico
+  ESSENCE // Esencia
+  SERUM // Sérum
+  EYE_CONTOUR // Contorno de ojos
+  MOISTURIZER // Hidratante
+  OIL // Aceite
+  SUNSCREEN // Protector solar
+  MASK // Mascarilla
+  TREATMENT // Tratamiento
+}
+
+enum Unit {
+  ML
+  G
+  UNITS // unidades
+}
+
+enum ConflictSeverity {
+  AVOID // Evitar
+  CAUTION // Con precaución
+  ALTERNATE_DAYS // Días alternos
+}
+
+enum RoutineDifficulty {
+  BASIC // Básica
+  INTERMEDIATE // Intermedia
+  COMPLETE // Completa
+}
+
+enum ExperienceLevel {
+  BASIC // Básico
+  INTERMEDIATE // Intermedio
+  ADVANCED // Avanzado
+}
+
+enum ProductType {
+  PRODUCT // Producto: the only type the engine and routines use
+  KIT
+  TRAVEL_SIZE // Tamaño de viaje
+}
+
+enum SealValue {
+  YES
+  NO
+  UNKNOWN // Sin dato: never shown, never in a filter
+}
+
+enum ProductLabel {
+  NEW // Nuevo
+  LIMITED_EDITION // Edición limitada
+  DERMATOLOGIST_RECOMMENDED // Recomendado por dermatóloga
+}
+
+enum ProductRelationKind {
+  COMPATIBLE
+  COMPLEMENTARY
+  ALTERNATIVE
+}
+
+enum IngredientStatus {
+  ACTIVE
+  REVIEW // created by an import from an INCI list: "nuevo · revisar"
+}
+
+enum RoutineStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum SynonymType {
+  SKIN_TYPE // Tipo de piel
+  CONCERN // Necesidad
+  PRODUCT_TYPE // Tipo de producto
+  BRAND // Marca
+  INGREDIENT // Ingrediente
+  INTENT // Intención
+}
+
+enum KnowledgeCategory {
+  SHIPPING // Envíos
+  PAYMENTS // Pagos
+  RETURNS // Cambios y devoluciones
+  PRODUCT_USE // Uso de productos
+  ROUTINES // Rutinas
+  AMBASSADORS // Embajadoras
+  GENERAL
+}
+
+enum EndorsementTarget {
+  PRODUCT
+  ROUTINE
+}
+
+enum ImportStatus {
+  REJECTED // validation found errors; nothing written
+  VALIDATED // dry run without errors; nothing written
+  APPLIED // written in one transaction
+}
+
+// ------------------------------------------------------------- taxonomy ----
+
 model Brand {
-  id       String    @id @default(cuid())
-  slug     String    @unique
-  name     String
-  products Product[]
+  id              String    @id @default(cuid())
+  code            String    @unique
+  name            String
+  countryOfOrigin String?   @map("country_of_origin")
+  description     String?
+  logoFile        String?   @map("logo_file")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  products        Product[]
 
   @@map("brands")
 }
 
-model SkinType {
-  id       String            @id @default(cuid())
-  slug     String            @unique
-  name     String
-  products ProductSkinType[]
+model Category {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  name        String
+  parentId    String?    @map("parent_id")
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  sortOrder   Int?       @map("sort_order")
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+  products    Product[]
 
-  @@map("skin_types")
+  @@index([parentId])
+  @@map("categories")
 }
 
 model Concern {
-  id          String           @id @default(cuid())
-  slug        String           @unique
-  name        String
-  shortLabel  String           @map("short_label")
-  description String?
-  products    ProductConcern[]
+  id               String              @id @default(cuid())
+  code             String              @unique
+  name             String
+  shortLabel       String              @map("short_label") // ≤ 18 characters
+  shortDescription String?             @map("short_description")
+  editorialContent String?             @map("editorial_content")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  deletedAt        DateTime?           @map("deleted_at")
+  products         ProductConcern[]
+  ingredients      IngredientConcern[]
+  routines         RoutineConcern[]
 
   @@map("concerns")
 }
 
+model SkinType {
+  id          String            @id @default(cuid())
+  code        String            @unique // "sensible" acts as a modifier in the diagnosis
+  name        String
+  description String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  deletedAt   DateTime?         @map("deleted_at")
+  products    ProductSkinType[]
+  routines    RoutineSkinType[]
+
+  @@map("skin_types")
+}
+
+model IngredientFamily {
+  id                    String           @id @default(cuid())
+  code                  String           @unique
+  name                  String
+  warning               String? // added to the product's precautions
+  excludableInDiagnosis Boolean          @default(false) @map("excludable_in_diagnosis")
+  noDuplicate           Boolean          @default(false) @map("no_duplicate") // never two in one routine moment
+  computes              String[] // informative: flags this family drives (sin_fragancia, …)
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  ingredients           Ingredient[]
+  conflictsA            FamilyConflict[] @relation("FamilyA")
+  conflictsB            FamilyConflict[] @relation("FamilyB")
+
+  @@map("ingredient_families")
+}
+
 model Ingredient {
   id          String               @id @default(cuid())
-  slug        String               @unique
-  inciName    String               @map("inci_name")
+  code        String               @unique
   commonName  String               @map("common_name")
-  description String?
+  inciName    String               @map("inci_name")
+  inciKey     String               @map("inci_key") // normalized INCI name, for matching INCI lists
   isKeyActive Boolean              @default(false) @map("is_key_active")
-  isIrritant  Boolean              @default(false) @map("is_irritant") // demo shortcut for sensitivity exclusion
+  isIrritant  Boolean              @default(false) @map("is_irritant")
+  description String?
+  familyId    String?              @map("family_id")
+  family      IngredientFamily?    @relation(fields: [familyId], references: [id])
+  status      IngredientStatus     @default(ACTIVE)
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  deletedAt   DateTime?            @map("deleted_at")
+  concerns    IngredientConcern[]
   products    ProductIngredient[]
-  conflictsA  IngredientConflict[] @relation("A")
-  conflictsB  IngredientConflict[] @relation("B")
+  conflictsA  IngredientConflict[] @relation("IngredientA")
+  conflictsB  IngredientConflict[] @relation("IngredientB")
 
+  @@index([inciKey])
+  @@index([familyId])
   @@map("ingredients")
 }
 
+model IngredientConcern {
+  ingredientId String     @map("ingredient_id")
+  concernId    String     @map("concern_id")
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  concern      Concern    @relation(fields: [concernId], references: [id], onDelete: Cascade)
+
+  @@id([ingredientId, concernId])
+  @@map("ingredient_concerns")
+}
+
 model IngredientConflict {
-  id            String     @id @default(cuid())
-  ingredientAId String     @map("ingredient_a_id")
-  ingredientBId String     @map("ingredient_b_id")
-  severity      String // AVOID | CAUTION | ALTERNATE_DAYS
-  note          String
-  ingredientA   Ingredient @relation("A", fields: [ingredientAId], references: [id])
-  ingredientB   Ingredient @relation("B", fields: [ingredientBId], references: [id])
+  id            String           @id @default(cuid())
+  ingredientAId String           @map("ingredient_a_id")
+  ingredientBId String           @map("ingredient_b_id")
+  ingredientA   Ingredient       @relation("IngredientA", fields: [ingredientAId], references: [id], onDelete: Cascade)
+  ingredientB   Ingredient       @relation("IngredientB", fields: [ingredientBId], references: [id], onDelete: Cascade)
+  severity      ConflictSeverity
+  note          String?
 
   @@unique([ingredientAId, ingredientBId])
   @@map("ingredient_conflicts")
 }
 
+model FamilyConflict {
+  id        String           @id @default(cuid())
+  familyAId String           @map("family_a_id")
+  familyBId String           @map("family_b_id")
+  familyA   IngredientFamily @relation("FamilyA", fields: [familyAId], references: [id], onDelete: Cascade)
+  familyB   IngredientFamily @relation("FamilyB", fields: [familyBId], references: [id], onDelete: Cascade)
+  severity  ConflictSeverity
+  note      String?
+
+  @@unique([familyAId, familyBId])
+  @@map("family_conflicts")
+}
+
+// -------------------------------------------------------------- product ----
+
 model Product {
-  id               String              @id @default(cuid())
-  slug             String              @unique
-  name             String
-  brandId          String              @map("brand_id")
-  brand            Brand               @relation(fields: [brandId], references: [id])
-  shortDescription String              @map("short_description")
-  description      String
-  whyWeChose       String              @map("why_we_chose")
-  ourRating        Int                 @map("our_rating")
-  ratingNotes      String              @map("rating_notes")
-  howToUse         String              @map("how_to_use")
-  precautions      String?
-  texture          String
-  fragranceFree    Boolean             @default(true) @map("fragrance_free")
-  routineStepType  String              @map("routine_step_type") // CLEANSER | TONER | EXFOLIANT | SERUM | TREATMENT | MOISTURIZER | SUNSCREEN
-  routineMoment    String              @map("routine_moment") // AM | PM | BOTH
-  sizeLabel        String              @map("size_label")
-  priceCents       Int                 @map("price_cents")
-  color            String // backdrop colour of the packshot, used behind the image while it loads
-  avgRating        Float               @map("avg_rating")
-  reviewCount      Int                 @map("review_count")
-  skinTypes        ProductSkinType[]
-  concerns         ProductConcern[]
-  ingredients      ProductIngredient[]
+  id                      String                   @id @default(cuid())
+  code                    String                   @unique // also the URL slug
+  name                    String
+  brandId                 String                   @map("brand_id")
+  brand                   Brand                    @relation(fields: [brandId], references: [id])
+  categoryId              String                   @map("category_id")
+  category                Category                 @relation(fields: [categoryId], references: [id])
+  status                  ProductStatus            @default(DRAFT)
+  type                    ProductType              @default(PRODUCT)
+  shortDescription        String                   @map("short_description")
+  description             String
+  benefits                String[] // "VERBO: texto" items
+  whyWeChose              String                   @map("why_we_chose")
+  evaluationScore         Int?                     @map("evaluation_score") // 0–100; not published until the method exists (D-10)
+  evaluationNotes         String?                  @map("evaluation_notes")
+  howToUse                String                   @map("how_to_use")
+  precautions             String?
+  texture                 String
+  textureDescription      String?                  @map("texture_description")
+  tips                    String?
+  routineStep             RoutineStepType          @map("routine_step")
+  moment                  Moment
+  durationDays            Int?                     @map("duration_days")
+  level                   ExperienceLevel?
+  priority                Int? // 1 = first; engine tie-break and "Recomendados" order
+  baseProductId           String?                  @map("base_product_id") // travel sizes inherit from it
+  baseProduct             Product?                 @relation("TravelSize", fields: [baseProductId], references: [id])
+  travelSizes             Product[]                @relation("TravelSize")
+  kitContents             String[]                 @map("kit_contents") // SKUs a kit contains
+  line                    String?
+  headline                String? // ≤ 8 words
+  chips                   String[] // ≤ 3, ≤ 20 characters each
+  labels                  ProductLabel[]
+  vegan                   SealValue                @default(UNKNOWN)
+  crueltyFree             SealValue                @default(UNKNOWN) @map("cruelty_free")
+  dermatologistTested     SealValue                @default(UNKNOWN) @map("dermatologist_tested")
+  sealSource              String?                  @map("seal_source") // internal, never published
+  anmatRegistration       String?                  @map("anmat_registration")
+  importerHolder          String?                  @map("importer_holder") // per product, as on the label (D-14)
+  countryOfOrigin         String?                  @map("country_of_origin") // empty: the brand's
+  paoMonths               Int?                     @map("pao_months")
+  vatRate                 Decimal?                 @map("vat_rate") @db.Decimal(5, 2) // only when not the general rate
+  inciText                String?                  @map("inci_text")
+  images                  String[] // file names; the first is the main image
+  videoUrl                String?                  @map("video_url")
+  seoTitle                String?                  @map("seo_title")
+  seoDescription          String?                  @map("seo_description")
+  // Computed from the ingredients' families on every import or edit (CAT-08).
+  fragranceFree           Boolean                  @default(true) @map("fragrance_free")
+  fragranceFreeDeclared   Boolean?                 @map("fragrance_free_declared") // the loaded value, kept as a check
+  essentialOilFree        Boolean                  @default(true) @map("essential_oil_free")
+  containsRetinoid        Boolean                  @default(false) @map("contains_retinoid")
+  containsExfoliatingAcid Boolean                  @default(false) @map("contains_exfoliating_acid")
+  alcoholFree             Boolean                  @default(true) @map("alcohol_free")
+  parabenFree             Boolean                  @default(true) @map("paraben_free")
+  siliconeFree            Boolean                  @default(true) @map("silicone_free")
+  sulfateFree             Boolean                  @default(true) @map("sulfate_free")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  deletedAt               DateTime?                @map("deleted_at")
+  variants                ProductVariant[]
+  ingredients             ProductIngredient[]
+  concerns                ProductConcern[]
+  skinTypes               ProductSkinType[]
+  relations               ProductRelation[]        @relation("RelationFrom")
+  relatedFrom             ProductRelation[]        @relation("RelationTo")
+  evaluations             ProductEvaluation[]
+  routineSteps            RoutineStep[]
+  routineAlternatives     RoutineStepAlternative[]
 
   @@index([brandId])
+  @@index([categoryId])
+  @@index([status])
   @@map("products")
 }
 
-model ProductSkinType {
-  productId   String   @map("product_id")
-  skinTypeId  String   @map("skin_type_id")
-  suitability String // IDEAL | SUITABLE | CAUTION | NOT_RECOMMENDED
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  skinType    SkinType @relation(fields: [skinTypeId], references: [id])
+model ProductVariant {
+  id              String   @id @default(cuid())
+  sku             String   @unique
+  productId       String   @map("product_id")
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size            Decimal  @db.Decimal(10, 2)
+  unit            Unit
+  priceCents      Int      @map("price_cents")
+  promoPriceCents Int?     @map("promo_price_cents") // always below price
+  stock           Int
+  barcode         String?
+  weightGrams     Int?     @map("weight_grams")
+  isMain          Boolean  @default(false) @map("is_main") // exactly one per product
+  durationDays    Int?     @map("duration_days")
+  heightCm        Decimal? @map("height_cm") @db.Decimal(6, 1)
+  widthCm         Decimal? @map("width_cm") @db.Decimal(6, 1)
+  lengthCm        Decimal? @map("length_cm") @db.Decimal(6, 1)
+  costCents       Int?     @map("cost_cents") // admin role only (CAT-20)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  @@id([productId, skinTypeId])
-  @@index([skinTypeId])
-  @@map("product_skin_types")
-}
-
-model ProductConcern {
-  productId String  @map("product_id")
-  concernId String  @map("concern_id")
-  relevance Int // 0–100
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  concern   Concern @relation(fields: [concernId], references: [id])
-
-  @@id([productId, concernId])
-  @@index([concernId, relevance])
-  @@map("product_concerns")
+  @@index([productId])
+  @@map("product_variants")
 }
 
 model ProductIngredient {
   productId     String     @map("product_id")
   ingredientId  String     @map("ingredient_id")
-  isKeyActive   Boolean    @default(false) @map("is_key_active")
-  concentration String?
-  position      Int        @default(0)
   product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   ingredient    Ingredient @relation(fields: [ingredientId], references: [id])
+  inciOrder     Int        @map("inci_order") // 1-based position in the INCI list
+  isStar        Boolean    @default(false) @map("is_star") // highlighted in this product
+  concentration String?
 
   @@id([productId, ingredientId])
   @@index([ingredientId])
   @@map("product_ingredients")
 }
 
-model Diagnosis {
-  id          String            @id @default(cuid())
-  answers     DiagnosisAnswer[]
-  result      DiagnosisResult?
-  ruleVersion Int               @default(1) @map("rule_version")
-  createdAt   DateTime          @default(now()) @map("created_at")
+model ProductConcern {
+  productId String  @map("product_id")
+  concernId String  @map("concern_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  concern   Concern @relation(fields: [concernId], references: [id])
+  relevance Int // 0–100
 
-  @@map("diagnoses")
+  @@id([productId, concernId])
+  @@index([concernId, relevance])
+  @@map("product_concerns")
 }
 
-model DiagnosisAnswer {
-  id          String    @id @default(cuid())
-  diagnosisId String    @map("diagnosis_id")
-  diagnosis   Diagnosis @relation(fields: [diagnosisId], references: [id], onDelete: Cascade)
-  questionKey String    @map("question_key")
-  values      String[]
+model ProductSkinType {
+  productId  String   @map("product_id")
+  skinTypeId String   @map("skin_type_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  skinType   SkinType @relation(fields: [skinTypeId], references: [id])
+  aptitude   Aptitude
 
-  @@unique([diagnosisId, questionKey])
-  @@map("diagnosis_answers")
+  @@id([productId, skinTypeId])
+  @@index([skinTypeId])
+  @@map("product_skin_types")
 }
 
-model DiagnosisResult {
-  id            String    @id @default(cuid())
-  diagnosisId   String    @unique @map("diagnosis_id")
-  diagnosis     Diagnosis @relation(fields: [diagnosisId], references: [id], onDelete: Cascade)
-  skinTypeSlug  String    @map("skin_type_slug")
-  concernScores Json      @map("concern_scores")
-  attributes    Json
-  routine       Json // { am: Step[], pm: Step[], notes: Note[] }
-  computedAt    DateTime  @default(now()) @map("computed_at")
+model ProductRelation {
+  productId String              @map("product_id")
+  relatedId String              @map("related_id")
+  kind      ProductRelationKind
+  position  Int
+  product   Product             @relation("RelationFrom", fields: [productId], references: [id], onDelete: Cascade)
+  related   Product             @relation("RelationTo", fields: [relatedId], references: [id], onDelete: Cascade)
 
-  @@map("diagnosis_results")
+  @@id([productId, relatedId, kind])
+  @@map("product_relations")
+}
+
+model EvaluationCriterion {
+  id          String              @id @default(cuid())
+  code        String              @unique
+  name        String
+  weight      Decimal             @db.Decimal(8, 2) // normalized when computing the total
+  description String?
+  evaluations ProductEvaluation[]
+
+  @@map("evaluation_criteria")
+}
+
+model ProductEvaluation {
+  productId   String              @map("product_id")
+  criterionId String              @map("criterion_id")
+  product     Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  criterion   EvaluationCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  score       Int // 0–100
+  note        String?
+
+  @@id([productId, criterionId])
+  @@map("product_evaluations")
+}
+
+// Table only in the MVP; the product page hides the block until Fase 2 (CAT-21).
+model Endorsement {
+  id         String            @id @default(cuid())
+  targetType EndorsementTarget @map("target_type")
+  targetCode String            @map("target_code") // product or routine code
+  entity     String
+  detail     String?
+  quote      String?
+  image      String?
+  active     Boolean           @default(false)
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  @@index([targetType, targetCode])
+  @@map("endorsements")
+}
+
+// ------------------------------------------------------------- routines ----
+
+model Routine {
+  id          String             @id @default(cuid())
+  code        String             @unique
+  name        String
+  goal        String
+  moment      Moment
+  difficulty  RoutineDifficulty?
+  discountPct Int?               @map("discount_pct")
+  description String?
+  status      RoutineStatus      @default(DRAFT)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  deletedAt   DateTime?          @map("deleted_at")
+  skinTypes   RoutineSkinType[]
+  concerns    RoutineConcern[]
+  steps       RoutineStep[]
+
+  @@map("routines")
+}
+
+model RoutineSkinType {
+  routineId  String   @map("routine_id")
+  skinTypeId String   @map("skin_type_id")
+  routine    Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  skinType   SkinType @relation(fields: [skinTypeId], references: [id])
+
+  @@id([routineId, skinTypeId])
+  @@map("routine_skin_types")
+}
+
+model RoutineConcern {
+  routineId String  @map("routine_id")
+  concernId String  @map("concern_id")
+  routine   Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  concern   Concern @relation(fields: [concernId], references: [id])
+
+  @@id([routineId, concernId])
+  @@map("routine_concerns")
+}
+
+model RoutineStep {
+  id            String                   @id @default(cuid())
+  routineId     String                   @map("routine_id")
+  routine       Routine                  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  position      Int
+  moment        Moment
+  stepType      RoutineStepType          @map("step_type")
+  title         String
+  mainProductId String                   @map("main_product_id")
+  mainProduct   Product                  @relation(fields: [mainProductId], references: [id])
+  instruction   String?
+  frequency     String?
+  optional      Boolean                  @default(false)
+  alternatives  RoutineStepAlternative[]
+
+  @@unique([routineId, position])
+  @@map("routine_steps")
+}
+
+model RoutineStepAlternative {
+  stepId    String      @map("step_id")
+  productId String      @map("product_id")
+  position  Int
+  step      RoutineStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([stepId, productId])
+  @@map("routine_step_alternatives")
+}
+
+// ---------------------------------------------------- search and assistant ----
+
+model Synonym {
+  id         String      @id @default(cuid())
+  term       String
+  type       SynonymType
+  targetCode String      @map("target_code")
+  variants   String[]
+
+  @@unique([type, targetCode, term])
+  @@map("synonyms")
+}
+
+model KnowledgeEntry {
+  id        String            @id @default(cuid())
+  code      String            @unique
+  category  KnowledgeCategory
+  question  String
+  answer    String
+  keywords  String[]
+  active    Boolean           @default(true)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  @@map("knowledge_entries")
+}
+
+// --------------------------------------------------------------- import ----
+
+model ImportJob {
+  id        String       @id @default(cuid())
+  fileName  String       @map("file_name")
+  status    ImportStatus
+  stage     String // S1 or S5: which fields are required
+  summary   Json // counts created / updated per entity
+  issues    Json // [{ sheet, row, field, level, message }]
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@map("import_jobs")
 }

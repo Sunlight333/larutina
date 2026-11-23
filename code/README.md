@@ -1,4 +1,48 @@
-# LaRutina Beauty — demo técnica
+# LaRutina Beauty
+
+The platform build (Phase 1 onwards) and, until the Phase 1 storefront replaces it, the technical demo that is live on larutinabeauty.com.
+
+- **Platform:** PostgreSQL schema for the v1.1 catalog (`prisma/schema.prisma`) and the catalog import (`src/server/catalog-import/`). See [Platform](#platform).
+- **Demo storefront:** the pages under `src/app/`, reading the sample dataset bundled in `src/demo/data.ts`. It needs no database. See below from [Stack](#stack).
+
+## Platform
+
+### Local setup
+
+```bash
+npm install
+cp .env.example .env
+npm run db:dev               # PostgreSQL 17 on port 54329, data in .pgdata/; leave it running
+npm run db:deploy            # in another terminal: apply prisma/migrations
+```
+
+`db:dev` needs no Docker or system install: the `embedded-postgres` package ships the server. On Windows it starts through `pg_ctl`, so it also works from an administrator account.
+
+### Catalog import
+
+The catalog template v1.1 is the import and export format. Validation runs over the whole file first; any error rejects the import and nothing is written. Every run is stored as an `ImportJob` with its report.
+
+```bash
+npm run catalog:import -- <file.xlsx> --dry-run     # validate and report only
+npm run catalog:import -- <file.xlsx>               # import (sample rules, S1)
+npm run catalog:import -- <file.xlsx> --stage S5    # full catalog: S5 columns become required
+```
+
+- New products and routines land in draft. Existing ones keep the status set in the panel.
+- Records are matched by code or SKU. Re-importing a file updates and creates nothing new.
+- The `inci` column gives the full ingredient order. Unknown INCI names become ingredients marked for review. `Prod_Ingredientes` marks the star ingredients.
+- Flags such as fragrance-free or contains-retinoid are computed from the ingredient families. A loaded `sin_fragancia` that contradicts the INCI is reported.
+- Prices are stored in centavos. A price written as `18.900` is rejected rather than read as 18.9.
+
+### Tests
+
+```bash
+npm test     # unit tests, plus integration tests against a throwaway PostgreSQL (port 54330)
+```
+
+The integration tests also import the client's v1.1 sample when the project documents are present locally (`../docs/`, never committed).
+
+## Demo storefront
 
 A small, finished slice of the proposed store, built to prove three claims from the challenge response:
 
@@ -12,42 +56,16 @@ Brands, products, prices and reviews are sample content, and every image, models
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind CSS 4 · Prisma 6 · PostgreSQL (Neon) · Vitest · Node 24 LTS. Versions are pinned exactly in `package.json`.
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind CSS 4 · Prisma 6 · PostgreSQL 17 · Vitest · Node 24 LTS. Versions are pinned exactly in `package.json`.
 
-No auth, cart, payments, analytics or third-party scripts: nothing that is not on the path of the three claims.
-
-## Run it locally
+The demo storefront has no auth, cart, payments, analytics or third-party scripts: nothing that is not on the path of the three claims.
 
 ```bash
-npm install
-cp .env.example .env         # point DATABASE_URL and DIRECT_URL at any Postgres 15+
-npm run db:migrate           # applies prisma/migrations
-npm run db:seed              # 5 brands, 41 ingredients, 2 conflicts, 18 products
 npm run dev
-```
-
-Checks:
-
-```bash
-npm run typecheck
-npm test                     # engine scenarios + invariants over all 3,240 answer combinations
 npm run routines             # prints six sample routines to read as a skincare advisor would
 ```
 
-## Running without a database
-
-If no database URL is set, the site still builds and runs: it reads the same sample catalog from `prisma/seed/data.ts`, and a result link carries the answers as a short code (`/diagnostico/resultado/v1-2-0-01-0-1-1`). The engine is deterministic, so the link shows the same routine on any device. The build log says which mode it is in, and the "about" page and footer describe the deploy accurately in both modes. Connecting PostgreSQL later needs no code change: results are then stored, and the answer-code links keep working.
-
-The database URL is read from `DATABASE_URL`, or from the names Vercel's Neon integration creates (`POSTGRES_PRISMA_URL`, `POSTGRES_URL`; direct: `DATABASE_URL_UNPOOLED`, `POSTGRES_URL_NON_POOLING`).
-
-## Deploy (Neon + Vercel)
-
-1. **Neon.** Create a project in **AWS São Paulo (`sa-east-1`)**. Copy the pooled connection string (add `&pgbouncer=true&connect_timeout=15`) as `DATABASE_URL` and the direct one as `DIRECT_URL`.
-2. **Schema and data, from your machine:** `npx prisma migrate deploy` then `npm run db:seed`, with the Neon URLs in `.env`. Never seed in the build.
-3. **Vercel.** Import the repo, set `DATABASE_URL` and `DIRECT_URL`. The build command is already `prisma generate && next build`. `vercel.json` pins functions to `gru1` (São Paulo) so result pages sit next to the database. A clean project name such as `larutina-demo-ravi` makes the link look intentional.
-4. Open every route once to warm it, then measure.
-
-Result pages render once on first visit and are then served from cache (`generateStaticParams` returns `[]`); results are immutable, so this is safe and keeps a cold Neon compute off the critical path for shared links.
+The demo reads its catalog from `src/demo/data.ts` and never touches the database. A result link carries the answers as a short code (`/diagnostico/resultado/v1-2-0-01-0-1-1`); the engine is deterministic, so the link shows the same routine on any device. Production deploys are described in `../deploy/README.md`.
 
 ## Deliberate simplifications versus the real schema
 
@@ -58,7 +76,6 @@ Result pages render once on first visit and are then served from cache (`generat
 
 Other decisions worth knowing, all small and all documented in code:
 
-- Tables and columns are mapped to `snake_case` (`@@map` / `@map`), as in the real schema, so the `EXISTS` filter SQL of spec §6.1 runs unchanged.
 - The ingredient table has the plan's 18 entries plus 23 base ingredients (preservatives, emollients, UV filters…) so the full INCI lists read like real ones. Base ingredients are never key actives or irritants. `filtros-uv` is marked as a key active, since it is what a sunscreen is about.
 - Engine rules beyond the plan, each visible in `src/lib/diagnosis/engine.ts`:
   - A sensitive modifier also applies the *sensible* skin type's `NOT_RECOMMENDED` exclusions.
@@ -70,16 +87,20 @@ Other decisions worth knowing, all small and all documented in code:
 ## Where things are
 
 ```
-prisma/schema.prisma              demo subset of spec §4
-prisma/seed/                      dataset and editorial copy (Rioplatense Spanish)
+prisma/schema.prisma              platform schema: catalog v1.1
+src/server/catalog-import/        catalog import: workbook reader, v1.1 contract, validation, write
+scripts/dev-db.ts                 local PostgreSQL (npm run db:dev)
+scripts/catalog-import.ts         import from the command line (npm run catalog:import)
+tests/integration/                tests against a throwaway PostgreSQL
+src/demo/data.ts                  demo dataset and editorial copy (Rioplatense Spanish)
 src/lib/diagnosis/engine.ts       pure scoring and routine generation (no I/O)
 src/lib/diagnosis/questions.ts    questionnaire v1 and weights
 src/lib/catalog/coverage.ts       "Aparece en estas rutinas": runs the engine over 60 profiles
 src/lib/catalog/pairings.ts       "Combina bien con" and per-product conflicts
-src/server/services/catalog.ts    catalog reads, including the filtered listing (the EXISTS query of spec §6.1)
+src/server/services/catalog.ts    demo catalog reads, including the filtered listing
 src/server/services/              catalog and diagnosis services; app/ holds no business logic
 src/app/                          routes
-tests/unit/                       engine tests, built on the seed dataset
+tests/unit/                       engine tests on the demo dataset; catalog import validation
 scripts/images/                   Replicate generation (prompts, runner, label retouching)
 scripts/process-images.mjs        raw generations → public/images + src/content/image-manifest.json
 ```
