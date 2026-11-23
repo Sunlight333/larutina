@@ -21,7 +21,8 @@ export class LocalDiskStorage implements StorageProvider {
     return resolved
   }
 
-  async put(key: string, data: Buffer) {
+  // The disk keeps no content type: the media table records it.
+  async put(key: string, data: Buffer, _contentType?: string) {
     const file = this.file(key)
     await mkdir(path.dirname(file), { recursive: true })
     await writeFile(file, data)
