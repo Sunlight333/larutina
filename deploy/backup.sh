@@ -5,6 +5,8 @@
 #   backup.sh             daily database dump (kept 14 days) and media copy (kept 7),
 #                         run by larutina-backup.timer
 #   backup.sh predeploy   dump taken by deploy.sh before migrations (newest 10 kept)
+#   backup.sh --verify    restore the latest dump into a scratch database and check it
+#                         (weekly, larutina-restore-check.timer)
 #   backup.sh --list      list the backups, oldest first
 set -euo pipefail
 
@@ -19,6 +21,23 @@ kind=daily
 case ${1:-} in
   "") ;;
   predeploy) kind=predeploy ;;
+  --verify)
+    # Restore rehearsal (INF-03, H1 "a backup has been restored"): the latest
+    # dump goes into a scratch database next to the live one, a few checks
+    # run, the scratch database is dropped. The result is kept for the
+    # monitor and --status.
+    latest=$(ls -1t "$DIR"/larutina-*.dump 2>/dev/null | head -1)
+    [ -n "$latest" ] || { echo "No backup to verify." >&2; exit 1; }
+    psql=("${COMPOSE[@]}" exec -T db psql -U larutina -d postgres -v ON_ERROR_STOP=1 -Atq)
+    "${psql[@]}" -c 'DROP DATABASE IF EXISTS larutina_restore_check' -c 'CREATE DATABASE larutina_restore_check'
+    if ! "${COMPOSE[@]}" exec -T db pg_restore -U larutina -d larutina_restore_check --no-owner --exit-on-error < "$latest"; then
+      "${psql[@]}" -c 'DROP DATABASE IF EXISTS larutina_restore_check'
+      echo "RESTORE FAILED: $latest" >&2; exit 1
+    fi
+    counts=$("${COMPOSE[@]}" exec -T db psql -U larutina -d larutina_restore_check -Atq -c "select 'migrations=' || count(*) from _prisma_migrations where finished_at is not null union all select 'products=' || count(*) from products union all select 'admin_users=' || count(*) from admin_users" | tr '\n' ' ')
+    "${psql[@]}" -c 'DROP DATABASE larutina_restore_check'
+    echo "$(date -u +%FT%TZ) $(basename "$latest") $counts" | tee /var/lib/larutina/restore-check
+    exit 0 ;;
   --list)
     find "$DIR" \( -name '*.dump' -o -name '*.tar.gz' \) -printf '%TY-%Tm-%Td %TH:%TM %s %f\n' 2>/dev/null | sort | numfmt --field=3 --to=iec
     exit 0 ;;

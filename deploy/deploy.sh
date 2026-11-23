@@ -217,6 +217,7 @@ status() {
   [ -s "$STATE/failed" ] && echo "Failed:   $(describe "$(cat "$STATE/failed")")"
   echo "Recent deploys:"; tail -5 "$STATE/history" | sed 's/^/  /'
   echo "Latest backups:"; "$APP_DIR/deploy/backup.sh" --list 2>/dev/null | tail -3 | sed 's/^/  /'
+  echo "Restore check: $(cat "$STATE/restore-check" 2>/dev/null || echo 'not run yet')"
   echo; "${COMPOSE[@]}" ps
 }
 

@@ -1,0 +1,7 @@
+[Unit]
+Description=Check that LaRutina is up and healthy
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/larutina/deploy/monitor.sh

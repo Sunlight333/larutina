@@ -22,6 +22,8 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: *database-url
+      # Optional: where unhandled server errors are reported (INF-04); see monitor.sh.
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
     # Start order only: the app opens its database connection on first use.
     depends_on:
       - db

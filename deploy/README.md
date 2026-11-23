@@ -13,13 +13,28 @@ visitor ─► Cloudflare (DNS, proxy) ─► VPS :443 Caddy (Let's Encrypt) ─
 | [`compose.yaml`](compose.yaml) | The stack: `web` (the app), `db` (PostgreSQL), `caddy` (HTTPS, `www` → apex redirect), and `migrate` (run by the deploy only) |
 | [`Caddyfile`](Caddyfile) | Domain, certificate, reverse proxy |
 | [`deploy.sh`](deploy.sh) | Runs on the server: build, backup, migrations, switch, health check, automatic rollback |
-| [`backup.sh`](backup.sh) | Database dumps: nightly, and before every deploy that migrates |
+| [`backup.sh`](backup.sh) | Database dumps (nightly, and before every deploy that migrates), nightly media copy, weekly restore rehearsal |
+| [`monitor.sh`](monitor.sh) | Every minute: site, app and database health, containers, disk, backup age; alerts on change |
+| [`admin.sh`](admin.sh) | `larutina-admin`: create panel users, reset a password or 2FA |
 | [`setup-server.sh`](setup-server.sh) | One-time server provisioning (Docker, firewall, fail2ban, clone, timer) |
-| [`systemd/`](systemd) | Timers: deploy `origin/main` within a minute of a push; nightly backup |
+| [`systemd/`](systemd) | Timers: deploy within a minute of a push; nightly backup; weekly restore check; monitor every minute |
 
-On the server: code in `/opt/larutina`, settings in `/opt/larutina/deploy/.env` (git-ignored, readable by root only), deploy state in `/var/lib/larutina`, backups in `/var/backups/larutina`. The `.env` holds `SITE_DOMAIN`, the live image `TAG`, and `POSTGRES_PASSWORD`, which the first deploy creates. PostgreSQL takes that password when its data volume is created, so it must never be changed or removed from the file.
+On the server: code in `/opt/larutina`, settings in `/opt/larutina/deploy/.env` (git-ignored, readable by root only), deploy state in `/var/lib/larutina`, backups in `/var/backups/larutina`. The `.env` holds `SITE_DOMAIN`, the live image `TAG`, `POSTGRES_PASSWORD`, which the first deploy creates, and optionally `ALERT_WEBHOOK_URL` (see Monitoring). PostgreSQL takes that password when its data volume is created, so it must never be changed or removed from the file.
 
-The demo storefront still serves its bundled sample catalog and does not use the database yet.
+Uploaded media (catalog images, contact attachments) live in the `larutina_media` volume, mounted at `/app/storage` in the app container.
+
+## First admin and panel users
+
+The panel is at `/admin`. Every user signs in with a password and a code from an authenticator app (set up at the first sign-in). Create the first user on the server; the rest from the panel (Sistema → Usuarios):
+
+```bash
+ssh larutina-vps larutina-admin create <email> "<Nombre>" ADMIN   # prints a temporary password
+ssh larutina-vps larutina-admin reset-password <email>
+ssh larutina-vps larutina-admin reset-2fa <email>                 # lost phone
+ssh larutina-vps larutina-admin list
+```
+
+While the site is in "Próximamente" or maintenance mode, visitors see that page and signed-in users see the whole site. To let someone review it without an account, send the preview link from Configuración → Sitio.
 
 ## How to deploy
 
@@ -46,11 +61,12 @@ PostgreSQL 17 in the `db` container, data in the `larutina_db-data` volume. It p
 
 **Migrations** are the files in `code/prisma/migrations` (create them locally with `npm run db:migrate`). The deploy applies the new ones before switching, while the previous version is still serving, and a rollback returns to that previous version without undoing them. So a migration must work with the app version before it: add a column or table first, start using it, and drop the old one in a later deploy.
 
-**Backups** go to `/var/backups/larutina` as `pg_dump` files: one every night at 03:30 Buenos Aires time, kept 14 days, and one before each deploy that runs migrations, newest 10 kept. They are on the VPS only for now; an off-site copy comes with object storage.
+**Backups** go to `/var/backups/larutina` as `pg_dump` files: one every night at 03:30 Buenos Aires time, kept 14 days, and one before each deploy that runs migrations, newest 10 kept. The media volume is archived nightly too, kept 7 days. Every Sunday the latest dump is restored into a scratch database and checked (`backup.sh --verify`); the result shows in `larutina-deploy --status`, and the monitor alerts if it fails. Backups are on the VPS only for now: encrypted off-site copies and point-in-time recovery need an object storage account.
 
 ```bash
 ssh larutina-vps /opt/larutina/deploy/backup.sh            # back up now
 ssh larutina-vps /opt/larutina/deploy/backup.sh --list     # list backups
+ssh larutina-vps /opt/larutina/deploy/backup.sh --verify   # restore rehearsal now
 ssh larutina-vps 'cd /opt/larutina/deploy && docker compose exec db psql -U larutina'   # SQL console
 ```
 
@@ -62,6 +78,14 @@ docker compose stop web
 docker compose exec -T db pg_restore -U larutina -d larutina --clean --if-exists --no-owner < /var/backups/larutina/<file>.dump
 docker compose start web
 ```
+
+## Monitoring
+
+`monitor.sh` runs every minute on the server. It checks the site through Caddy (`/api/live`), the app and database (`/api/health`), that every container is running and healthy, disk use under 85%, a nightly backup in the last 48 hours, and a successful restore rehearsal in the last 8 days. Each problem is reported once when it starts (after two failed checks in a row, so a deploy swap does not page) and once when it clears. The app also reports every unhandled server error.
+
+Alerts go to `ALERT_WEBHOOK_URL` in `/opt/larutina/deploy/.env`: any URL that accepts a JSON POST with a `text` or `content` field (a Slack or Discord incoming webhook works as is). After adding it, run `larutina-deploy --force` so the app picks it up, and `/opt/larutina/deploy/monitor.sh --test` to see an alert arrive. Without it, problems are only written to the journal (`journalctl -u larutina-monitor`).
+
+For an outside view as well (the server cannot report its own outage), point any uptime service at `https://larutinabeauty.com/api/health`.
 
 ## SSH access
 
