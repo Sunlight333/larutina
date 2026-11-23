@@ -8,6 +8,7 @@ import { LogoFull, LogoMark } from '@/components/site/logo'
 import { SignupForm } from '@/components/site/signup-form'
 import { joinWaitlist } from '@/app/(site)/actions'
 import { WAITLIST_CONSENT } from '@/lib/consent'
+import { WAITLIST_JOINED } from '@/lib/waitlist'
 
 // G-25: "Próximamente" with the waitlist, shown for every route until launch.
 // The full logo leads, large and centred; with a waitlist image set in the
@@ -28,7 +29,7 @@ export async function WaitlistPage() {
           <p className="mt-8 font-display text-display-md text-balance">{await copy(s['copy.waitlistTitle'])}</p>
           <p className="mt-4 max-w-md text-lede text-ink-soft">{await copy(s['copy.waitlistText'])}</p>
           <div className="mt-8 w-full max-w-md text-left">
-            <SignupForm action={joinWaitlist} consent={WAITLIST_CONSENT} button="Avisarme" />
+            <SignupForm action={joinWaitlist} consent={WAITLIST_CONSENT} button="Avisarme" rememberAs={WAITLIST_JOINED} />
           </div>
         </div>
         <p className="text-sm text-ink-muted">© {new Date().getFullYear()} {s['brand.fullName']}</p>
@@ -62,5 +63,24 @@ export async function MaintenancePage() {
         )}
       </div>
     </main>
+  )
+}
+
+// G-25 in the waitlist window (WaitlistModal): the same copy as the page,
+// sized for a dialog.
+export async function WaitlistModalContent() {
+  const s = await getSettings()
+  return (
+    <div className="flex flex-col items-center text-center">
+      <LogoFull className="w-[min(70vw,19rem)]" />
+      <div aria-hidden="true" className="mt-7 h-px w-20 bg-gradient-to-r from-transparent via-accent to-transparent" />
+      <h2 id="lista-de-espera-titulo" className="mt-6 font-display text-display-sm text-balance">
+        {await copy(s['copy.waitlistTitle'])}
+      </h2>
+      <p className="mt-3 text-ink-soft">{await copy(s['copy.waitlistText'])}</p>
+      <div className="mt-6 w-full text-left">
+        <SignupForm action={joinWaitlist} consent={WAITLIST_CONSENT} button="Avisarme" rememberAs={WAITLIST_JOINED} />
+      </div>
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useId } from 'react'
+import { useActionState, useEffect, useId } from 'react'
 import type { SignupState } from '@/app/(site)/actions'
 
 // One form for the waitlist and the newsletter: email, required consent, a
@@ -11,15 +11,25 @@ export function SignupForm({
   button,
   source,
   inverse = false,
+  rememberAs,
 }: {
   action: (prev: SignupState, form: FormData) => Promise<SignupState>
   consent: string
   button: string
   source?: string
   inverse?: boolean
+  /** localStorage key set after a successful sign-up (the waitlist window stops showing). */
+  rememberAs?: string
 }) {
   const [state, formAction, pending] = useActionState(action, null)
   const id = useId()
+  useEffect(() => {
+    if (!state?.ok || !rememberAs) return
+    try {
+      localStorage.setItem(rememberAs, String(Date.now()))
+    } catch {}
+  }, [state, rememberAs])
+
   if (state?.ok) {
     return (
       <p role="status" className="text-base">

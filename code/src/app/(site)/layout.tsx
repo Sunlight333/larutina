@@ -4,15 +4,17 @@ import { AnnouncementBar } from '@/components/site/announcement-bar'
 import { SiteHeader } from '@/components/site/site-header'
 import { SiteFooter } from '@/components/site/site-footer'
 import { TeamBar } from '@/components/site/team-bar'
-import { MaintenancePage, WaitlistPage } from '@/components/site/closed-pages'
+import { MaintenancePage, WaitlistModalContent } from '@/components/site/closed-pages'
+import { WaitlistModal } from '@/components/site/waitlist-modal'
 import { getAnnouncements } from '@/server/services/site'
 
-// The storefront. In waitlist or maintenance mode visitors get that page
-// instead of any route (GEN-08, GEN-09); the team sees the site with a bar
-// saying it is closed to the public.
+// The storefront. Maintenance mode shows visitors the maintenance page (the
+// proxy already sends them to /proximamente; this is the second line, GEN-09).
+// Waitlist mode keeps the site open and shows visitors the waitlist in a
+// window they can skip (GEN-08). The team gets a bar saying which mode is on.
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const access = await siteAccess()
-  if (!access.canSeeSite) return access.mode === 'maintenance' ? <MaintenancePage /> : <WaitlistPage />
+  if (!access.canSeeSite) return <MaintenancePage />
 
   const announcements = await getAnnouncements()
   return (
@@ -23,13 +25,18 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       >
         Ir al contenido principal
       </a>
-      {access.mode !== 'open' && <TeamBar mode={access.mode} isAdmin={!!access.team} />}
+      {access.mode !== 'open' && (access.team || access.preview) && <TeamBar mode={access.mode} isAdmin={!!access.team} />}
       {announcements.length > 0 && <AnnouncementBar messages={announcements} />}
       <SiteHeader />
       <main id="contenido" className="flex-1">
         {children}
       </main>
       <SiteFooter />
+      {access.showWaitlist && (
+        <WaitlistModal>
+          <WaitlistModalContent />
+        </WaitlistModal>
+      )}
     </ToastProvider>
   )
 }

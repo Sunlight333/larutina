@@ -2,12 +2,13 @@ import { createHash } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getDb } from '@/server/db'
 
-// The site gate (GEN-08, GEN-09), before any page renders. While the site is
-// in waitlist or maintenance mode, a visitor who is not the team is rewritten
-// to /proximamente, so no storefront page runs for them: a layout can swap
-// what is shown, but the page under it still renders and its data would
-// travel in the response. "The team" is a signed-in admin with 2FA, or the
-// preview link's cookie (same rules as src/server/site-access.ts).
+// The maintenance gate (GEN-09), before any page renders. While maintenance
+// mode is on, a visitor who is not the team is rewritten to /proximamente,
+// so no storefront page runs for them: a layout can swap what is shown, but
+// the page under it still renders and its data would travel in the response.
+// "The team" is a signed-in admin with 2FA, or the preview link's cookie
+// (same rules as src/server/site-access.ts). Waitlist mode does not close the
+// site: the layout shows the waitlist in a window visitors can skip.
 //
 // The panel, the APIs (each checks access itself), media and Next's own files
 // are outside the matcher.
@@ -19,11 +20,9 @@ const IDLE_MS = 2 * 60 * 60 * 1000
 export async function proxy(request: NextRequest) {
   if (!process.env.DATABASE_URL) return NextResponse.next()
   const db = getDb()
-  const rows = await db.setting.findMany({ where: { key: { in: ['site.waitlistMode', 'site.maintenanceMode', 'internal.previewToken'] } } })
+  const rows = await db.setting.findMany({ where: { key: { in: ['site.maintenanceMode', 'internal.previewToken'] } } })
   const value = (key: string) => rows.find((r) => r.key === key)?.value
-  const maintenance = value('site.maintenanceMode') === true
-  const waitlist = value('site.waitlistMode') ?? true // on until launch (settings registry default)
-  if (!maintenance && waitlist !== true) return NextResponse.next()
+  if (value('site.maintenanceMode') !== true) return NextResponse.next()
 
   const preview = request.cookies.get(PREVIEW_COOKIE)?.value
   if (preview && preview === value('internal.previewToken')) return NextResponse.next()
@@ -43,7 +42,7 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   url.pathname = '/proximamente'
   url.search = ''
-  return NextResponse.rewrite(url, maintenance ? { status: 503, headers: { 'Retry-After': '1800' } } : undefined)
+  return NextResponse.rewrite(url, { status: 503, headers: { 'Retry-After': '1800' } })
 }
 
 export const config = {

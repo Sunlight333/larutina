@@ -1,10 +1,13 @@
 import type { SiteMode } from '@/server/site-access'
 
 export function TeamBar({ mode, isAdmin }: { mode: SiteMode; isAdmin: boolean }) {
-  const label = mode === 'maintenance' ? 'mantenimiento' : 'Próximamente'
+  const text =
+    mode === 'maintenance'
+      ? 'Vista del equipo: el sitio está en mantenimiento y las visitas no lo ven.'
+      : 'Vista del equipo: las visitas ven la ventana "Próximamente" al entrar; vos no.'
   return (
     <div className="bg-night-deep px-4 py-2 text-center text-[0.8125rem] text-paper">
-      Vista del equipo: el sitio está en modo {label} y las visitas no lo ven.{' '}
+      {text}{' '}
       {isAdmin ? (
         <a href="/admin" className="underline underline-offset-2">
           Ir al panel

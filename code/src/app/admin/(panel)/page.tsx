@@ -32,8 +32,8 @@ export default async function PanelHome({ searchParams }: { searchParams: Promis
       <div className="space-y-6">
         {sp['sin-permiso'] !== undefined && <Notice tone="warning">Tu rol no tiene acceso a esa sección.</Notice>}
         {(s['site.waitlistMode'] || s['site.maintenanceMode']) && (
-          <Notice tone="info" title={s['site.maintenanceMode'] ? 'El sitio está en mantenimiento' : 'El sitio está en modo Próximamente'}>
-            Las visitas ven {s['site.maintenanceMode'] ? 'la página de mantenimiento' : 'la lista de espera'}; vos ves el sitio completo mientras tengas la sesión abierta.
+          <Notice tone="info" title={s['site.maintenanceMode'] ? 'El sitio está en mantenimiento' : 'La ventana Próximamente está activa'}>
+            {s['site.maintenanceMode'] ? 'Las visitas ven la página de mantenimiento; vos ves el sitio completo mientras tengas la sesión abierta.' : 'Las visitas ven la lista de espera en una ventana que pueden cerrar para recorrer el sitio.'}
           </Notice>
         )}
 

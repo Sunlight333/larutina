@@ -53,7 +53,7 @@ const defs = [
   { key: 'company.supportHours', group: 'company', label: 'Horario de atención', type: 'text', default: 'Lunes a viernes de 9 a 18 h' },
 
   // Site (GEN-08, GEN-09, IR-02)
-  { key: 'site.waitlistMode', group: 'site', label: 'Modo "Próximamente" (lista de espera)', type: 'boolean', default: true, help: 'Las visitas ven la página Próximamente. El equipo con sesión y quien tenga el link de vista previa ven el sitio.', adminOnly: true },
+  { key: 'site.waitlistMode', group: 'site', label: 'Ventana "Próximamente" (lista de espera)', type: 'boolean', default: true, help: 'Al entrar, las visitas ven una ventana con la lista de espera que pueden cerrar para recorrer el sitio. Hasta el lanzamiento el sitio no se indexa.', adminOnly: true },
   { key: 'site.maintenanceMode', group: 'site', label: 'Modo mantenimiento', type: 'boolean', default: false, help: 'Las visitas ven la página de mantenimiento. El equipo con sesión sigue viendo el sitio.', adminOnly: true },
   { key: 'site.indexing', group: 'site', label: 'Permitir que los buscadores indexen el sitio', type: 'boolean', default: false, help: 'Se activa el día del lanzamiento.', adminOnly: true },
   { key: 'site.ogImage', group: 'site', label: 'Imagen por defecto al compartir (1200 × 630)', type: 'image', default: '' },

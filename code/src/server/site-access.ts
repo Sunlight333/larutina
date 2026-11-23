@@ -6,8 +6,9 @@ import { getDb } from '@/server/db'
 import { teamMember } from '@/server/auth/session'
 import { getSettings } from '@/server/settings'
 
-// GEN-08 and GEN-09: in waitlist or maintenance mode visitors see that page,
-// while the team keeps seeing the site. "The team" is a signed-in admin, or
+// GEN-08 and GEN-09. Maintenance mode closes the site to visitors while the
+// team keeps seeing it. Waitlist mode keeps the site open and shows visitors
+// the waitlist in a window they can skip (showWaitlist). "The team" is a signed-in admin, or
 // anyone who opened the preview link (/vista-previa?t=…), which is how
 // LaRutina reviews the site before launch without an account.
 
@@ -37,5 +38,6 @@ export const siteAccess = cache(async () => {
     const cookie = (await cookies()).get(PREVIEW_COOKIE)?.value
     preview = !!cookie && cookie === (await getPreviewToken(getDb()))
   }
-  return { mode, team, preview, canSeeSite: mode === 'open' || !!team || preview, settings }
+  const insider = !!team || preview
+  return { mode, team, preview, canSeeSite: mode !== 'maintenance' || insider, showWaitlist: mode === 'waitlist' && !insider, settings }
 })
