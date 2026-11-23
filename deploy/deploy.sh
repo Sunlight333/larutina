@@ -155,10 +155,11 @@ install_units() {
   done
 }
 
-# Starts the database if needed, backs it up when it already holds data, and
-# applies the commit's migrations. Migrations must stay compatible with the
-# previous app version (add first, remove in a later deploy), because that
-# version keeps serving until the switch and is what a rollback returns to.
+# Starts the database if needed, backs it up when it already holds data,
+# applies the commit's migrations and loads missing starting content.
+# Migrations must stay compatible with the previous app version (add first,
+# remove in a later deploy), because that version keeps serving until the
+# switch and is what a rollback returns to.
 migrate() {
   local tag=$1
   "${COMPOSE[@]}" up -d --wait db || return 1
@@ -166,7 +167,11 @@ migrate() {
     "$APP_DIR/deploy/backup.sh" predeploy || return 1
   fi
   log "Applying database migrations"
-  TAG=$tag "${COMPOSE[@]}" --profile tools run --rm migrate
+  TAG=$tag "${COMPOSE[@]}" --profile tools run --rm migrate || return 1
+  # Starting content (Home, pages, legal drafts, announcements): creates only
+  # what is missing and never overwrites what the panel changed.
+  log "Loading starting content where missing"
+  TAG=$tag "${COMPOSE[@]}" --profile tools run --rm -T migrate node_modules/.bin/tsx scripts/seed-content.ts
 }
 
 # Points the stack at an image tag, starts it, waits for the health check.
