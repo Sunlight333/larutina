@@ -29,14 +29,14 @@ export default async function BrandsPage() {
         title="Nuestras marcas"
         intro={[`${plural(brands.length, 'marca', 'marcas')}, elegidas una por una por cómo formulan y por qué tan claro cuentan lo que lleva cada producto.`]}
       />
-      <section className="container-page" aria-label="Marcas">
+      <section className="container-page mt-10 md:mt-12" aria-label="Marcas">
         {brands.length === 0 ? (
           <p className="text-ink-soft">Pronto vas a encontrar acá nuestras marcas.</p>
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {brands.map((b) => (
               <li key={b.code}>
-                <Link href={`/marca/${b.code}`} className="group flex h-full flex-col rounded-[var(--radius-card)] border border-line bg-paper p-6 transition-colors hover:border-ink">
+                <Link href={`/marca/${b.code}`} className="group flex h-full flex-col rounded-[2rem] bg-shell p-6 transition-colors hover:bg-sand">
                   <span className="flex h-14 items-center">
                     {b.logo ? (
                       <Image src={b.logo.src} alt="" width={b.logo.width} height={b.logo.height} sizes="10rem" className="h-12 w-auto max-w-[10rem] object-contain" />

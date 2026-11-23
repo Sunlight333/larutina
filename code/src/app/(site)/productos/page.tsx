@@ -5,6 +5,7 @@ import { browse } from '@/server/services/catalog/browse'
 import { getCatalog } from '@/server/services/catalog/catalog'
 import { parseListingState, type RawSearchParams } from '@/server/services/catalog/listing-params'
 import { canSeeCatalog } from '@/server/services/catalog/viewer'
+import { lifestyleImage } from '@/lib/images'
 
 type Props = { searchParams: Promise<RawSearchParams> }
 
@@ -28,7 +29,9 @@ export default async function ProductsPage({ searchParams }: Props) {
     <>
       <PageIntro
         crumbs={[{ label: 'Inicio', href: '/' }, { label: 'Productos' }]}
+        eyebrow="Tienda"
         title="Todos los productos"
+        image={lifestyleImage('manana')}
         intro={[
           `${catalog.length} productos, elegidos uno por uno. Filtrá por tu tipo de piel y lo que querés mejorar, o dejá que el diagnóstico arme la rutina por vos.`,
         ]}

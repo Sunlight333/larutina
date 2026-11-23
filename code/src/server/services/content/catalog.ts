@@ -1,4 +1,4 @@
-import type { PrismaClient, ProductStatus } from '@prisma/client'
+import type { PrismaClient, ProductStatus, RoutineStepType } from '@prisma/client'
 import { resolveImages, type ResolvedImage } from '@/server/media'
 
 // What content blocks and articles show of the catalog. Read straight from
@@ -18,6 +18,8 @@ export type ProductTeaser = {
   compareAtCents: number | null // the list price when a promo price applies
   status: ProductStatus
   headline: string | null
+  /** For the placeholder of a product without photos. */
+  routineStep: RoutineStepType
 }
 
 /** Published products by code, in the order given; unknown or unpublished codes are skipped. */
@@ -25,7 +27,7 @@ export async function getProductTeasers(db: PrismaClient, codes: string[]): Prom
   if (!codes.length) return []
   const rows = await db.product.findMany({
     where: { ...live, code: { in: codes } },
-    select: { code: true, name: true, status: true, headline: true, images: true, brand: { select: { name: true } }, variants: { where: { isMain: true }, select: { priceCents: true, promoPriceCents: true }, take: 1 } },
+    select: { code: true, name: true, status: true, headline: true, routineStep: true, images: true, brand: { select: { name: true } }, variants: { where: { isMain: true }, select: { priceCents: true, promoPriceCents: true }, take: 1 } },
   })
   const images = await resolveImages(db, rows.map((r) => r.images[0] ?? ''))
   const byCode = new Map(rows.map((r) => [r.code, r]))
@@ -45,6 +47,7 @@ export async function getProductTeasers(db: PrismaClient, codes: string[]): Prom
         compareAtCents: promo != null && v ? v.priceCents : null,
         status: r.status,
         headline: r.headline,
+        routineStep: r.routineStep,
       },
     ]
   })

@@ -2,7 +2,29 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
-import { Alert, ArrowRight, Chat, Check, Info, Leaf, Moon, ShieldCheck, Sun } from '@/components/icons'
+import {
+  Alert,
+  ArrowRight,
+  Award,
+  Bulb,
+  Chat,
+  Check,
+  ChevronDown,
+  ConcernIcon,
+  Droplet,
+  FaceScan,
+  Flask,
+  Hand,
+  IconBadge,
+  Info,
+  Layers,
+  Leaf,
+  Moon,
+  ShieldCheck,
+  Sparkle,
+  StepIcon,
+  Sun,
+} from '@/components/icons'
 import { ButtonLink } from '@/components/ui/button'
 import { Breadcrumb } from '@/components/catalog/page-intro'
 import { ProductGrid } from '@/components/catalog/product-grid'
@@ -45,28 +67,43 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   }
 }
 
-function Section({ title, id, children, className = '' }: { title: string; id: string; children: React.ReactNode; className?: string }) {
+/** A section of the product page as the design draws it: the title with its icon on the left, the content on the right. */
+function Block({ title, id, icon, children }: { title: string; id: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section aria-labelledby={id} className={`border-t border-line py-10 ${className}`}>
-      <h2 id={id} className="font-display text-display-sm">
+    <section aria-labelledby={id} className="grid scroll-mt-24 gap-5 border-t border-line py-10 md:grid-cols-[13rem_1fr] md:gap-12 md:py-14 lg:grid-cols-[16rem_1fr]">
+      <h2 id={id} className="flex items-center gap-3 font-display text-display-sm md:flex-col md:items-start md:gap-4">
+        <IconBadge size="lg">{icon}</IconBadge>
         {title}
       </h2>
-      <div className="mt-5">{children}</div>
+      <div className="min-w-0">{children}</div>
     </section>
   )
 }
 
 const Paragraphs = ({ items, className = '' }: { items: string[]; className?: string }) => (
-  <div className={`space-y-3 text-ink-soft ${className}`}>
+  <div className={`space-y-3 text-[1rem] leading-relaxed text-ink-soft ${className}`}>
     {items.map((p, i) => (
       <p key={i}>{p}</p>
     ))}
   </div>
 )
 
-// PDP-01..03 and the CAT display fields, in the content file's order (F-01 to F-26).
-// Not here on purpose: reviews (Phase 2, F-06/F-22) and endorsements, whose
-// table exists but whose block stays hidden until Phase 2 (CAT-21).
+function Pill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <li className="inline-flex items-center gap-2 rounded-full bg-shell py-1 pl-1 pr-3">
+      <IconBadge size="sm" tone="paper" className="size-7">
+        {icon}
+      </IconBadge>
+      {children}
+    </li>
+  )
+}
+
+// PDP-01..03 and the CAT display fields (F-01 to F-26), in the approved
+// design's product page: photo and buying on top, then one section per
+// subject with its icon. Not here on purpose: reviews (Phase 2, F-06/F-22)
+// and endorsements, whose table exists but whose block stays hidden until
+// Phase 2 (CAT-21).
 export default async function ProductPage({ params, searchParams }: Props) {
   const p = await load((await params).code, wantsPreview(await searchParams))
   if (!p) notFound()
@@ -74,58 +111,58 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const wa = s['company.whatsappActive'] ? whatsappLink(s['company.whatsapp'], `Hola, tengo una duda sobre ${p.name}`) : null
   const [sameLine, ...relationCards] = await Promise.all([toCards(p.sameLine?.items ?? []), ...p.relations.map((r) => toCards(r.items))])
   const main = p.images[0]
+  const size = p.variants[0]?.sizeLabel
 
   return (
-    <>
+    <article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(p.jsonLd) }} />
       {p.banner && (
         <div className="bg-night-soft px-4 py-2.5 text-center text-sm text-night" role="note">
           {p.banner}
         </div>
       )}
-      <div className="container-page pt-6 sm:pt-8">
+      <div className="container-page pt-5">
         <Breadcrumb items={p.breadcrumb} />
       </div>
 
-      <div className="container-page mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
+      {/* Photos, name, price and buying; what it is for and its star ingredients. */}
+      <section className="container-page mt-5 grid gap-8 lg:mt-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:gap-16">
         <div className="lg:sticky lg:top-24 lg:self-start">
           <Gallery images={p.images} video={p.video} name={p.name} step={p.routineStep} brand={p.brand.name} />
         </div>
 
-        <div>
-          <Link href={`/marca/${p.brand.code}`} className="text-sm font-medium uppercase tracking-wide text-ink-muted hover:text-ink">
+        <div className="lg:pt-2">
+          <Link href={`/marca/${p.brand.code}`} className="text-[0.9375rem] font-medium text-ink-soft hover:text-ink">
             {p.brand.name}
           </Link>
           <h1 className="mt-2 font-display text-display-md text-balance">{p.name}</h1>
           {p.headline && <p className="mt-3 text-lede text-ink-soft">{p.headline}</p>}
 
-          {(p.labels.length > 0 || p.chips.length > 0) && (
-            <ul className="mt-5 flex flex-wrap gap-2" aria-label="Características">
-              {p.labels.map((l) => (
-                <li key={l} className="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-ink">
-                  {l}
-                </li>
-              ))}
-              {p.chips.map((c) => (
-                <li key={c} className="rounded-full border border-line-strong px-3 py-1 text-xs">
-                  {c}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="mt-4 flex flex-wrap gap-2 text-[0.8125rem]" aria-label="Características">
+            <Pill icon={<StepIcon type={p.routineStep} size={15} />}>
+              {p.stepLabel}
+              {size && ` · ${size}`}
+            </Pill>
+            {p.texture && <Pill icon={<Droplet size={15} />}>{p.texture}</Pill>}
+            <Pill icon={p.moment === 'PM' ? <Moon size={14} /> : <Sun size={15} />}>{p.momentLabel}</Pill>
+            {p.seals.map((seal) => (
+              <Pill key={seal} icon={seal === 'Vegano' ? <Leaf size={15} /> : <ShieldCheck size={15} />}>
+                {seal}
+              </Pill>
+            ))}
+            {p.labels.map((l) => (
+              <li key={l} className="inline-flex items-center rounded-full bg-accent-soft px-3 py-1 font-medium text-accent-ink">
+                {l}
+              </li>
+            ))}
+            {p.chips.map((c) => (
+              <li key={c} className="inline-flex items-center rounded-full border border-line-strong px-3 py-1">
+                {c}
+              </li>
+            ))}
+          </ul>
 
-          {p.seals.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-sage-ink" aria-label="Sellos">
-              {p.seals.map((seal) => (
-                <li key={seal} className="flex items-center gap-1.5">
-                  {seal === 'Vegano' ? <Leaf size={16} /> : <ShieldCheck size={16} />}
-                  {seal}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="mt-6">
+          <div className="mt-6 border-t border-line pt-6">
             <BuyBox
               product={{ name: p.name, brand: p.brand.name, routineStep: p.routineStep, image: main ? { src: main.src, width: main.width, height: main.height } : null }}
               variants={p.variants}
@@ -137,7 +174,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
           {p.baseProduct && (
             <p className="mt-4 text-sm text-ink-soft">
               Es el tamaño de viaje de{' '}
-              <Link href={`/producto/${p.baseProduct.code}`} className="underline underline-offset-2">
+              <Link href={`/producto/${p.baseProduct.code}`} className="underline decoration-line-strong underline-offset-4 hover:decoration-ink">
                 {p.baseProduct.name}
               </Link>
               .
@@ -151,15 +188,23 @@ export default async function ProductPage({ params, searchParams }: Props) {
             </a>
           )}
 
-          {p.shortDescription.length > 0 && <Paragraphs items={p.shortDescription} className="mt-8 text-[1.0625rem]" />}
+          {p.shortDescription.length > 0 && (
+            <div className="mt-8 space-y-3 text-lede text-ink-soft">
+              {p.shortDescription.map((t, i) => (
+                <p key={i}>{t}</p>
+              ))}
+            </div>
+          )}
 
           {(p.concerns.length > 0 || p.skinTypes.length > 0) && (
-            <Section title="Para qué sirve" id="para-que-sirve" className="mt-10">
+            <div className="mt-6">
+              <h2 className="sr-only">Para qué sirve</h2>
               {p.concerns.length > 0 && (
-                <ul className="flex flex-wrap gap-2">
+                <ul className="flex flex-wrap gap-2" aria-label="Necesidades">
                   {p.concerns.map((c) => (
                     <li key={c.code}>
-                      <Link href={`/necesidad/${c.code}`} className="inline-flex h-9 items-center rounded-full bg-shell px-4 text-sm hover:bg-sand">
+                      <Link href={`/necesidad/${c.code}`} className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3.5 py-1.5 text-sm hover:border-ink">
+                        <ConcernIcon slug={c.code} size={16} className="text-accent-ink" />
                         {c.name}
                       </Link>
                     </li>
@@ -167,301 +212,341 @@ export default async function ProductPage({ params, searchParams }: Props) {
                 </ul>
               )}
               {p.skinTypes.length > 0 && (
-                <ul className="mt-4 space-y-1 text-sm text-ink-soft">
+                <ul className="mt-3 space-y-1 text-sm text-ink-muted">
                   {p.skinTypes.map((g) => (
                     <li key={g.aptitude} className={g.aptitude === 'NOT_RECOMMENDED' ? 'text-accent-ink' : ''}>
-                      <span className="font-medium text-ink">{g.label}</span> para piel {joinEs(g.names)}.
+                      {g.label} para piel {joinEs(g.names)}.
                     </li>
                   ))}
                 </ul>
               )}
-            </Section>
+            </div>
           )}
 
           {p.stars.length > 0 && (
-            <Section title="Ingredientes estrella" id="ingredientes-estrella">
-              <ul className="divide-y divide-line border-y border-line">
-                {p.stars.map((i) => (
-                  <li key={i.code}>
-                    {i.description ? (
-                      <details className="group py-3.5">
-                        <summary className="flex items-center justify-between gap-4">
-                          <StarName star={i} />
-                          <span className="chevron text-ink-muted" aria-hidden="true">
-                            ▾
-                          </span>
-                        </summary>
-                        <p className="mt-2 text-sm text-ink-soft">{i.description}</p>
-                        {i.href && (
-                          <Link href={i.href} className="mt-2 inline-flex items-center gap-1 text-sm font-medium">
-                            Más sobre {lowerFirst(i.name)} <ArrowRight size={14} />
-                          </Link>
-                        )}
-                      </details>
-                    ) : (
-                      <div className="py-3.5">
+            <div className="mt-10">
+              <h2 className="text-sm font-medium">Ingredientes estrella</h2>
+              <div className="mt-3 border-t border-line">
+                {p.stars.map((i) =>
+                  i.description ? (
+                    <details key={i.code} className="group border-b border-line">
+                      <summary className="flex items-center justify-between gap-4 py-4">
                         <StarName star={i} />
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </Section>
+                        <ChevronDown size={18} className="chevron shrink-0 text-ink-muted" />
+                      </summary>
+                      <p className="pb-4 text-[0.9375rem] leading-relaxed text-ink-soft">{i.description}</p>
+                      {i.href && (
+                        <Link href={i.href} className="-mt-1 mb-5 inline-flex items-center gap-1.5 text-sm font-medium underline decoration-line-strong underline-offset-4 hover:decoration-ink">
+                          Más sobre {lowerFirst(i.name)} <ArrowRight size={14} />
+                        </Link>
+                      )}
+                    </details>
+                  ) : (
+                    <div key={i.code} className="border-b border-line py-4">
+                      <StarName star={i} />
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
           )}
+        </div>
+      </section>
 
-          {p.benefits.length > 0 && (
-            <Section title="Beneficios" id="beneficios">
-              <ul className="space-y-3">
-                {p.benefits.map((b, i) => (
-                  <li key={i} className="flex gap-3">
-                    <Check size={18} className="mt-0.5 shrink-0 text-sage-ink" />
-                    <span>
-                      {b.verb && <strong className="font-medium tracking-wide">{b.verb}: </strong>}
-                      <span className="text-ink-soft">{b.text}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
+      {/* One section per subject. */}
+      <div className="container-page mt-16 md:mt-24">
+        {p.whyWeChose.length > 0 && (
+          <Block title="Por qué lo elegimos" id="por-que" icon={<Bulb size={22} />}>
+            <div className="max-w-2xl space-y-4 font-display text-[1.45rem] leading-[1.4] text-ink md:text-[1.6rem]">
+              {p.whyWeChose.map((t, i) => (
+                <p key={i}>{t}</p>
+              ))}
+            </div>
+          </Block>
+        )}
 
-          {p.whyWeChose.length > 0 && (
-            <Section title="Por qué lo elegimos" id="por-que">
-              <Paragraphs items={p.whyWeChose} />
-            </Section>
-          )}
+        {p.benefits.length > 0 && (
+          <Block title="Beneficios" id="beneficios" icon={<Sparkle size={22} />}>
+            <ul className="max-w-2xl space-y-3">
+              {p.benefits.map((b, i) => (
+                <li key={i} className="flex gap-3 text-[1rem] leading-relaxed">
+                  <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-sage-soft text-sage-ink">
+                    <Check size={14} />
+                  </span>
+                  <span>
+                    {b.verb && <strong className="font-medium">{b.verb}: </strong>}
+                    <span className="text-ink-soft">{b.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Block>
+        )}
 
-          {p.description.length > 0 && (
-            <Section title="Conocelo mejor" id="conocelo">
-              <Paragraphs items={p.description} />
-            </Section>
-          )}
+        {p.description.length > 0 && (
+          <Block title="Conocelo mejor" id="conocelo" icon={<Info size={22} />}>
+            <Paragraphs items={p.description} className="max-w-2xl" />
+          </Block>
+        )}
 
-          {(p.texture || p.textureDescription.length > 0 || p.tips.length > 0) && (
-            <Section title="Textura" id="textura">
-              {p.texture && <p className="font-medium">{p.texture}</p>}
-              {p.textureDescription.length > 0 && <Paragraphs items={p.textureDescription} className="mt-2" />}
+        {(p.texture || p.textureDescription.length > 0 || p.tips.length > 0) && (
+          <Block title="Textura" id="textura" icon={<Droplet size={22} />}>
+            <div className="max-w-2xl">
+              {p.texture && <p className="font-display text-[1.35rem] leading-tight">{p.texture}</p>}
+              {p.textureDescription.length > 0 && <Paragraphs items={p.textureDescription} className="mt-3" />}
               {p.tips.length > 0 && (
-                <div className="mt-5 rounded-2xl bg-shell p-4">
-                  <p className="text-sm font-medium">Tips</p>
-                  <Paragraphs items={p.tips} className="mt-1 text-sm" />
+                <div className="mt-6 rounded-[1.75rem] bg-shell p-5 sm:p-6">
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkle size={16} /> Tips
+                  </p>
+                  <Paragraphs items={p.tips} className="mt-2 text-[0.9375rem]" />
                 </div>
               )}
-            </Section>
-          )}
+            </div>
+          </Block>
+        )}
 
-          <Section title="Dónde va en tu rutina" id="rutina">
-            <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <MomentMark on={p.moment !== 'PM'} icon={<Sun size={18} />} label="De mañana" />
-              <MomentMark on={p.moment !== 'AM'} icon={<Moon size={18} />} label="De noche" />
+        <Block title="Modo de uso" id="rutina" icon={<Hand size={22} />}>
+          <div className="max-w-2xl">
+            <ul className="flex flex-wrap gap-2" aria-label="Momento del día">
+              <MomentMark on={p.moment !== 'PM'} icon={<Sun size={16} />} label="Mañana" />
+              <MomentMark on={p.moment !== 'AM'} icon={<Moon size={15} />} label="Noche" />
             </ul>
-            <p className="mt-3 text-sm">
-              <span className="text-ink-muted">Paso:</span> {p.stepLabel}
-            </p>
-            {p.howToUse.length > 0 && (
-              <>
-                <h3 className="mt-5 text-sm font-medium">Modo de uso</h3>
-                <Paragraphs items={p.howToUse} className="mt-1" />
-              </>
+            {p.howToUse.length > 0 && <Paragraphs items={p.howToUse} className="mt-4" />}
+            <div className="mt-8">
+              <p className="text-sm text-ink-muted">Dónde va en tu rutina</p>
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink py-1.5 pl-2 pr-3 text-sm font-medium text-paper">
+                <StepIcon type={p.routineStep} size={15} />
+                {p.stepLabel}
+              </p>
+            </div>
+          </div>
+        </Block>
+
+        <Block title="Precauciones" id="precauciones" icon={<ShieldCheck size={22} />}>
+          <div className="max-w-2xl">
+            <Paragraphs items={p.precautions.text} />
+            {p.precautions.warnings.length > 0 && (
+              <ul className="mt-6 space-y-3">
+                {p.precautions.warnings.map((w) => (
+                  <li key={w} className="flex gap-3 rounded-2xl bg-accent-soft/70 p-4 text-[0.9375rem]">
+                    <Alert size={18} className="mt-0.5 shrink-0 text-accent-ink" />
+                    {w}
+                  </li>
+                ))}
+              </ul>
             )}
-            <div className="mt-6 rounded-2xl border border-line p-4">
-              <h3 className="flex items-center gap-2 text-sm font-medium">
-                <Info size={16} /> Precauciones
-              </h3>
-              <Paragraphs items={p.precautions.text} className="mt-2 text-sm" />
-              {p.precautions.warnings.length > 0 && (
-                <ul className="mt-3 space-y-1.5 text-sm">
-                  {p.precautions.warnings.map((w) => (
-                    <li key={w} className="flex gap-2">
-                      <Alert size={16} className="mt-0.5 shrink-0 text-accent-ink" />
-                      {w}
+            {p.precautions.conflicts.length > 0 && (
+              <>
+                <h3 className="mt-8 text-sm font-medium">Con qué no combinarlo</h3>
+                <ul className="mt-3 space-y-3">
+                  {p.precautions.conflicts.map((c) => (
+                    <li key={c.note} className="flex gap-3 rounded-2xl bg-accent-soft/70 p-4 text-[0.9375rem]">
+                      <Alert size={18} className="mt-0.5 shrink-0 text-accent-ink" />
+                      <div>
+                        <p className="font-medium">Con {joinEs(c.with)}</p>
+                        <p className="mt-1 text-ink-soft">{c.note}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>
-              )}
-              {p.precautions.conflicts.length > 0 && (
-                <>
-                  <h4 className="mt-4 text-sm font-medium">Con qué no combinarlo</h4>
-                  <ul className="mt-1.5 space-y-1.5 text-sm text-ink-soft">
-                    {p.precautions.conflicts.map((c) => (
-                      <li key={c.note}>
-                        <span className="text-ink">Con {joinEs(c.with)}:</span> {c.note}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          </Section>
+              </>
+            )}
+          </div>
+        </Block>
 
-          {p.kit.length > 0 && (
-            <Section title="Qué trae el kit" id="kit">
-              <ul className="space-y-2">
-                {p.kit.map((k, i) => (
-                  <li key={i} className="flex justify-between gap-4 text-sm">
-                    {k.href ? (
-                      <Link href={k.href} className="underline underline-offset-2">
-                        {k.name}
-                      </Link>
-                    ) : (
-                      <span>{k.name}</span>
-                    )}
-                    <span className="shrink-0 text-ink-muted">{k.sizeLabel}</span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
-          {p.routines.length > 0 && (
-            <Section title="Aparece en estas rutinas" id="rutinas">
-              <p className="text-ink-soft">
-                Está en {p.routines.length === 1 ? 'una' : p.routines.length} de nuestras rutinas armadas:{' '}
-                {p.routines.map((r, i) => (
-                  <span key={r.code}>
-                    {i > 0 && ' · '}
-                    <Link href={`/rutinas#${r.code}`} className="text-ink underline underline-offset-2">
-                      {r.name}
+        {p.kit.length > 0 && (
+          <Block title="Qué trae el kit" id="kit" icon={<Layers size={22} />}>
+            <ul className="max-w-2xl divide-y divide-line border-y border-line">
+              {p.kit.map((k, i) => (
+                <li key={i} className="flex justify-between gap-4 py-3 text-[0.9375rem]">
+                  {k.href ? (
+                    <Link href={k.href} className="underline decoration-line-strong underline-offset-4 hover:decoration-ink">
+                      {k.name}
                     </Link>
-                  </span>
-                ))}
-              </p>
-            </Section>
-          )}
-        </div>
-      </div>
+                  ) : (
+                    <span>{k.name}</span>
+                  )}
+                  <span className="shrink-0 text-ink-muted">{k.sizeLabel}</span>
+                </li>
+              ))}
+            </ul>
+          </Block>
+        )}
 
-      <div className="container-page">
+        {p.routines.length > 0 && (
+          <Block title="Aparece en estas rutinas" id="rutinas" icon={<Layers size={22} />}>
+            <p className="max-w-2xl text-[1rem] leading-relaxed text-ink-soft">Está en {p.routines.length === 1 ? 'una' : p.routines.length} de nuestras rutinas armadas.</p>
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {p.routines.map((r) => (
+                <li key={r.code}>
+                  <Link href={`/rutinas#${r.code}`} className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3.5 py-1.5 text-sm hover:border-ink">
+                    {r.name} <ArrowRight size={14} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Block>
+        )}
+
         {sameLine.length > 0 && p.sameLine && (
-          <Section title="De la misma línea" id="misma-linea" className="mt-14">
-            <p className="-mt-3 mb-6 text-sm text-ink-muted">{p.sameLine.name}</p>
-            <ProductGrid products={sameLine} />
-          </Section>
+          <Block title="De la misma línea" id="misma-linea" icon={<Sparkle size={22} />}>
+            <p className="mb-6 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">{p.sameLine.name}</p>
+            <ProductGrid products={sameLine} columns={3} />
+          </Block>
         )}
         {p.relations.map((r, i) => (
-          <Section key={r.kind} title={r.title} id={`rel-${r.kind.toLowerCase()}`} className={i === 0 && !sameLine.length ? 'mt-14' : ''}>
-            {r.text && <p className="-mt-3 mb-6 text-sm text-ink-muted">{r.text}</p>}
-            <ProductGrid products={relationCards[i] ?? []} />
-          </Section>
+          <Block key={r.kind} title={r.title} id={`rel-${r.kind.toLowerCase()}`} icon={<Sparkle size={22} />}>
+            {r.text && <p className="mb-6 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">{r.text}</p>}
+            <ProductGrid products={relationCards[i] ?? []} columns={3} />
+          </Block>
         ))}
 
-        <section className="mt-14 flex flex-col items-start gap-5 rounded-[var(--radius-card)] bg-shell px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10" aria-label="Diagnóstico">
-          <p className="font-display text-display-sm">¿No sabés si es para tu piel?</p>
-          <ButtonLink href="/diagnostico">Hacer mi diagnóstico</ButtonLink>
-        </section>
-
-        <div className="mt-6 grid gap-x-14 lg:grid-cols-2">
-          {p.brand.description.length > 0 && (
-            <Section title={`Sobre ${p.brand.name}`} id="marca">
-              <Paragraphs items={p.brand.description} />
-              <Link href={`/marca/${p.brand.code}`} className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium">
-                Ver todos los productos de {p.brand.name} <ArrowRight size={16} />
-              </Link>
-            </Section>
-          )}
-          <IngredientsAndInfo p={p} />
-        </div>
-
         {p.evaluation && (
-          <Section title="Nuestra evaluación" id="evaluacion">
-            <p className="font-display text-display-md tabular">
-              {p.evaluation.score}
-              <span className="text-lede text-ink-muted">/100</span>
-            </p>
-            {p.evaluation.notes && <p className="mt-2 max-w-2xl text-ink-soft">{p.evaluation.notes}</p>}
-            {p.evaluation.criteria.length > 0 && (
-              <dl className="mt-5 grid max-w-2xl gap-3 sm:grid-cols-2">
-                {p.evaluation.criteria.map((c) => (
-                  <div key={c.name} className="rounded-2xl bg-shell p-4">
-                    <dt className="text-sm text-ink-muted">{c.name}</dt>
-                    <dd className="mt-1 text-lg tabular">{c.score}/100</dd>
-                    {c.note && <dd className="mt-1 text-sm text-ink-soft">{c.note}</dd>}
-                  </div>
-                ))}
-              </dl>
-            )}
-          </Section>
+          <Block title="Nuestra evaluación" id="evaluacion" icon={<Award size={22} />}>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
+              <ScoreRing score={p.evaluation.score} />
+              <div className="max-w-xl">
+                {p.evaluation.notes && <p className="text-[1rem] leading-relaxed text-ink-soft">{p.evaluation.notes}</p>}
+                {p.evaluation.criteria.length > 0 && (
+                  <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {p.evaluation.criteria.map((c) => (
+                      <div key={c.name} className="rounded-2xl bg-shell p-4">
+                        <dt className="text-sm text-ink-muted">{c.name}</dt>
+                        <dd className="mt-1 text-lg tabular">{c.score}/100</dd>
+                        {c.note && <dd className="mt-1 text-sm text-ink-soft">{c.note}</dd>}
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            </div>
+          </Block>
         )}
+
+        {p.brand.description.length > 0 && (
+          <Block title={`Sobre ${p.brand.name}`} id="marca" icon={<Leaf size={22} />}>
+            <Paragraphs items={p.brand.description} className="max-w-2xl" />
+            <Link href={`/marca/${p.brand.code}`} className="mt-5 inline-flex items-center gap-2 text-[0.9375rem] font-medium underline decoration-line-strong underline-offset-[6px] hover:decoration-ink">
+              Ver todos los productos de {p.brand.name} <ArrowRight size={16} />
+            </Link>
+          </Block>
+        )}
+
+        <IngredientsAndInfo p={p} />
+
+        <aside className="mt-6 grid items-center gap-6 overflow-hidden rounded-[2rem] bg-ink p-6 text-paper sm:grid-cols-[auto_1fr_auto] sm:p-8" aria-label="Diagnóstico">
+          <span className="grid size-14 place-items-center rounded-full bg-paper/10 ring-1 ring-paper/15">
+            <FaceScan size={26} />
+          </span>
+          <p className="font-display text-display-sm">¿No sabés si es para tu piel?</p>
+          <ButtonLink href="/diagnostico" variant="inverse" className="justify-self-start sm:justify-self-auto">
+            Hacer mi diagnóstico
+          </ButtonLink>
+        </aside>
       </div>
-    </>
+    </article>
   )
 }
 
 function IngredientsAndInfo({ p }: { p: ProductDetail }) {
   if (!p.inci && !p.info.length) return null
   return (
-    <section aria-labelledby="ingredientes" className="border-t border-line py-10">
-      <h2 id="ingredientes" className="font-display text-display-sm">
-        {p.inci ? 'Lista de ingredientes' : 'Información del producto'}
-      </h2>
-      {p.inci && (
-        <details className="mt-5 rounded-2xl border border-line">
-          <summary className="flex items-center justify-between gap-4 px-4 py-3.5">
-            <span>
-              <span className="block font-medium">Ver todos los ingredientes (INCI)</span>
-              <span className="block text-sm text-ink-muted">En orden de concentración. Los ingredientes estrella, resaltados.</span>
-            </span>
-            <span className="chevron text-ink-muted" aria-hidden="true">
-              ▾
-            </span>
-          </summary>
-          <p className="px-4 pb-4 text-sm leading-relaxed text-ink-soft">
-            {'items' in p.inci
-              ? p.inci.items.map((it, i) => (
-                  <span key={i}>
-                    {i > 0 && ', '}
-                    {it.star ? (
-                      it.href ? (
-                        <Link href={it.href} className="font-medium text-ink underline underline-offset-2">
-                          {it.name}
-                        </Link>
-                      ) : (
-                        <strong className="font-medium text-ink">{it.name}</strong>
-                      )
-                    ) : (
-                      it.name
-                    )}
-                  </span>
-                ))
-              : p.inci.text}
-          </p>
-        </details>
-      )}
-      {p.info.length > 0 && (
-        <>
-          {p.inci && <h3 className="mt-8 text-sm font-medium">Información del producto</h3>}
-          <dl className={`${p.inci ? 'mt-3' : 'mt-5'} divide-y divide-line border-y border-line text-sm`}>
-            {p.info.map((row) => (
-              <div key={row.label} className="flex justify-between gap-6 py-2.5">
-                <dt className="text-ink-muted">{row.label}</dt>
-                <dd className="text-right">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </>
-      )}
-    </section>
+    <Block title={p.inci ? 'Ingredientes completos' : 'Información del producto'} id="ingredientes" icon={<Flask size={22} />}>
+      <div className="max-w-2xl">
+        {p.inci && (
+          <details className="group rounded-[1.75rem] border border-line">
+            <summary className="flex items-center justify-between gap-4 px-5 py-4 text-[0.9375rem]">
+              <span>
+                Ver lista INCI
+                {'items' in p.inci && <span className="text-ink-muted"> ({p.inci.items.length} ingredientes)</span>}
+              </span>
+              <ChevronDown size={18} className="chevron shrink-0 text-ink-muted" />
+            </summary>
+            <div className="border-t border-line px-5 py-5">
+              <p className="text-[0.9375rem] leading-relaxed text-ink-soft">
+                {'items' in p.inci
+                  ? p.inci.items.map((it, i) => (
+                      <span key={i}>
+                        {i > 0 && ', '}
+                        {it.star ? (
+                          it.href ? (
+                            <Link href={it.href} className="font-medium text-ink underline decoration-line-strong underline-offset-4">
+                              {it.name}
+                            </Link>
+                          ) : (
+                            <strong className="font-medium text-ink">{it.name}</strong>
+                          )
+                        ) : (
+                          it.name
+                        )}
+                      </span>
+                    ))
+                  : p.inci.text}
+              </p>
+              <p className="mt-3 text-[0.8125rem] text-ink-muted">En orden de concentración. Los ingredientes estrella, resaltados.</p>
+            </div>
+          </details>
+        )}
+        {p.info.length > 0 && (
+          <>
+            {p.inci && <h3 className="mt-8 text-sm font-medium">Información del producto</h3>}
+            <dl className={`${p.inci ? 'mt-3' : ''} divide-y divide-line border-y border-line text-sm`}>
+              {p.info.map((row) => (
+                <div key={row.label} className="grid grid-cols-[9rem_1fr] items-baseline gap-4 py-3">
+                  <dt className="font-medium">{row.label}</dt>
+                  <dd className="text-ink-soft">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
+      </div>
+    </Block>
   )
 }
 
 function StarName({ star }: { star: ProductDetail['stars'][number] }) {
   return (
-    <span>
-      <span className="font-medium">{star.name}</span>
-      {star.concentration && <span className="ml-1.5 tabular text-accent-ink">{star.concentration}</span>}
-      <span className="block text-xs text-ink-muted">{star.inciName}</span>
+    <span className="flex items-center gap-3">
+      <IconBadge size="sm">
+        <Flask size={17} />
+      </IconBadge>
+      <span>
+        <span className="font-display text-[1.25rem] leading-tight">{star.name}</span>
+        {star.concentration && <span className="ml-2 tabular text-sm text-ink-muted">{star.concentration}</span>}
+        <span className="block text-xs text-ink-muted">{star.inciName}</span>
+      </span>
     </span>
   )
 }
 
 function MomentMark({ on, icon, label }: { on: boolean; icon: React.ReactNode; label: string }) {
   return (
-    <li className={`flex items-center gap-2 ${on ? '' : 'text-ink-muted line-through decoration-line-strong'}`}>
+    <li className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${on ? 'border-line-strong' : 'border-line text-ink-muted line-through decoration-line-strong'}`}>
       {icon}
       {label}
       <span className="sr-only">{on ? ': sí' : ': no'}</span>
-      {on && <Check size={16} className="text-sage-ink" />}
     </li>
+  )
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const r = 42
+  const c = 2 * Math.PI * r
+  return (
+    <div className="relative size-32 shrink-0" role="img" aria-label={`${score} sobre 100`}>
+      <svg viewBox="0 0 100 100" width="128" height="128" className="-rotate-90" aria-hidden="true">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="var(--color-line)" strokeWidth="5" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke="var(--color-accent)" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${(score / 100) * c} ${c}`} />
+      </svg>
+      <p className="absolute inset-0 grid place-items-center text-center" aria-hidden="true">
+        <span>
+          <span className="tabular block font-display text-[2.5rem] leading-none">{score}</span>
+          <span className="text-xs text-ink-muted">de 100</span>
+        </span>
+      </p>
+    </div>
   )
 }
 

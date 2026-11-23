@@ -14,9 +14,16 @@ const rows = <T extends Record<string, ScalarValue>>(items: T[]) => items.map((i
 
 export type SeedPage = { slug: string; kind: PageKind; doc: PageDoc }
 
+// The Home in the order of the approved design: campaign hero, what we do
+// (icon strip), shop by need, our criteria (still life), how it works,
+// morning and night, ready-made routines, a product page shown in use,
+// featured products and the dark closing. The client's copy (H-01 to H-28)
+// fills each section; where the design sets a short label over a heading,
+// the copy's own heading became that label.
 const homeBlocks: Block[] = [
-  // H-01 to H-04. No photo yet (prompt P-H01): the hero shows text only until one is uploaded.
+  // H-01 to H-04. No photo uploaded yet (prompt P-H01): the hero shows the campaign's photographs.
   newBlock('hero', 'hero', {
+    eyebrow: 'Diagnóstico de piel · {preguntas} preguntas',
     title: 'Cuidar tu piel es *tu rutina*',
     subtitle: 'Respondé {preguntas} preguntas y armamos tu rutina de mañana y de noche. Cada producto viene con el motivo por el que lo elegimos.',
     cta1Label: 'Hacer mi diagnóstico',
@@ -40,33 +47,50 @@ const homeBlocks: Block[] = [
     },
     false,
   ),
-  // H-06
+  // H-06: the strip that overlaps the hero's lower edge.
   newBlock('features', 'lo-que-hacemos', {
+    layout: 'icons',
     items: rows([
-      { title: 'Diagnóstico en tres minutos', text: '{preguntas} preguntas, sin registrarte.', image: '' },
-      { title: 'Cada paso, en su orden', text: 'Limpiar, tratar y proteger, sin pasos de más.', image: '' },
-      { title: 'El porqué de cada producto', text: 'Te contamos qué hace cada activo y para qué piel es.', image: '' },
-      { title: 'Activos que conviven', text: 'Separamos los que no van juntos en la misma rutina.', image: '' },
+      { title: 'Diagnóstico en tres minutos', text: '{preguntas} preguntas, sin registrarte.', icon: 'diagnostico', image: '' },
+      { title: 'Cada paso, en su orden', text: 'Limpiar, tratar y proteger, sin pasos de más.', icon: 'pasos', image: '' },
+      { title: 'El porqué de cada producto', text: 'Te contamos qué hace cada activo y para qué piel es.', icon: 'idea', image: '' },
+      { title: 'Activos que conviven', text: 'Separamos los que no van juntos en la misma rutina.', icon: 'proteccion', image: '' },
     ]),
   }),
   // H-07 to H-09. Cards come from the catalog's needs, in the order of Configuración › Listado.
   newBlock('needs', 'necesidades', { eyebrow: 'Comprar por necesidad', title: '¿Qué te gustaría mejorar?', ctaLabel: 'Ver todos los productos', ctaHref: '/productos' }),
-  // H-10 to H-12. Photo P-H11 and the products on it are still to choose.
+  // H-10 to H-12. Photo P-H11 and the products on it are still to choose: the campaign's still life until then.
   newBlock('imageText', 'criterio', {
     eyebrow: 'Nuestro criterio',
     title: 'Productos de marcas coreanas. Elegidos uno por uno.',
     body: 'Cada producto está acá por lo que lleva y por la piel para la que sirve. Te decimos para qué es, cómo usarlo y con qué no combinarlo. Y también lo que no hace.',
     imageSide: 'right',
+    ctaLabel: 'Ver la selección',
+    ctaHref: '/productos',
   }),
-  // H-13
-  newBlock('diagnosis', 'vista-previa-diagnostico', { variant: 'preview', ctaLabel: 'Hacer mi diagnóstico', ctaHref: '/diagnostico' }),
+  // H-23, H-24: in the design, how it works carries the preview of a question (H-13) on its photo.
+  newBlock('howItWorks', 'como-funciona', {
+    eyebrow: 'Cómo funciona',
+    title: 'Tres minutos, y una rutina que se explica sola.',
+    text: 'Detrás de cada recomendación hay datos de cada producto: para qué piel es, sobre qué trabaja, qué activos lleva y con cuáles no combina.',
+    steps: rows([
+      { title: 'Contás cómo es tu piel', text: 'Brillo, granitos, sensibilidad y lo que querés mejorar. Una pregunta por pantalla.' },
+      { title: 'Cruzamos cada producto', text: 'Para qué piel es ideal, sobre qué trabaja y con qué no combina. Si estás embarazada o es tu primera vez con activos fuertes, los dejamos afuera.' },
+      { title: 'Recibís tu rutina, con el porqué', text: 'De mañana y de noche, lista para sumar a tu carrito.' },
+    ]),
+    ctaLabel: 'Hacer mi diagnóstico',
+    ctaHref: '/diagnostico',
+  }),
+  // H-13: its preview is drawn inside "Cómo funciona"; kept hidden so the Home does not show it twice.
+  newBlock('diagnosis', 'vista-previa-diagnostico', { variant: 'preview', ctaLabel: 'Hacer mi diagnóstico', ctaHref: '/diagnostico' }, false),
   // H-14 to H-16
   newBlock('features', 'dos-momentos', {
-    title: 'Dos momentos, dos rutinas',
-    text: 'Tu piel no necesita lo mismo a la mañana que a la noche.',
+    layout: 'moments',
+    eyebrow: 'Dos momentos, dos rutinas',
+    title: 'Tu piel no necesita lo mismo a la mañana que a la noche.',
     items: rows([
-      { title: 'Tu rutina de mañana', text: 'Limpiar, preparar y proteger la piel para todo el día. De tres a cinco pasos.', image: '' },
-      { title: 'Tu rutina de noche', text: 'Tratar y reparar mientras dormís, sin mezclar activos que no van juntos. De tres a cinco pasos.', image: '' },
+      { title: 'Tu rutina de mañana', text: 'Limpiar, preparar y proteger la piel para todo el día. De tres a cinco pasos.', icon: 'manana', image: '' },
+      { title: 'Tu rutina de noche', text: 'Tratar y reparar mientras dormís, sin mezclar activos que no van juntos. De tres a cinco pasos.', icon: 'noche', image: '' },
     ]),
   }),
   // H-17 to H-19. "pensadas", not "probadas", until the dermatologist validates them (note on H-17).
@@ -77,29 +101,23 @@ const homeBlocks: Block[] = [
     ctaLabel: 'Ver las rutinas',
     ctaHref: '/rutinas',
   }),
-  // H-20, H-21
+  // H-20, H-21. The product beside the photo: the first of Configuración › Listado › Productos destacados.
   newBlock('features', 'ficha', {
-    title: 'Así se ve una ficha',
-    text: 'Cada producto, explicado como lo haría una asesora. Todo lo que necesitás para elegir, en el orden en que lo preguntarías.',
+    layout: 'showcase',
+    eyebrow: 'Así se ve una ficha',
+    title: 'Cada producto, explicado como lo haría una asesora.',
+    text: 'Todo lo que necesitás para elegir, en el orden en que lo preguntarías.',
     items: rows([
-      { title: 'Ingredientes estrella', text: 'Qué hace cada uno y en qué concentración.', image: '' },
-      { title: 'Para qué piel es', text: 'Para cuál es ideal y para cuál no.', image: '' },
-      { title: 'Dónde va en tu rutina', text: 'Cuándo, cuánto y en qué paso.', image: '' },
-      { title: 'Con qué no combinarlo', text: 'Lo calculamos a partir de sus activos.', image: '' },
+      { title: 'Ingredientes estrella', text: 'Qué hace cada uno y en qué concentración.', icon: 'activos', image: '' },
+      { title: 'Para qué piel es', text: 'Para cuál es ideal y para cuál no.', icon: 'diagnostico', image: '' },
+      { title: 'Dónde va en tu rutina', text: 'Cuándo, cuánto y en qué paso.', icon: 'uso', image: '' },
+      { title: 'Con qué no combinarlo', text: 'Lo calculamos a partir de sus activos.', icon: 'proteccion', image: '' },
     ]),
+    ctaLabel: 'Ver la ficha completa',
+    ctaHref: '/productos',
   }),
   // H-22. Products: Configuración › Listado › Productos destacados.
-  newBlock('featured', 'para-empezar', { title: 'Para empezar', ctaLabel: 'Ver todos los productos', ctaHref: '/productos' }),
-  // H-23, H-24
-  newBlock('howItWorks', 'como-funciona', {
-    title: 'Cómo funciona',
-    text: 'Tres minutos, y una rutina que se explica sola. Detrás de cada recomendación hay datos de cada producto: para qué piel es, sobre qué trabaja, qué activos lleva y con cuáles no combina.',
-    steps: rows([
-      { title: 'Contás cómo es tu piel', text: 'Brillo, granitos, sensibilidad y lo que querés mejorar. Una pregunta por pantalla.' },
-      { title: 'Cruzamos cada producto', text: 'Para qué piel es ideal, sobre qué trabaja y con qué no combina. Si estás embarazada o es tu primera vez con activos fuertes, los dejamos afuera.' },
-      { title: 'Recibís tu rutina, con el porqué', text: 'De mañana y de noche, lista para sumar a tu carrito.' },
-    ]),
-  }),
+  newBlock('featured', 'para-empezar', { eyebrow: 'Selección', title: 'Para empezar', ctaLabel: 'Ver todos los productos', ctaHref: '/productos' }),
   // H-25 (FALTA DATO): hidden until the programme is defined.
   newBlock(
     'ambassadors',
@@ -113,7 +131,7 @@ const homeBlocks: Block[] = [
     },
     false,
   ),
-  // H-26: the only dark block.
+  // H-26: the only dark block, flowing into the footer.
   newBlock('diagnosis', 'cierre', {
     variant: 'dark',
     title: 'Tu piel cambia de la mañana a la noche. Tu rutina, también.',
@@ -148,12 +166,13 @@ const nosotrasBlocks: Block[] = [
   }),
   // NO-06
   newBlock('features', 'como-trabajamos', {
+    layout: 'cards',
     title: 'Cómo trabajamos',
     items: rows([
-      { title: 'Curaduría', text: 'Pocos productos, elegidos uno por uno por lo que llevan.', image: '' },
-      { title: 'Diagnóstico', text: '{preguntas} preguntas para que la rutina sea para tu piel.', image: '' },
-      { title: 'Rutinas simples', text: 'Los pasos justos, en el orden correcto.', image: '' },
-      { title: 'Acompañamiento', text: 'Después de la compra seguimos: por WhatsApp y en tu cuenta.', image: '' },
+      { title: 'Curaduría', text: 'Pocos productos, elegidos uno por uno por lo que llevan.', icon: 'brillo', image: '' },
+      { title: 'Diagnóstico', text: '{preguntas} preguntas para que la rutina sea para tu piel.', icon: 'diagnostico', image: '' },
+      { title: 'Rutinas simples', text: 'Los pasos justos, en el orden correcto.', icon: 'pasos', image: '' },
+      { title: 'Acompañamiento', text: 'Después de la compra seguimos: por WhatsApp y en tu cuenta.', icon: 'charla', image: '' },
     ]),
   }),
   // NO-07 (DECIDIR): only with the alliance signed; hidden until then.

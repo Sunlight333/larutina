@@ -8,7 +8,17 @@ import { resolveImages, type ResolvedImage } from '@/server/media'
 // Pieces every block renderer shares: the section heading, the call to
 // action and image lookup by media key.
 
-export type BlockContext = { pageSlug: string; vars: Record<string, string | number>; headingLevel: 1 | 2 }
+export type BlockContext = {
+  pageSlug: string
+  vars: Record<string, string | number>
+  headingLevel: 1 | 2
+  /** The first thing under the header (a hero then slides under the translucent header). */
+  first: boolean
+  /** The type of the block right before, for sections that overlap it (the icon strip under the hero). */
+  prev: string | null
+  /** The last block of the page (the dark closing flows into the footer). */
+  last: boolean
+}
 
 export async function lookupImages(keys: string[]): Promise<Map<string, ResolvedImage>> {
   const wanted = keys.filter(Boolean)
@@ -56,14 +66,14 @@ export function SectionHeader({ id, eyebrow, title, text, link, center = false }
   if (!eyebrow && !title && !text && !link) return null
   return (
     <div className={`flex flex-col gap-4 md:flex-row md:items-end ${center ? 'items-center text-center md:flex-col md:items-center' : 'justify-between'}`}>
-      <div className={`max-w-2xl ${center ? 'mx-auto' : ''}`}>
+      <div className={`${center ? 'mx-auto max-w-2xl' : 'max-w-xl'}`}>
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         {title && (
-          <h2 id={id} className={`font-display text-display-md text-balance ${eyebrow ? 'mt-3' : ''}`}>
+          <h2 id={id} className={`font-display text-display-lg text-balance ${eyebrow ? 'mt-3' : ''}`}>
             {title}
           </h2>
         )}
-        {text && <p className="mt-4 whitespace-pre-line text-lede text-ink-soft">{text}</p>}
+        {text && <p className="mt-5 whitespace-pre-line text-lede text-ink-soft">{text}</p>}
       </div>
       {link}
     </div>

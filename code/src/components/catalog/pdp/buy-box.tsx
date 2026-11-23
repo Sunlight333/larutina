@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { formatARS } from '@/lib/money'
 import { addToCart, MAX_QTY } from '@/components/cart/store'
+import { Bag } from '@/components/icons'
 import type { BuyVariant } from '@/server/services/catalog/product'
 
 type Props = {
@@ -45,9 +46,9 @@ export function BuyBox({ product, variants, presale, published }: Props) {
   const label = !published ? 'Todavía no está a la venta' : v.available ? 'Agregar al carrito' : 'Sin stock por ahora'
 
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5 sm:p-6">
+    <div>
       <p className="flex flex-wrap items-baseline gap-x-3 tabular" aria-live="polite">
-        <span className={`text-[1.75rem] font-medium leading-none ${promo ? 'text-accent-ink' : ''}`}>
+        <span className={`font-display text-[2.25rem] leading-none ${promo ? 'text-accent-ink' : ''}`}>
           {promo && <span className="sr-only">Precio promocional: </span>}
           {formatARS(v.chargedCents)}
         </span>
@@ -78,7 +79,7 @@ export function BuyBox({ product, variants, presale, published }: Props) {
             {variants.map((x, i) => (
               <label
                 key={x.sku}
-                className={`relative flex min-w-[6.5rem] cursor-pointer flex-col rounded-2xl border px-4 py-2.5 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink ${
+                className={`relative flex min-w-[6.5rem] cursor-pointer flex-col rounded-[1.25rem] border px-4 py-2.5 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink ${
                   i === selected ? 'border-ink bg-shell' : 'border-line-strong hover:border-ink'
                 }`}
               >
@@ -96,7 +97,7 @@ export function BuyBox({ product, variants, presale, published }: Props) {
 
       <div className="mt-5 flex gap-3">
         {published && v.available && (
-          <div className="flex h-12 items-center rounded-full border border-line-strong" role="group" aria-label="Cantidad">
+          <div className="flex h-14 items-center rounded-full border border-line-strong" role="group" aria-label="Cantidad">
             <button type="button" className="grid size-12 place-items-center rounded-full text-lg hover:bg-shell disabled:opacity-40" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="Restar uno">
               −
             </button>
@@ -113,8 +114,9 @@ export function BuyBox({ product, variants, presale, published }: Props) {
           type="button"
           onClick={add}
           disabled={!published || !v.available}
-          className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-ink px-6 text-[0.9375rem] font-medium text-paper shadow-[0_8px_24px_-12px_rgb(40_30_20/0.45)] transition-colors hover:bg-ink-soft disabled:bg-line-strong disabled:text-ink-soft disabled:shadow-none"
+          className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-ink px-8 text-base font-medium text-paper shadow-[0_8px_24px_-12px_rgb(40_30_20/0.45)] transition-colors hover:bg-ink-soft disabled:bg-line-strong disabled:text-ink-soft disabled:shadow-none"
         >
+          {published && v.available && <Bag size={20} />}
           {label}
         </button>
       </div>

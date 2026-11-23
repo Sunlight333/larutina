@@ -19,6 +19,25 @@ const images: FieldDef[] = [
   { kind: 'text', name: 'imageAlt', label: 'Texto alternativo', help: 'Qué se ve en la foto, para quien no la ve. Vacío si es decorativa.', max: 250 },
 ]
 
+// The icons a point of a "Lista de puntos" can carry. "auto" takes the
+// design's icons in order (diagnóstico, pasos, porqué, compatibilidad).
+export const FEATURE_ICONS = [
+  { value: 'auto', label: 'Automático, según el orden' },
+  { value: 'diagnostico', label: 'Diagnóstico (rostro)' },
+  { value: 'pasos', label: 'Pasos (capas)' },
+  { value: 'idea', label: 'Idea (lamparita)' },
+  { value: 'proteccion', label: 'Protección (escudo)' },
+  { value: 'activos', label: 'Activos (frasco)' },
+  { value: 'evaluacion', label: 'Evaluación (medalla)' },
+  { value: 'uso', label: 'Modo de uso (mano)' },
+  { value: 'manana', label: 'Mañana (sol)' },
+  { value: 'noche', label: 'Noche (luna)' },
+  { value: 'natural', label: 'Natural (hoja)' },
+  { value: 'hidratacion', label: 'Hidratación (gota)' },
+  { value: 'brillo', label: 'Brillo (destello)' },
+  { value: 'charla', label: 'Acompañamiento (globo de charla)' },
+]
+
 export const BLOCK_DEFS = {
   hero: {
     label: 'Portada (hero)',
@@ -60,8 +79,20 @@ export const BLOCK_DEFS = {
   },
   features: {
     label: 'Lista de puntos',
-    description: 'Propuestas de valor o puntos destacados, con título y texto cada uno.',
+    description: 'Propuestas de valor o puntos destacados, con título y texto cada uno. Cuatro estilos: franja con íconos, mañana y noche, ficha de producto o tarjetas.',
     fields: [
+      {
+        kind: 'select',
+        name: 'layout',
+        label: 'Estilo',
+        help: 'Franja: los puntos con su ícono, en una fila. Mañana y noche: los dos primeros puntos como fotos de mañana y de noche. Ficha: una foto con el producto señalado y los puntos al lado.',
+        options: [
+          { value: 'icons', label: 'Franja con íconos' },
+          { value: 'moments', label: 'Mañana y noche, con fotos' },
+          { value: 'showcase', label: 'Ficha de producto, con foto' },
+          { value: 'cards', label: 'Tarjetas' },
+        ],
+      },
       eyebrow,
       title(),
       text,
@@ -75,9 +106,13 @@ export const BLOCK_DEFS = {
         fields: [
           { kind: 'text', name: 'title', label: 'Título', required: true, max: 80 },
           { kind: 'textarea', name: 'text', label: 'Texto', rows: 2, max: 300 },
-          { kind: 'image', name: 'image', label: 'Imagen (opcional)' },
+          { kind: 'select', name: 'icon', label: 'Ícono', options: FEATURE_ICONS },
+          { kind: 'image', name: 'image', label: 'Imagen (opcional)', help: 'En "Mañana y noche" reemplaza la foto de ese momento.' },
         ],
       },
+      { kind: 'image', name: 'image', label: 'Foto del bloque (opcional)', help: 'Para el estilo "Ficha de producto". Vacía: la foto de la campaña.' },
+      { kind: 'text', name: 'imageAlt', label: 'Texto alternativo de la foto', max: 250 },
+      { kind: 'codes', name: 'productCodes', label: 'Producto señalado (código)', help: 'Para el estilo "Ficha de producto": el producto que se muestra junto a la foto. Si se archiva, deja de mostrarse solo.', max: 1 },
       ...cta(),
     ],
   },
@@ -231,7 +266,16 @@ type Cta = { ctaLabel: string; ctaHref: string }
 export type BlockDataMap = {
   hero: { eyebrow: string; title: string; subtitle: string; cta1Label: string; cta1Href: string; cta2Label: string; cta2Href: string; note: string; imageDesktop: string; imageMobile: string; imageAlt: string; focusDesktop: Focal; focusMobile: Focal }
   carousel: { eyebrow: string; title: string; slides: (ListRow & { imageDesktop: string; imageMobile: string; alt: string; text: string; href: string })[] }
-  features: { eyebrow: string; title: string; text: string; items: (ListRow & { title: string; text: string; image: string })[] } & Cta
+  features: {
+    layout: 'icons' | 'moments' | 'showcase' | 'cards'
+    eyebrow: string
+    title: string
+    text: string
+    items: (ListRow & { title: string; text: string; icon: string; image: string })[]
+    image: string
+    imageAlt: string
+    productCodes: string[]
+  } & Cta
   needs: { eyebrow: string; title: string; concernCodes: string[] } & Cta
   imageText: { eyebrow: string; title: string; body: string; image: string; imageAlt: string; imageSide: 'left' | 'right'; productCodes: string[] } & Cta
   diagnosis: { variant: 'preview' | 'dark'; eyebrow: string; title: string; text: string } & Cta

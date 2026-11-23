@@ -9,15 +9,18 @@ import { SignupForm } from '@/components/site/signup-form'
 import { joinWaitlist } from '@/app/(site)/actions'
 import { WAITLIST_CONSENT } from '@/lib/consent'
 import { WAITLIST_JOINED } from '@/lib/waitlist'
+import { lifestyleImage } from '@/lib/images'
 
 // G-25: "Próximamente" with the waitlist, shown for every route until launch.
-// The full logo leads, large and centred; with a waitlist image set in the
-// panel, the page splits in two with the image on the right.
+// The full logo leads, large and centred; from desktop the page splits in
+// two with the waitlist image of the panel on the right, or the campaign's.
 export async function WaitlistPage() {
   const s = await getSettings()
-  const image = s['copy.waitlistImage'] ? (await resolveImages(getDb(), [s['copy.waitlistImage']])).get(s['copy.waitlistImage']) : undefined
+  const own = s['copy.waitlistImage'] ? (await resolveImages(getDb(), [s['copy.waitlistImage']])).get(s['copy.waitlistImage']) : undefined
+  const campaign = lifestyleImage('hero-2-phone')
+  const image = own ?? { src: campaign.src, alt: '' }
   return (
-    <main id="contenido" className={`relative grid min-h-dvh overflow-hidden bg-paper ${image ? 'lg:grid-cols-2' : ''}`}>
+    <main id="contenido" className="relative grid min-h-dvh overflow-hidden bg-paper lg:grid-cols-2">
       {/* Soft terracotta sun behind the logo, from the emblem. */}
       <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 size-[46rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--color-accent-soft),transparent)]" />
       <section className="relative flex flex-col items-center justify-between gap-10 px-6 py-10 text-center md:py-14">
@@ -34,11 +37,11 @@ export async function WaitlistPage() {
         </div>
         <p className="text-sm text-ink-muted">© {new Date().getFullYear()} {s['brand.fullName']}</p>
       </section>
-      {image && (
-        <div className="relative hidden lg:block">
+      <div className="relative hidden p-4 lg:block">
+        <div className="shape-leaf relative size-full overflow-hidden bg-sand">
           <Image src={image.src} alt={image.alt ?? ''} fill priority sizes="50vw" className="object-cover" />
         </div>
-      )}
+      </div>
     </main>
   )
 }

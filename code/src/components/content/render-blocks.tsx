@@ -68,13 +68,17 @@ export async function PageView({ doc, slug, isHome, preview }: { doc: PageDoc; s
         </p>
       )}
       {showTitle && (
-        <header className="container-page pb-2 pt-12 md:pt-16">
-          <h1 className="max-w-3xl font-display text-display-lg text-balance">{fill(doc.title)}</h1>
+        <header className="mb-8 bg-shell md:mb-12">
+          <div className="container-page pb-12 pt-10 md:pb-16 md:pt-14">
+            <h1 className="max-w-3xl font-display text-display-lg text-balance">{fill(doc.title)}</h1>
+          </div>
         </header>
       )}
       {/* Every page keeps one h1, even a Home whose first block is not the hero. */}
       {isHome && !startsWithHero && <h1 className="sr-only">{fill(doc.title)}</h1>}
-      {blocks.map((b, i) => renderBlock(b, { pageSlug: slug, vars, headingLevel: i === 0 && b.type === 'hero' ? 1 : 2 }))}
+      {blocks.map((b, i) =>
+        renderBlock(b, { pageSlug: slug, vars, headingLevel: i === 0 && b.type === 'hero' ? 1 : 2, first: i === 0 && !preview && !showTitle, prev: blocks[i - 1]?.type ?? null, last: i === blocks.length - 1 }),
+      )}
       {faq && <JsonLd data={faq} />}
     </>
   )

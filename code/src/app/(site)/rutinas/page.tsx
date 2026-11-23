@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Moon, Sun } from '@/components/icons'
+import { IconBadge, Moon, Sun } from '@/components/icons'
 import { ButtonLink } from '@/components/ui/button'
 import { PageIntro } from '@/components/catalog/page-intro'
 import { ProductImage } from '@/components/catalog/product-image'
@@ -43,7 +43,7 @@ export default async function RoutinesPage() {
         </div>
       </PageIntro>
 
-      <div className="container-page space-y-16">
+      <div className="container-page mt-10 space-y-16 md:mt-12">
         {routines.map((r) => (
           <section key={r.code} id={r.code} aria-labelledby={`r-${r.code}`} className="scroll-mt-24 border-t border-line pt-10">
             <div className="max-w-2xl">
@@ -66,8 +66,8 @@ export default async function RoutinesPage() {
                 if (!steps.length) return null
                 return (
                   <div key={m}>
-                    <h3 className="flex items-center gap-2 text-sm font-medium">
-                      {m === 'AM' ? <Sun size={18} /> : <Moon size={18} />}
+                    <h3 className="flex items-center gap-3 font-display text-[1.35rem]">
+                      <IconBadge size="sm">{m === 'AM' ? <Sun size={18} /> : <Moon size={17} />}</IconBadge>
                       {m === 'AM' ? 'De mañana' : 'De noche'}
                     </h3>
                     <ol className="mt-4 space-y-3">
@@ -89,10 +89,10 @@ export default async function RoutinesPage() {
 
 function Step({ n, step, card }: { n: number; step: RoutineStepView; card?: Awaited<ReturnType<typeof toCards>>[number] }) {
   return (
-    <li className="flex gap-4 rounded-2xl border border-line p-4">
+    <li className="flex gap-4 rounded-[1.75rem] bg-shell p-4">
       {card && (
         <Link href={`/producto/${card.code}`} className="w-16 shrink-0" tabIndex={-1} aria-hidden="true">
-          <ProductImage image={card.image} alt="" step={card.routineStep} sizes="4rem" className="rounded-lg" placeholderSize="sm" />
+          <ProductImage image={card.image} alt="" step={card.routineStep} sizes="4rem" className="rounded-lg" />
         </Link>
       )}
       <div className="min-w-0">
