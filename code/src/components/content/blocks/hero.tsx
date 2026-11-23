@@ -35,7 +35,7 @@ export async function HeroBlock({ data, ctx }: { data: BlockDataMap['hero']; ctx
         </div>
       )}
       {data.note && (
-        <p className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8rem] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+        <p className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted">
           {data.note.split(/\s+·\s+/).map((part, i) => (
             <span key={i} className="inline-flex items-center gap-3">
               {i > 0 && <span aria-hidden="true" className="size-1.5 rotate-45 rounded-[1px] bg-accent" />}

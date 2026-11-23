@@ -21,28 +21,38 @@
   --color-sage-soft: oklch(0.94 0.022 150);
   --color-sage-ink: oklch(0.42 0.05 150);
 
-  /* Type from the logo: a soft high-contrast serif like the wordmark (Fraunces,
-     SOFT axis) and a geometric sans like its 'Beauty' line (Montserrat). */
-  --font-display: var(--font-fraunces), Georgia, serif;
-  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display: var(--font-newsreader), 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  --text-display-hero: clamp(2.9rem, 1.9rem + 3.9vw, 5.1rem);
-  --text-display-hero--line-height: 1.02;
-  --text-display-hero--letter-spacing: -0.022em;
-  --text-display-xl: clamp(3.25rem, 2.2rem + 4.6vw, 6rem);
+  /* Text sizes, one step larger than Tailwind's defaults for readability. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.7rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.8rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.9rem;
+
+  --text-display-hero: clamp(3rem, 1.85rem + 4.2vw, 5.3rem);
+  --text-display-hero--line-height: 0.98;
+  --text-display-hero--letter-spacing: -0.028em;
+  --text-display-xl: clamp(3.45rem, 2.35rem + 4.8vw, 6.35rem);
   --text-display-xl--line-height: 0.95;
   --text-display-xl--letter-spacing: -0.025em;
-  --text-display-lg: clamp(2.35rem, 1.75rem + 2.7vw, 4rem);
+  --text-display-lg: clamp(2.5rem, 1.85rem + 2.85vw, 4.25rem);
   --text-display-lg--line-height: 1.02;
   --text-display-lg--letter-spacing: -0.02em;
-  --text-display-md: clamp(1.8rem, 1.5rem + 1.35vw, 2.6rem);
+  --text-display-md: clamp(1.95rem, 1.6rem + 1.45vw, 2.8rem);
   --text-display-md--line-height: 1.08;
   --text-display-md--letter-spacing: -0.015em;
-  --text-display-sm: clamp(1.4rem, 1.27rem + 0.6vw, 1.8rem);
+  --text-display-sm: clamp(1.5rem, 1.35rem + 0.65vw, 1.95rem);
   --text-display-sm--line-height: 1.15;
   --text-display-sm--letter-spacing: -0.01em;
-  --text-lede: clamp(1.1rem, 1.04rem + 0.3vw, 1.25rem);
-  --text-lede--line-height: 1.65;
+  --text-lede: clamp(1.15rem, 1.08rem + 0.3vw, 1.3rem);
+  --text-lede--line-height: 1.6;
 
   --radius-card: 1.125rem;
   --radius-image: 0.875rem;
@@ -85,9 +95,6 @@
 
 @layer base {
   html {
-    /* Larger base: 17 px on phones, 18 px from desktop; every rem size follows. */
-    font-size: 106.25%;
-    @media (width >= 64rem) { font-size: 112.5%; }
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
@@ -96,8 +103,8 @@
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: var(--text-base);
     font-weight: 500;
-    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'kern';
@@ -110,6 +117,9 @@
     outline: 2px solid var(--color-ink);
     outline-offset: 3px;
     border-radius: 6px;
+  }
+  h1, h2, h3, h4 {
+    font-weight: 500;
   }
   summary {
     cursor: pointer;
@@ -128,11 +138,6 @@
   }
 }
 
-@layer base {
-  h1, h2, h3, h4 { font-weight: 500; }
-  .font-display { font-variation-settings: 'SOFT' 100, 'WONK' 0; }
-}
-
 @utility container-page {
   width: 100%;
   max-width: 76rem;
@@ -142,14 +147,12 @@
   @media (width >= 64rem) { padding-inline: 2rem; }
 }
 
-/* Small capitals letter-spaced like the logo's "Beauty". */
 @utility eyebrow {
-  font-size: 0.75rem;
-  line-height: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
   font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-accent-ink);
+  letter-spacing: 0.01em;
+  color: var(--color-ink-muted);
 }
 
 @utility tabular {

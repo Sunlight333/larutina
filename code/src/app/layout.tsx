@@ -1,24 +1,19 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, Montserrat } from 'next/font/google'
+import { Newsreader } from 'next/font/google'
 import { getSettings } from '@/server/settings'
 import { mediaUrl } from '@/server/media'
 import './globals.css'
 
-// Type from the logo (see globals.css). next/font downloads both at build time
-// and serves them from this site: no request to Google from the browser.
-const fraunces = Fraunces({
+// The site's display face, Newsreader, with its optical-size axis and the full
+// weight range (headings use 500). next/font downloads it at build time and
+// serves it from this site: no request to Google from the browser.
+const newsreader = Newsreader({
   subsets: ['latin'],
-  axes: ['opsz', 'SOFT', 'WONK'],
+  axes: ['opsz'],
   style: ['normal', 'italic'],
   display: 'swap',
-  variable: '--font-fraunces',
-})
-
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-  variable: '--font-montserrat',
+  variable: '--font-newsreader',
+  fallback: ['Georgia', 'serif'],
 })
 
 // Every page reads settings, the catalog or the session: rendered per request,
@@ -55,7 +50,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-AR" className={`${fraunces.variable} ${montserrat.variable}`}>
+    <html lang="es-AR" className={newsreader.variable}>
       <body className="flex min-h-dvh flex-col overflow-x-clip">{children}</body>
     </html>
   )

@@ -68,7 +68,7 @@ export function WaitlistModal({ children }: { children: ReactNode }) {
           {children}
         </div>
         <div className="relative mt-6 text-center">
-          <button type="button" onClick={close} className="text-[0.8rem] font-semibold uppercase tracking-[0.14em] text-ink-muted underline-offset-4 hover:text-ink hover:underline">
+          <button type="button" onClick={close} className="text-[0.875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted underline-offset-4 hover:text-ink hover:underline">
             Ahora no, ver el sitio
           </button>
         </div>

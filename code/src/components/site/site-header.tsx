@@ -33,7 +33,7 @@ function NavLink({ item }: { item: LinkItem }) {
   return (
     <Link
       href={item.href}
-      className="group/link relative whitespace-nowrap px-2.5 py-2 text-[0.8rem] font-semibold uppercase tracking-[0.16em] text-ink-soft transition-colors hover:text-ink xl:px-4"
+      className="group/link relative whitespace-nowrap px-2.5 py-2 text-[0.875rem] font-semibold uppercase tracking-[0.14em] text-ink-soft transition-colors hover:text-ink xl:px-4"
     >
       {item.label}
       <span
@@ -67,7 +67,7 @@ export async function SiteHeader() {
             {highlighted && (
               <Link
                 href={highlighted.href}
-                className={`hidden h-11 items-center justify-center rounded-full bg-ink text-[0.75rem] font-semibold uppercase tracking-[0.16em] text-paper shadow-[0_8px_20px_-10px_rgb(62_44_34/0.7)] transition-colors hover:bg-accent-ink lg:inline-flex ${EDGE}`}
+                className={`hidden h-11 items-center justify-center rounded-full bg-ink text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-paper shadow-[0_8px_20px_-10px_rgb(62_44_34/0.7)] transition-colors hover:bg-accent-ink lg:inline-flex ${EDGE}`}
               >
                 {highlighted.label}
               </Link>
