@@ -11,7 +11,8 @@ type Option = { id: string; label: string; detail?: string; href: string; group?
 // phones) with a combobox following the ARIA 1.2 pattern: suggestions load
 // while typing (debounced), arrows move through them, Enter opens one or
 // searches, Esc closes. Without JavaScript the button is a link to /buscar.
-export function SearchBox({ placeholder }: { placeholder: string }) {
+// `compact`: an icon button only (the header puts it in a capsule with the cart).
+export function SearchBox({ placeholder, compact = false }: { placeholder: string; compact?: boolean }) {
   const router = useRouter()
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -130,10 +131,14 @@ export function SearchBox({ placeholder }: { placeholder: string }) {
         }}
         aria-label="Buscar"
         aria-haspopup="dialog"
-        className="grid size-10 place-items-center rounded-full hover:bg-shell lg:flex lg:h-10 lg:w-56 lg:items-center lg:justify-start lg:gap-2 lg:rounded-full lg:border lg:border-line lg:px-4 lg:text-sm lg:text-ink-muted lg:hover:border-line-strong lg:hover:bg-paper xl:w-64"
+        className={
+          compact
+            ? 'grid size-10 place-items-center rounded-full hover:bg-shell'
+            : 'grid size-10 place-items-center rounded-full hover:bg-shell lg:flex lg:h-10 lg:w-56 lg:items-center lg:justify-start lg:gap-2 lg:rounded-full lg:border lg:border-line lg:px-4 lg:text-sm lg:text-ink-muted lg:hover:border-line-strong lg:hover:bg-paper xl:w-64'
+        }
       >
         <Search size={20} className="shrink-0" />
-        <span className="hidden truncate lg:inline">{placeholder}</span>
+        {!compact && <span className="hidden truncate lg:inline">{placeholder}</span>}
       </a>
 
       <dialog

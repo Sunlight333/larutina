@@ -29,7 +29,8 @@ COPY . .
 # Inlined at build time: absolute URLs for Open Graph images and metadata.
 ARG NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
-RUN npm run build
+# public/ may be empty, and an empty folder does not survive git or an upload.
+RUN mkdir -p public && npm run build
 
 FROM base AS run
 ENV NODE_ENV=production \
