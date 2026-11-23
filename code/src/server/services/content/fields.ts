@@ -120,7 +120,7 @@ export async function readFields(
 ): Promise<FieldData> {
   const out: FieldData = {}
   for (const f of fields) {
-    const name = `${prefix}.${f.name}`
+    const name = prefix ? `${prefix}.${f.name}` : f.name
     if (f.kind === 'list') {
       let ids: string[] = []
       try {
@@ -186,7 +186,7 @@ async function readScalar(form: FormData, f: ScalarField, name: string, readImag
  */
 export function validateFields(fields: FieldDef[], data: FieldData, prefix: string, errors: Record<string, string>, strict = true) {
   for (const f of fields) {
-    const name = `${prefix}.${f.name}`
+    const name = prefix ? `${prefix}.${f.name}` : f.name
     const v = data[f.name]
     if (f.kind === 'list') {
       const rows = (v as ListRow[]) ?? []
