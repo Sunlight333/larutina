@@ -11,7 +11,7 @@ import { readTemplateFields, type FormInput } from './template-form'
 
 const FIELDS = { commonName: 'nombre_comun', inciName: 'nombre_inci', description: 'descripcion' } as const
 
-export async function saveIngredient(db: Db, actor: Actor, code: string | null, input: FormInput & { concernIds?: string[] }): Promise<Result & { code?: string }> {
+export async function saveIngredient(db: Db, actor: Actor, code: string | null, input: FormInput, wantedConcerns: string[] = []): Promise<Result & { code?: string }> {
   const { values, errors } = readTemplateFields('Ingredientes', FIELDS, input)
   const familyId = (input.familyId ?? '').trim() || null
   if (familyId && !(await db.ingredientFamily.findUnique({ where: { id: familyId } }))) errors.familyId = 'La familia no existe.'
@@ -33,7 +33,7 @@ export async function saveIngredient(db: Db, actor: Actor, code: string | null, 
     if (twin) errors.inciName = `Ya hay un ingrediente con ese nombre INCI: "${twin.code}".`
   }
   const liveConcerns = new Set((await db.concern.findMany({ where: { deletedAt: null }, select: { id: true } })).map((c) => c.id))
-  const concernIds = [...new Set(input.concernIds ?? [])].filter((id) => liveConcerns.has(id)).sort()
+  const concernIds = [...new Set(wantedConcerns)].filter((id) => liveConcerns.has(id)).sort()
 
   if (current === null) {
     const newCode = (input.code ?? '').trim()

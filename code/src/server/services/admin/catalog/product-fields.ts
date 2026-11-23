@@ -82,10 +82,15 @@ export const SECTIONS: Record<DataField['section'], string> = {
   seo: 'SEO',
 }
 
+/** Required in the panel: what the template requires from the first sample (S1), and every closed list. */
+export const isRequired = (f: DataField) => f.kind === 'list' || templateField(f.key)?.req === 'S1'
+
 /** JSON-safe values of the "Datos" fields: the shape stored in Product.draft (ADM-02). */
 export type DataValues = Record<string, string | number | string[] | null>
 
-const templateField = (key: string | undefined): Field | undefined => (key ? SHEETS.Productos.fields.find((f) => f.key === key) : undefined)
+function templateField(key: string | undefined): Field | undefined {
+  return key ? SHEETS.Productos.fields.find((f) => f.key === key) : undefined
+}
 
 /** The column values of the "Datos" fields, in draft shape (dates as YYYY-MM-DD, decimals as numbers). */
 export function dataOf(p: Product): DataValues {

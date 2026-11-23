@@ -140,6 +140,8 @@ export async function createProduct(db: Db, actor: Actor, input: DataInput & { c
   const { values, errors, warnings } = parseData(input, null, lookups)
   const codeError = await newCodeProblem(code, (c) => db.product.findUnique({ where: { code: c }, select: { id: true } }))
   if (codeError) errors.code = codeError
+  // /admin/productos/nuevo is the creation page.
+  else if (code === 'nuevo') errors.code = 'Ese código está reservado.'
   const variantInput: VariantInput = { size: one(input.size), unit: one(input.unit), priceCents: one(input.priceCents), stock: one(input.stock), isMain: 'on' }
   const variant = parseVariant(variantInput, false)
   for (const [k, v] of Object.entries(variant.errors)) errors[k] ??= v
