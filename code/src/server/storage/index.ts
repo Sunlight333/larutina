@@ -21,7 +21,7 @@ export class LocalDiskStorage implements StorageProvider {
     return resolved
   }
 
-  // The content type is kept in MediaAsset; a disk file does not need it.
+  // The content type matters to object storage, not to a file on disk.
   async put(key: string, data: Buffer, _contentType?: string) {
     const file = this.file(key)
     await mkdir(path.dirname(file), { recursive: true })

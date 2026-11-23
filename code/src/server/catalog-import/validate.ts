@@ -18,8 +18,9 @@ import type {
   SynonymType,
   Unit,
 } from '@prisma/client'
-import { codeFromInci, inciCandidates, inciKey, splitInci } from './inci'
-import { LISTS, listLabels, lookup } from './lists'
+import { inciKey } from './inci'
+import { buildIngredientList, computeFlags, defaultFlags, FLAG_COLUMNS, fragranceMismatch, inciMatcher, type ProductFlags } from './ingredient-list'
+import { badBenefits, benefitsWarning, chipsProblems, headlineProblem, parseCell, promoProblem, type CellValue } from './rules'
 import { SHEETS, type Field, type SheetName, type SheetSpec } from './spec'
 import type { SheetRow, Workbook } from './workbook'
 
@@ -76,17 +77,7 @@ export type IngredientIn = {
 }
 export type ConflictIn = { a: string; b: string; severity: ConflictSeverity; note: string | null }
 
-export const FLAG_COLUMNS = {
-  sin_fragancia: 'fragranceFree',
-  sin_aceites_esenciales: 'essentialOilFree',
-  contiene_retinoide: 'containsRetinoid',
-  contiene_acido_exfoliante: 'containsExfoliatingAcid',
-  sin_alcohol: 'alcoholFree',
-  sin_parabenos: 'parabenFree',
-  sin_siliconas: 'siliconeFree',
-  sin_sulfatos: 'sulfateFree',
-} as const
-export type ProductFlags = Record<(typeof FLAG_COLUMNS)[keyof typeof FLAG_COLUMNS], boolean>
+export { FLAG_COLUMNS, type ProductFlags }
 
 export type ProductIn = {
   code: string
@@ -155,7 +146,8 @@ export type VariantIn = {
   heightCm: number | null
   widthCm: number | null
   lengthCm: number | null
-  costCents: number | null
+  /** Undefined when the file has no cost column (an export without cost, CAT-20): costs stay as they are. */
+  costCents: number | null | undefined
 }
 
 export type RoutineIn = {
@@ -209,10 +201,7 @@ export type ValidationResult = {
 
 // --------------------------------------------------------- reading values ----
 
-const CODE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const NUMBER_RE = /^-?\d+(?:[.,]\d+)?$/
-
-type Value = string | number | boolean | string[] | null
+type Value = CellValue
 type Row = { row: number; v: Record<string, Value> }
 
 class Context {
@@ -240,79 +229,12 @@ class Context {
   }
 }
 
-function parseNumber(raw: string): number | null {
-  const s = raw.replace(/\s/g, '')
-  if (!NUMBER_RE.test(s)) return null
-  return Number(s.replace(',', '.'))
-}
-
 function readValue(ctx: Context, sheet: string, rowNum: number, field: Field, raw: string): Value {
-  const bad = (message: string) => {
-    ctx.error(sheet, rowNum, field.key, message)
-    return null
-  }
-  switch (field.type) {
-    case 'text':
-      if (field.maxLength && raw.length > field.maxLength) return bad(`Tiene ${raw.length} caracteres; el máximo es ${field.maxLength}.`)
-      return raw
-    case 'code':
-    case 'ref':
-      if (!CODE_RE.test(raw)) return bad(`"${raw}" no es un código válido: solo minúsculas, números y guiones, sin espacios ni acentos.`)
-      return raw
-    case 'refs': {
-      const codes = splitList(raw, ';')
-      const wrong = codes.filter((c) => !CODE_RE.test(c))
-      if (wrong.length) return bad(`Códigos no válidos: ${wrong.map((w) => `"${w}"`).join(', ')}. Solo minúsculas, números y guiones, separados por punto y coma.`)
-      return codes
-    }
-    case 'texts':
-      return splitList(raw, ';')
-    case 'pipes':
-      return splitList(raw, '|')
-    case 'int':
-    case 'number':
-    case 'money': {
-      // "18.900" is how a price is written in Argentina, but in a cell it reads
-      // as 18.9: amounts with a thousands separator are rejected, not guessed.
-      if (field.type === 'money' && /^\d{1,3}([.,]\d{3})+$/.test(raw.replace(/\s/g, '')))
-        return bad(`"${raw}": cargá el precio sin puntos ni símbolos (por ejemplo 18900).`)
-      const n = parseNumber(raw)
-      if (n === null) return bad(`"${raw}" no es un número.`)
-      if (field.type === 'int' && !Number.isInteger(n)) return bad(`"${raw}" tiene que ser un número entero.`)
-      if (field.type === 'money' && !/^-?\d+(?:[.,]\d{1,2})?$/.test(raw.replace(/\s/g, ''))) return bad(`"${raw}" tiene más de dos decimales.`)
-      if (field.min !== undefined && n < field.min) return bad(`${raw} es menor que el mínimo (${field.min}).`)
-      if (field.max !== undefined && n > field.max) return bad(`${raw} es mayor que el máximo (${field.max}).`)
-      return n
-    }
-    case 'yesno': {
-      const v = lookup(LISTS.si_no, raw)
-      if (!v) return bad(`"${raw}": tiene que ser Sí o No.`)
-      return v === 'true'
-    }
-    case 'list': {
-      const def = LISTS[field.list!]
-      const v = lookup(def, raw)
-      if (!v) return bad(`"${raw}" no está en la lista. Valores posibles: ${listLabels(def)}.`)
-      return v
-    }
-    case 'multi': {
-      const def = LISTS[field.list!]
-      const values: string[] = []
-      for (const part of splitList(raw, ';')) {
-        const v = lookup(def, part)
-        if (!v) return bad(`"${part}" no está en la lista. Valores posibles: ${listLabels(def)}.`)
-        values.push(v)
-      }
-      return values
-    }
-  }
+  const parsed = parseCell(field, raw)
+  if (parsed.ok) return parsed.value
+  ctx.error(sheet, rowNum, field.key, parsed.message)
+  return null
 }
-
-const splitList = (raw: string, sep: string) =>
-  raw
-    .split(sep)
-    .map((s) => s.trim())
-    .filter(Boolean)
 
 /** Reads one sheet: column checks, then every row's values with type and requirement checks. */
 function readSheet(ctx: Context, wb: Workbook, spec: SheetSpec): Row[] {
@@ -331,6 +253,7 @@ function readSheet(ctx: Context, wb: Workbook, spec: SheetSpec): Row[] {
     if (present.has(field.key)) return true
     if (field.req === 'S1' || field.req === 'row' || (field.req === 'S5' && ctx.stage === 'S5'))
       ctx.error(spec.name, 1, field.key, 'Falta la columna. Usá la plantilla v1.1 sin borrar ni renombrar columnas.')
+    else if (field.keepWhenAbsent) ctx.info(spec.name, 1, field.key, 'El archivo no tiene esta columna: los valores cargados no cambian.')
     else if (sheet.rows.length) ctx.warn(spec.name, 1, field.key, 'Falta la columna; se toma como vacía.')
     return false
   })
@@ -381,9 +304,17 @@ function unique(ctx: Context, sheet: string, rows: Row[], key: (r: Row) => strin
 
 const sameStep = (a: RoutineStepType, b: RoutineStepType) => a === b
 
-export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting(), stage: Stage = 'S1'): ValidationResult {
+export type ValidateOptions = {
+  /** For a role without access to cost (CAT-20): the cost column is ignored and costs stay as they are. */
+  ignoreCost?: boolean
+}
+
+export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting(), stage: Stage = 'S1', options: ValidateOptions = {}): ValidationResult {
   const ctx = new Context(stage)
   const read = (name: SheetName) => readSheet(ctx, wb, SHEETS[name])
+  const hasCost = !options.ignoreCost && (wb.get('Variantes')?.headers.includes('costo_ars') ?? false)
+  if (options.ignoreCost && wb.get('Variantes')?.headers.includes('costo_ars'))
+    ctx.info('Variantes', 1, 'costo_ars', 'Tu rol no carga costos: la columna se ignora y los costos cargados no cambian.')
 
   // ---- taxonomies
   const brandRows = unique(ctx, 'Marcas', read('Marcas'), (r) => str(r, 'codigo_marca'), 'codigo_marca', 'Código de marca')
@@ -553,13 +484,13 @@ export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting
     }
 
     const headline = str(r, 'frase_principal')
-    if (headline && headline.split(/\s+/).length > 8) ctx.error(S, r.row, 'frase_principal', `Tiene ${headline.split(/\s+/).length} palabras; el máximo es 8.`)
+    const headlineError = headlineProblem(headline)
+    if (headlineError) ctx.error(S, r.row, 'frase_principal', headlineError)
     const chips = arr(r, 'chips')
-    if (chips.length > 3) ctx.error(S, r.row, 'chips', `Tiene ${chips.length} chips; el máximo es 3.`)
-    for (const c of chips) if (c.length > 20) ctx.error(S, r.row, 'chips', `"${c}" tiene ${c.length} caracteres; el máximo es 20.`)
+    for (const message of chipsProblems(chips)) ctx.error(S, r.row, 'chips', message)
     const benefits = arr(r, 'beneficios')
-    const badBenefits = benefits.filter((b) => !/^[^:]{2,}:\s*\S/.test(b))
-    if (badBenefits.length) ctx.warn(S, r.row, 'beneficios', `Formato esperado "VERBO: texto": revisá ${badBenefits.map((b) => `"${b.slice(0, 40)}"`).join(', ')}.`)
+    const wrongBenefits = badBenefits(benefits)
+    if (wrongBenefits.length) ctx.warn(S, r.row, 'beneficios', benefitsWarning(wrongBenefits))
 
     const relations: ProductIn['relations'] = []
     for (const [field, kind] of [
@@ -621,16 +552,7 @@ export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting
       seoTitle: str(r, 'seo_titulo'),
       seoDescription: str(r, 'seo_descripcion'),
       fragranceFreeDeclared: bool(r, 'sin_fragancia'),
-      flags: {
-        fragranceFree: true,
-        essentialOilFree: true,
-        containsRetinoid: false,
-        containsExfoliatingAcid: false,
-        alcoholFree: true,
-        parabenFree: true,
-        siliconeFree: true,
-        sulfateFree: true,
-      },
+      flags: defaultFlags(),
       relations,
       ingredients: [],
       concerns: [],
@@ -649,7 +571,8 @@ export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting
     if (!mustExist(productCodes, S, r.row, 'codigo_producto', productCode, 'El producto')) continue
     const price = num(r, 'precio_ars')
     const promo = num(r, 'precio_promocional_ars')
-    if (price !== null && promo !== null && promo >= price) ctx.error(S, r.row, 'precio_promocional_ars', `El precio promocional (${promo}) tiene que ser menor al precio (${price}).`)
+    const promoError = promoProblem(price, promo)
+    if (promoError) ctx.error(S, r.row, 'precio_promocional_ars', promoError)
     const sku = reqStr(r, 'sku')
     const v: VariantIn = {
       sku,
@@ -666,7 +589,7 @@ export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting
       heightCm: num(r, 'alto_cm'),
       widthCm: num(r, 'ancho_cm'),
       lengthCm: num(r, 'largo_cm'),
-      costCents: num(r, 'costo_ars') === null ? null : Math.round(num(r, 'costo_ars')! * 100),
+      costCents: !hasCost ? undefined : num(r, 'costo_ars') === null ? null : Math.round(num(r, 'costo_ars')! * 100),
     }
     const before = existing.variants.get(sku)
     if (before && before.productCode !== v.productCode)
@@ -711,99 +634,40 @@ export function validateCatalog(wb: Workbook, existing: Existing = emptyExisting
     piByProduct.set(p!, list)
   }
 
-  const createdFromInci = new Map<string, IngredientIn>()
   const usedCodes = new Set(known.ingredients)
-  const matchInci = (name: string): string => {
-    for (const key of inciCandidates(name)) {
-      const code = byInci.get(key)
-      if (code) return code
-    }
-    const key = inciKey(name)
-    let code = codeFromInci(name)
-    for (let n = 2; usedCodes.has(code); n++) code = `${codeFromInci(name)}-${n}`
-    usedCodes.add(code)
-    const ing: IngredientIn = {
-      code,
-      commonName: name,
-      inciName: name,
-      inciKey: key,
-      isKeyActive: false,
-      isIrritant: false,
-      description: null,
-      concernCodes: [],
-      familyCode: null,
-      fromInci: true,
-    }
-    createdFromInci.set(code, ing)
-    byInci.set(key, code)
-    ingredientFamily.set(code, null)
-    return code
-  }
+  const matcher = inciMatcher(byInci, usedCodes)
 
   for (const p of products) {
     const row = productRows.find((r) => reqStr(r, 'codigo_producto') === p.code)!.row
-    const sheetRows = piByProduct.get(p.code) ?? []
-    const list: ProductIn['ingredients'] = []
-    const position = new Map<string, number>()
-    if (p.inciText) {
-      const names = splitInci(p.inciText)
-      for (const name of names) {
-        const code = matchInci(name)
-        if (position.has(code)) {
-          ctx.warn('Productos', row, 'inci', `"${name}" aparece dos veces en la lista INCI (o dos nombres son el mismo ingrediente); se toma la primera posición.`)
-          continue
-        }
-        position.set(code, list.length)
-        list.push({ code, inciOrder: list.length + 1, isStar: false, concentration: null })
-      }
-      for (const r of sheetRows) {
-        const code = reqStr(r, 'codigo_ingrediente')
-        const at = position.get(code)
-        if (at === undefined) {
-          ctx.warn('Prod_Ingredientes', r.row, 'codigo_ingrediente', `"${code}" no figura en la lista INCI del producto "${p.code}"; se agrega al final.`)
-          position.set(code, list.length)
-          list.push({ code, inciOrder: list.length + 1, isStar: bool(r, 'es_activo_clave') ?? false, concentration: str(r, 'concentracion') })
-          continue
-        }
-        const item = list[at]!
-        item.isStar = bool(r, 'es_activo_clave') ?? false
-        item.concentration = str(r, 'concentracion')
-      }
-    } else {
-      const sorted = [...sheetRows].sort((a, b) => (num(a, 'orden_inci') ?? 0) - (num(b, 'orden_inci') ?? 0))
-      for (const r of sorted) {
-        const code = reqStr(r, 'codigo_ingrediente')
-        if (position.has(code)) {
-          ctx.error('Prod_Ingredientes', r.row, 'codigo_ingrediente', `El ingrediente ya está cargado para "${p.code}".`)
-          continue
-        }
-        position.set(code, list.length)
-        list.push({ code, inciOrder: num(r, 'orden_inci') ?? list.length + 1, isStar: bool(r, 'es_activo_clave') ?? false, concentration: str(r, 'concentracion') })
-      }
-    }
+    const highlights = (piByProduct.get(p.code) ?? []).map((r) => ({
+      code: reqStr(r, 'codigo_ingrediente'),
+      isStar: bool(r, 'es_activo_clave') ?? false,
+      concentration: str(r, 'concentracion'),
+      inciOrder: num(r, 'orden_inci'),
+      source: r,
+    }))
+    const list = buildIngredientList(p.inciText, highlights, matcher.match, (issue) => {
+      if (issue.kind === 'repeated-in-inci')
+        ctx.warn('Productos', row, 'inci', `"${issue.name}" aparece dos veces en la lista INCI (o dos nombres son el mismo ingrediente); se toma la primera posición.`)
+      else if (issue.kind === 'not-in-inci')
+        ctx.warn('Prod_Ingredientes', issue.item.source.row, 'codigo_ingrediente', `"${issue.item.code}" no figura en la lista INCI del producto "${p.code}"; se agrega al final.`)
+      else ctx.error('Prod_Ingredientes', issue.item.source.row, 'codigo_ingrediente', `El ingrediente ya está cargado para "${p.code}".`)
+    })
     p.ingredients = list
 
     // Flags computed from the families of the ingredients (CAT-08).
-    for (const { code } of list) {
-      const fam = ingredientFamily.get(code)
-      if (!fam) continue
-      for (const flag of familyComputes.get(fam) ?? []) {
-        const column = FLAG_COLUMNS[flag as keyof typeof FLAG_COLUMNS]
-        if (column) p.flags[column] = flag.startsWith('contiene_')
-      }
-    }
-    if (p.fragranceFreeDeclared !== null && p.fragranceFreeDeclared !== p.flags.fragranceFree) {
-      ctx.warn(
-        'Productos',
-        row,
-        'sin_fragancia',
-        p.flags.fragranceFree
-          ? 'Cargado "No", pero ningún ingrediente del INCI es de la familia fragancia o aceite esencial. Se publica lo calculado: revisá el INCI o las familias.'
-          : 'Cargado "Sí", pero el INCI tiene un ingrediente de la familia fragancia o aceite esencial. Se publica lo calculado: "No".',
-      )
-    }
+    p.flags = computeFlags(
+      list.map((i) => i.code),
+      (code) => ingredientFamily.get(code),
+      (fam) => familyComputes.get(fam),
+    )
+    const mismatch = fragranceMismatch(p.fragranceFreeDeclared, p.flags.fragranceFree)
+    if (mismatch) ctx.warn('Productos', row, 'sin_fragancia', mismatch)
     if (p.type === 'PRODUCT' && list.length === 0) ctx.countMissing('Productos', 'inci (o Prod_Ingredientes)')
   }
+  const createdFromInci = new Map<string, IngredientIn>(
+    [...matcher.created.values()].map((i) => [i.code, { ...i, isKeyActive: false, isIrritant: false, description: null, concernCodes: [], familyCode: null, fromInci: true }]),
+  )
   for (const ing of createdFromInci.values()) ctx.info('Ingredientes', undefined, ing.code, `Ingrediente nuevo desde una lista INCI: "${ing.inciName}". Queda para revisar.`)
 
   // Concerns and skin types per product.
