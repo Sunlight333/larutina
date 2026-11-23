@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import type { BlockDataMap } from '@/server/services/content/blocks'
 import type { Focal } from '@/server/services/content/fields'
 import { CtaButton, lookupImages, type BlockContext } from './shared'
+import { LogoMark } from '@/components/site/logo'
 
 // CMS-01, H-01: each banner has a desktop and a mobile image. On phones the
 // photo sits above the text (never text over a face) with its own 4:5 crop;
@@ -32,10 +33,21 @@ export async function HeroBlock({ data, ctx }: { data: BlockDataMap['hero']; ctx
     </div>
   )
 
+  // No photo yet: the brand's emblem carries the band, large, over a soft
+  // terracotta sun, so the Home reads as finished before the shoot arrives.
   if (!desktop || !mobile) {
     return (
-      <section className="bg-shell">
-        <div className="container-page py-16 md:py-24">{text}</div>
+      <section className="relative overflow-hidden bg-shell">
+        <div className="container-page grid items-center gap-10 py-14 md:grid-cols-[1.1fr_1fr] md:py-20 lg:py-24">
+          {text}
+          <div aria-hidden="true" className="relative mx-auto grid w-full max-w-[17rem] place-items-center md:max-w-[26rem] lg:max-w-[30rem]">
+            <span className="absolute inset-[-12%] rounded-full bg-[radial-gradient(closest-side,var(--color-accent-soft),transparent)]" />
+            <span className="absolute inset-[4%] rounded-full border border-line-strong/60" />
+            <span className="relative grid aspect-square w-[84%] place-items-center rounded-full bg-paper p-[4%] shadow-[0_40px_80px_-40px_rgb(62_44_34/0.55)] ring-1 ring-line">
+              <LogoMark className="size-full" priority sizes="(min-width: 1024px) 420px, (min-width: 768px) 360px, 240px" />
+            </span>
+          </div>
+        </div>
       </section>
     )
   }

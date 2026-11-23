@@ -48,7 +48,7 @@ export async function SiteHeader() {
         {/* A thin terracotta rule under the bar, echoing the line under the wordmark. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent" />
 
-        <div className="container-page grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2 transition-[height] duration-300 lg:h-[5.5rem] group-data-[scrolled=true]/header:lg:h-[4.25rem]">
+        <div className="container-page grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2 transition-[height] duration-300 lg:h-[6.5rem] group-data-[scrolled=true]/header:lg:h-[4.25rem]">
           {/* Left: mobile menu + search, or search + first half of the menu. */}
           <div className="flex min-w-0 items-center gap-1 lg:gap-2">
             <div className="lg:hidden">
@@ -68,9 +68,9 @@ export async function SiteHeader() {
               className={[
                 'grid place-items-center rounded-full bg-paper ring-1 ring-line',
                 'shadow-[0_14px_34px_-16px_rgb(62_44_34/0.55)] transition-all duration-300 ease-out',
-                // Mobile: 76 px medallion hanging 14 px under a 64 px bar.
+                // Mobile: 76 px medallion hanging 16 px under a 64 px bar.
                 'mt-1 size-[4.75rem] p-1',
-                // Desktop: 124 px medallion hanging 36 px under an 88 px bar.
+                // Desktop: 124 px medallion hanging 26 px under a 104 px bar.
                 'lg:mt-1.5 lg:size-[7.75rem] lg:p-1.5',
                 // Scrolled: it settles into the bar.
                 'group-data-[scrolled=true]/header:mt-1.5 group-data-[scrolled=true]/header:size-[3.25rem] group-data-[scrolled=true]/header:p-0.5 group-data-[scrolled=true]/header:shadow-none group-data-[scrolled=true]/header:ring-0',
