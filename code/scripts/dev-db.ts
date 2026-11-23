@@ -16,7 +16,8 @@ import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 
-export const DEV_PORT = 54329
+// DEV_PG_PORT runs a second local server, e.g. for another checkout.
+export const DEV_PORT = Number(process.env.DEV_PG_PORT) || 54329
 export const devUrl = (port = DEV_PORT, database = 'larutina') => `postgresql://postgres:postgres@localhost:${port}/${database}`
 
 function pgCtl(): string | null {
