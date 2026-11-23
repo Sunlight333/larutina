@@ -67,7 +67,7 @@ export async function SiteHeader() {
             {highlighted && (
               <Link
                 href={highlighted.href}
-                className={`hidden h-11 items-center justify-center rounded-full bg-ink text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-paper shadow-[0_8px_20px_-10px_rgb(62_44_34/0.7)] transition-colors hover:bg-accent-ink lg:inline-flex ${EDGE}`}
+                className={`hidden h-11 items-center justify-center rounded-full bg-ink text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-paper shadow-[0_8px_20px_-10px_rgb(40_30_20/0.7)] transition-colors hover:bg-accent-ink lg:inline-flex ${EDGE}`}
               >
                 {highlighted.label}
               </Link>
@@ -84,7 +84,7 @@ export async function SiteHeader() {
             <span
               className={[
                 'grid place-items-center rounded-full bg-paper ring-1 ring-line',
-                'shadow-[0_14px_34px_-16px_rgb(62_44_34/0.55)] transition-all duration-300 ease-out',
+                'shadow-[0_14px_34px_-16px_rgb(40_30_20/0.55)] transition-all duration-300 ease-out',
                 // Mobile: 76 px medallion hanging 16 px under a 64 px bar.
                 'mt-1 size-[4.75rem] p-1',
                 // Desktop: 124 px medallion hanging 26 px under a 104 px bar.

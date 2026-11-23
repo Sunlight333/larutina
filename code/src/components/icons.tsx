@@ -270,7 +270,11 @@ export const Sunscreen = (p: IconProps) => (
 )
 
 const STEP_ICONS = {
+  MAKEUP_REMOVER: Cleanser,
   CLEANSER: Cleanser,
+  ESSENCE: Toner,
+  EYE_CONTOUR: Serum,
+  MASK: Moisturizer,
   TONER: Toner,
   EXFOLIANT: Exfoliant,
   SERUM: Serum,
@@ -329,6 +333,11 @@ const CONCERN_ICONS: Record<string, (p: IconProps) => React.ReactElement> = {
   sensibilidad: Leaf,
   lineas: Lines,
   poros: Pores,
+  // The catalog's need codes.
+  'rojeces-sensibilidad': Leaf,
+  'lineas-firmeza': Lines,
+  'poros-brillo': Pores,
+  luminosidad: Sparkle,
 }
 
 export function ConcernIcon({ slug, ...p }: IconProps & { slug: string }) {
