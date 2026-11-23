@@ -1,5 +1,5 @@
 {
-  "name": "larutina-demo",
+  "name": "larutina",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -15,30 +15,31 @@
     "routines": "tsx tests/unit/print-routines.ts",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "images:generate": "node --env-file=.env scripts/images/generate.mjs",
-    "images": "node scripts/process-images.mjs",
     "postinstall": "prisma generate",
     "db:dev": "tsx scripts/dev-db.ts",
     "db:reset": "prisma migrate reset --force --skip-seed",
-    "catalog:import": "tsx --env-file=.env scripts/catalog-import.ts"
+    "catalog:import": "tsx --env-file=.env scripts/catalog-import.ts",
+    "admin": "tsx --env-file-if-exists=.env scripts/admin.ts"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
     "exceljs": "4.4.0",
     "jszip": "3.10.2",
     "next": "16.3.6",
+    "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "sharp": "0.35.4",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.13.6",
+    "@types/qrcode": "1.5.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "embedded-postgres": "17.11.0-beta.19",
     "prisma": "6.19.3",
-    "sharp": "0.35.4",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "typescript": "5.9.3",

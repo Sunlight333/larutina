@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { decodeAnswers, encodeAnswers } from '../../src/lib/diagnosis/answers'
 import { diagnose } from '../../src/lib/diagnosis/engine'
 import { questions } from '../../src/lib/diagnosis/questions'
-import { toEngineConflicts, toEngineProduct } from '../../src/server/services/catalog'
-import { sampleCatalog } from '../../src/server/services/sample-catalog'
+import { toEngineConflicts, toEngineProduct } from '../../src/demo/catalog'
+import { sampleCatalog } from '../../src/demo/sample-catalog'
 import { engineConflicts, engineProducts } from './fixtures'
 
 function* everyAnswerSet() {

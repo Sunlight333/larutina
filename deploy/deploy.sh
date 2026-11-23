@@ -138,9 +138,11 @@ ensure_secrets() {
   fi
 }
 
-# systemd units from deploy/systemd: installed or updated, timers enabled.
+# systemd units from deploy/systemd: installed or updated, timers enabled;
+# and the larutina-admin command (panel users).
 install_units() {
   local f changed=0
+  ln -sf "$APP_DIR/deploy/admin.sh" /usr/local/bin/larutina-admin
   for f in "$APP_DIR"/deploy/systemd/*.service "$APP_DIR"/deploy/systemd/*.timer; do
     if ! cmp -s "$f" "/etc/systemd/system/$(basename "$f")"; then
       install -m 0644 "$f" /etc/systemd/system/

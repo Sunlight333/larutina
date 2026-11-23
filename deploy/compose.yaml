@@ -27,6 +27,7 @@ services:
       - db
     volumes:
       - next-cache:/app/.next/cache
+      - media:/app/storage
     logging: *logging
 
   # Reachable only from the other containers; no port is published.
@@ -84,6 +85,7 @@ services:
 
 volumes:
   next-cache:
+  media:
   db-data:
   caddy-data:
   caddy-config:

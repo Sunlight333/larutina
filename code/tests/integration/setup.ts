@@ -7,7 +7,8 @@ import path from 'node:path'
 import type { TestProject } from 'vitest/node'
 import { devPostgres } from '../../scripts/dev-db'
 
-const PORT = 54330
+// TEST_PG_PORT lets several checkouts run their tests at the same time.
+const PORT = Number(process.env.TEST_PG_PORT) || 54330
 const DATABASE = 'larutina_test'
 
 declare module 'vitest' {
@@ -17,7 +18,7 @@ declare module 'vitest' {
 }
 
 export default async function setup(project: TestProject) {
-  const pg = devPostgres(path.join(os.tmpdir(), 'larutina-test-pg'), PORT, true)
+  const pg = devPostgres(path.join(os.tmpdir(), `larutina-test-pg-${PORT}`), PORT, true)
   await pg.start('postgres')
   const client = await pg.client('postgres')
   await client.query(`DROP DATABASE IF EXISTS "${DATABASE}" WITH (FORCE)`)

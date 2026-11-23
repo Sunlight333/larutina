@@ -2,7 +2,7 @@
 # Build context is this folder.
 #   target run      the app (Next.js standalone)
 #   target migrate  one-shot `prisma migrate deploy`, run by deploy.sh before
-#                   the new app container goes live
+#                   the new app container goes live; also runs scripts/ (admin)
 
 FROM node:24-bookworm-slim AS base
 RUN apt-get update \
@@ -18,8 +18,9 @@ COPY package.json package-lock.json ./
 COPY prisma/schema.prisma ./prisma/schema.prisma
 RUN npm ci --no-audit --no-fund
 
+# Also the tools image: scripts/admin.ts runs here (deploy/admin.sh).
 FROM deps AS migrate
-COPY prisma ./prisma
+COPY . .
 USER node
 CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
 
@@ -33,14 +34,15 @@ RUN npm run build
 FROM base AS run
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    STORAGE_DIR=/app/storage
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
-# Image optimizer cache; a named volume keeps it across deploys.
-RUN mkdir -p .next/cache && chown node:node .next/cache
+# Image optimizer cache and uploaded media; named volumes keep both across deploys.
+RUN mkdir -p .next/cache storage && chown node:node .next/cache storage
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --start-interval=2s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:3000/api/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "server.js"]

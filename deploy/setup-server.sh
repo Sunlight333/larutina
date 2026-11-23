@@ -43,6 +43,7 @@ if [ ! -d "$APP_DIR/.git" ]; then
 fi
 chmod +x "$APP_DIR"/deploy/*.sh
 ln -sf "$APP_DIR/deploy/deploy.sh" /usr/local/bin/larutina-deploy
+ln -sf "$APP_DIR/deploy/admin.sh" /usr/local/bin/larutina-admin
 
 # Server-local settings (git-ignored).
 if [ ! -f "$APP_DIR/deploy/.env" ]; then

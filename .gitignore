@@ -14,6 +14,7 @@
 
 # local tooling
 /code/.pgdata/
+/code/storage/
 /code/.vercel
 npm-debug.log*
 .DS_Store
