@@ -36,37 +36,39 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <>
-      <header className="container-page pb-8 pt-8 sm:pt-12">
-        <form role="search" action="/buscar" method="get" className="flex max-w-2xl items-center gap-2 rounded-full border border-line-strong bg-paper py-1.5 pl-5 pr-1.5 focus-within:border-ink">
-          <Search size={20} className="shrink-0 text-ink-muted" />
-          <label htmlFor="buscar-q" className="sr-only">
-            Buscar
-          </label>
-          <input id="buscar-q" name="q" type="search" defaultValue={q} placeholder={s['copy.searchPlaceholder']} maxLength={100} className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-ink-muted" />
-          <button type="submit" className="h-10 shrink-0 rounded-full bg-ink px-5 text-sm font-medium text-paper hover:bg-ink-soft">
-            Buscar
-          </button>
-        </form>
+      <header className="mb-8 bg-shell">
+        <div className="container-page pb-12 pt-10 md:pb-14 md:pt-12">
+          <form role="search" action="/buscar" method="get" className="flex max-w-2xl items-center gap-2 rounded-full border border-line-strong bg-paper py-1.5 pl-5 pr-1.5 focus-within:border-ink">
+            <Search size={20} className="shrink-0 text-ink-muted" />
+            <label htmlFor="buscar-q" className="sr-only">
+              Buscar
+            </label>
+            <input id="buscar-q" name="q" type="search" defaultValue={q} placeholder={s['copy.searchPlaceholder']} maxLength={100} className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-ink-muted" />
+            <button type="submit" className="h-10 shrink-0 rounded-full bg-ink px-5 text-sm font-medium text-paper hover:bg-ink-soft">
+              Buscar
+            </button>
+          </form>
 
-        {q && (
-          <h1 className="mt-8 font-display text-display-md text-balance">
-            Resultados para “{q}”
-            {result && <span className="mt-2 block font-sans text-base text-ink-soft">{plural(result.total, 'producto', 'productos')}</span>}
-          </h1>
-        )}
-        {!q && <h1 className="mt-8 font-display text-display-md">¿Qué estás buscando?</h1>}
+          {q && (
+            <h1 className="mt-8 font-display text-display-lg text-balance">
+              Resultados para “{q}”
+              {result && <span className="mt-2 block font-sans text-base text-ink-soft">{plural(result.total, 'producto', 'productos')}</span>}
+            </h1>
+          )}
+          {!q && <h1 className="mt-8 font-display text-display-lg">¿Qué estás buscando?</h1>}
 
-        {found?.concern && (
-          <Link href={`/necesidad/${found.concern.code}`} className="mt-5 inline-flex items-center gap-2 rounded-full bg-shell px-5 py-2.5 text-sm font-medium hover:bg-sand">
-            Ver todo para {found.concern.name}
-            <ArrowRight size={16} />
-          </Link>
-        )}
+          {found?.concern && (
+            <Link href={`/necesidad/${found.concern.code}`} className="mt-5 inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2.5 text-sm font-medium ring-1 ring-line hover:ring-ink/40">
+              Ver todo para {found.concern.name}
+              <ArrowRight size={16} />
+            </Link>
+          )}
+        </div>
       </header>
 
       <section className="container-page" aria-label="Resultados">
         {q && !result && (
-          <div className="rounded-[var(--radius-card)] bg-shell px-6 py-12 text-center">
+          <div className="rounded-[2rem] bg-shell px-6 py-14 text-center">
             <p className="mx-auto max-w-xl text-lede text-ink-soft">
               No encontramos nada con “{q}”. Probá con otra palabra, o hacé el diagnóstico y te armamos la rutina.
             </p>

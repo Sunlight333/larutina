@@ -41,8 +41,8 @@ export function CartView({ whatsapp, paymentLine }: { whatsapp: string | null; p
 
   if (!lines.length) {
     return (
-      <div className="rounded-[var(--radius-card)] bg-shell px-6 py-14 text-center">
-        <p className="text-lede">Tu carrito está vacío.</p>
+      <div className="rounded-[2rem] bg-shell px-6 py-16 text-center">
+        <p className="font-display text-display-sm">Tu carrito está vacío.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/productos">Ver productos</ButtonLink>
           <ButtonLink href="/diagnostico" variant="secondary">
@@ -82,13 +82,13 @@ export function CartView({ whatsapp, paymentLine }: { whatsapp: string | null; p
             const promo = it.chargedCents < it.priceCents
             return (
               <li key={l.sku} className="flex gap-4 py-5">
-                <Link href={`/producto/${it.productCode}`} className="w-20 shrink-0 sm:w-24" tabIndex={-1} aria-hidden="true">
+                <Link href={`/producto/${it.productCode}`} className="w-20 shrink-0 overflow-hidden rounded-[1rem] sm:w-24" tabIndex={-1} aria-hidden="true">
                   <ProductImage image={it.image} alt="" step={it.routineStep} sizes="6rem" className="rounded-lg" />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs uppercase tracking-wide text-ink-muted">{it.brand}</p>
-                    <Link href={`/producto/${it.productCode}`} className="mt-0.5 block leading-snug hover:underline hover:underline-offset-2">
+                    <Link href={`/producto/${it.productCode}`} className="mt-0.5 block font-display text-[1.2rem] leading-snug hover:underline hover:decoration-line-strong hover:underline-offset-4">
                       {it.name}
                     </Link>
                     <p className="mt-1 text-sm text-ink-soft">
@@ -129,7 +129,7 @@ export function CartView({ whatsapp, paymentLine }: { whatsapp: string | null; p
         </ul>
       </div>
 
-      <aside className="h-fit rounded-[var(--radius-card)] bg-shell p-6 lg:sticky lg:top-24" aria-label="Resumen">
+      <aside className="h-fit rounded-[2rem] bg-shell p-6 sm:p-8 lg:sticky lg:top-24" aria-label="Resumen">
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
             <dt>Subtotal</dt>

@@ -18,7 +18,7 @@ export default async function CartPage() {
   return (
     <>
       <PageIntro title="Tu carrito" />
-      <section className="container-page" aria-label="Productos en tu carrito">
+      <section className="container-page mt-10 md:mt-12" aria-label="Productos en tu carrito">
         <CartView whatsapp={whatsapp} paymentLine={paymentLine} />
       </section>
     </>

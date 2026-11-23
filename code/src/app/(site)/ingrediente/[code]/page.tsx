@@ -61,7 +61,7 @@ export default async function IngredientPage({ params }: Props) {
         )}
       </PageIntro>
 
-      <section className="container-page space-y-14" aria-label="Productos con este ingrediente">
+      <section className="container-page mt-10 space-y-14 md:mt-12" aria-label="Productos con este ingrediente">
         {cards.length === 0 && <p className="text-ink-soft">Todavía no tenemos productos con {lowerFirst(ing.commonName)}.</p>}
         {stars.length > 0 && (
           <div>

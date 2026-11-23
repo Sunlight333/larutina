@@ -54,7 +54,7 @@ export function WaitlistModal({ children }: { children: ReactNode }) {
       }}
       className="m-auto w-[calc(100%-2rem)] max-w-[34rem] overflow-visible rounded-[2rem] bg-transparent p-0 text-ink backdrop:bg-night-deep/55 backdrop:backdrop-blur-[3px] open:animate-rise"
     >
-      <div className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] bg-paper px-6 pb-8 pt-10 shadow-[0_40px_120px_-30px_rgb(43_30_23/0.6)] ring-1 ring-line sm:px-10 sm:pb-10">
+      <div className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] bg-paper px-6 pb-8 pt-10 shadow-[0_40px_120px_-30px_rgb(40_30_20/0.6)] ring-1 ring-line sm:px-10 sm:pb-10">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-10 mx-auto size-[26rem] rounded-full bg-[radial-gradient(closest-side,var(--color-accent-soft),transparent)]" />
         <button
           type="button"
