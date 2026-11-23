@@ -1,23 +1,23 @@
 @import 'tailwindcss';
 
-/* Design tokens (spec §11.2). Placeholder scale until the brand manual
-   arrives: near-monochrome warm paper and ink, one terracotta accent, and the
-   product photography carrying the colour. Swapping the brand is this block. */
+/* Design tokens (spec §11.2), taken from the LaRutina emblem: chocolate ink,
+   warm cream paper and the terracotta of its sun. Only the values change with
+   the brand; every component uses these names. */
 @theme {
-  --color-ink: oklch(0.22 0.012 60);
-  --color-ink-soft: oklch(0.34 0.012 60);
-  --color-ink-muted: oklch(0.47 0.012 60);
-  --color-paper: oklch(0.985 0.004 80);
-  --color-shell: oklch(0.962 0.009 75);
-  --color-sand: oklch(0.93 0.016 72);
-  --color-line: oklch(0.9 0.009 75);
-  --color-line-strong: oklch(0.8 0.012 70);
-  --color-accent: oklch(0.72 0.11 35);
-  --color-accent-ink: oklch(0.5 0.12 35);
-  --color-accent-soft: oklch(0.95 0.025 45);
-  --color-night: oklch(0.3 0.03 275);
-  --color-night-soft: oklch(0.955 0.012 275);
-  --color-night-deep: oklch(0.2 0.018 285);
+  --color-ink: #3e2c22;
+  --color-ink-soft: #5b4436;
+  --color-ink-muted: #7a6353;
+  --color-paper: #fbf7f2;
+  --color-shell: #f4ece3;
+  --color-sand: #eadccd;
+  --color-line: #e7dbcf;
+  --color-line-strong: #d2c0ae;
+  --color-accent: #c16e4d;
+  --color-accent-ink: #98502f;
+  --color-accent-soft: #f6e3d8;
+  --color-night: #4a3328;
+  --color-night-soft: #f2e9e1;
+  --color-night-deep: #2b1e17;
   --color-sage-soft: oklch(0.94 0.022 150);
   --color-sage-ink: oklch(0.42 0.05 150);
 

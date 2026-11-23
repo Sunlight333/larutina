@@ -42,7 +42,7 @@ export function SignupForm({
           required
           autoComplete="email"
           placeholder="tu@email.com"
-          className={`h-12 min-w-0 flex-1 rounded-full border px-5 text-base outline-none focus-visible:ring-2 focus-visible:ring-accent ${inverse ? 'border-paper/30 bg-transparent text-paper placeholder:text-paper/50' : 'border-line-strong bg-paper'}`}
+          className={`h-12 w-full min-w-0 rounded-full border sm:flex-1 px-5 text-base outline-none focus-visible:ring-2 focus-visible:ring-accent ${inverse ? 'border-paper/30 bg-transparent text-paper placeholder:text-paper/50' : 'border-line-strong bg-paper'}`}
         />
         <button type="submit" disabled={pending} className={`h-12 rounded-full px-6 font-medium ${inverse ? 'bg-paper text-ink' : 'bg-ink text-paper'} disabled:opacity-60`}>
           {pending ? 'Enviando…' : button}

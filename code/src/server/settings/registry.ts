@@ -31,10 +31,10 @@ export type SettingGroup = keyof typeof SETTING_GROUPS
 
 const defs = [
   // Brand (GEN-07)
-  { key: 'brand.name', group: 'brand', label: 'Nombre de la marca en los textos', type: 'text', default: 'Larutina' },
-  { key: 'brand.fullName', group: 'brand', label: 'Nombre en títulos, SEO y legales', type: 'text', default: 'Larutina Beauty' },
+  { key: 'brand.name', group: 'brand', label: 'Nombre de la marca en los textos', type: 'text', default: 'LaRutina' },
+  { key: 'brand.fullName', group: 'brand', label: 'Nombre en títulos, SEO y legales', type: 'text', default: 'LaRutina Beauty' },
   { key: 'brand.domain', group: 'brand', label: 'Dominio', type: 'text', default: 'larutinabeauty.com' },
-  { key: 'brand.senderName', group: 'brand', label: 'Remitente de los emails', type: 'text', default: 'Larutina' },
+  { key: 'brand.senderName', group: 'brand', label: 'Remitente de los emails', type: 'text', default: 'LaRutina' },
   { key: 'brand.senderEmail', group: 'brand', label: 'Email remitente', type: 'email', default: '', help: 'Pendiente: depende del dominio de email.' },
   { key: 'brand.tagline', group: 'brand', label: 'Frase del footer', type: 'text', default: 'Cuidar tu piel es tu rutina.' },
 

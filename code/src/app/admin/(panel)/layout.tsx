@@ -16,7 +16,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <aside className="border-b border-line bg-paper lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-5 py-4">
           <Link href="/admin" aria-label="Inicio del panel">
-            <Wordmark />
+            <Wordmark markClassName="size-9" />
           </Link>
           <Link href="/" className="text-xs text-ink-muted underline underline-offset-2">
             Ver sitio

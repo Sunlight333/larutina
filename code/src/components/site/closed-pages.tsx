@@ -4,31 +4,40 @@ import { getDb } from '@/server/db'
 import { resolveImages } from '@/server/media'
 import { copy } from '@/server/services/site'
 import { whatsappLink } from '@/lib/whatsapp'
-import { Wordmark } from '@/components/site/wordmark'
+import { LogoFull, LogoMark } from '@/components/site/logo'
 import { SignupForm } from '@/components/site/signup-form'
 import { joinWaitlist } from '@/app/(site)/actions'
 import { WAITLIST_CONSENT } from '@/lib/consent'
 
 // G-25: "Próximamente" with the waitlist, shown for every route until launch.
+// The full logo leads, large and centred; with a waitlist image set in the
+// panel, the page splits in two with the image on the right.
 export async function WaitlistPage() {
   const s = await getSettings()
   const image = s['copy.waitlistImage'] ? (await resolveImages(getDb(), [s['copy.waitlistImage']])).get(s['copy.waitlistImage']) : undefined
   return (
-    <main id="contenido" className="grid min-h-dvh md:grid-cols-2">
-      <section className="flex flex-col justify-between gap-12 px-6 py-10 md:px-12 md:py-14">
-        <Wordmark name={s['brand.name']} />
-        <div className="max-w-md">
-          <h1 className="font-display text-display-lg text-balance">{await copy(s['copy.waitlistTitle'])}</h1>
-          <p className="mt-5 text-lede text-ink-soft">{await copy(s['copy.waitlistText'])}</p>
-          <div className="mt-8">
+    <main id="contenido" className={`relative grid min-h-dvh overflow-hidden bg-paper ${image ? 'lg:grid-cols-2' : ''}`}>
+      {/* Soft terracotta sun behind the logo, from the emblem. */}
+      <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 size-[46rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--color-accent-soft),transparent)]" />
+      <section className="relative flex flex-col items-center justify-between gap-10 px-6 py-10 text-center md:py-14">
+        <span aria-hidden="true" />
+        <div className="flex max-w-xl flex-col items-center">
+          <h1 className="sr-only">{s['brand.fullName']}</h1>
+          <LogoFull priority className="w-[min(86vw,32rem)]" />
+          <div aria-hidden="true" className="mt-10 h-px w-24 bg-gradient-to-r from-transparent via-accent to-transparent" />
+          <p className="mt-8 font-display text-display-md text-balance">{await copy(s['copy.waitlistTitle'])}</p>
+          <p className="mt-4 max-w-md text-lede text-ink-soft">{await copy(s['copy.waitlistText'])}</p>
+          <div className="mt-8 w-full max-w-md text-left">
             <SignupForm action={joinWaitlist} consent={WAITLIST_CONSENT} button="Avisarme" />
           </div>
         </div>
         <p className="text-sm text-ink-muted">© {new Date().getFullYear()} {s['brand.fullName']}</p>
       </section>
-      <div className="relative hidden bg-shell md:block">
-        {image && <Image src={image.src} alt={image.alt ?? ''} fill priority sizes="50vw" className="object-cover" />}
-      </div>
+      {image && (
+        <div className="relative hidden lg:block">
+          <Image src={image.src} alt={image.alt ?? ''} fill priority sizes="50vw" className="object-cover" />
+        </div>
+      )}
     </main>
   )
 }
@@ -40,7 +49,7 @@ export async function MaintenancePage() {
   return (
     <main id="contenido" className="grid min-h-dvh place-items-center px-6 py-16 text-center">
       <div className="max-w-md">
-        <Wordmark name={s['brand.name']} />
+        <LogoMark className="mx-auto size-36" priority alt={s['brand.fullName']} />
         <h1 className="mt-10 font-display text-display-md text-balance">{await copy(s['copy.maintenanceText'])}</h1>
         {wa && (
           <p className="mt-6 text-ink-soft">

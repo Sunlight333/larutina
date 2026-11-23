@@ -37,7 +37,7 @@ export async function SiteFooter() {
     <footer className="mt-24 bg-night-deep text-paper">
       <div className="container-page grid gap-12 py-14 lg:grid-cols-[1.2fr_2fr]">
         <div className="max-w-sm">
-          <Wordmark name={s['brand.name']} inverse />
+          <Wordmark inverse markClassName="size-16" />
           <p className="mt-4 text-paper/70">{s['brand.tagline']}</p>
           <h2 className="mt-10 font-display text-display-sm">{s['copy.newsletterTitle']}</h2>
           <p className="mt-2 text-sm text-paper/70">{s['copy.newsletterText']}</p>
