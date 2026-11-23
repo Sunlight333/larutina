@@ -55,6 +55,8 @@ fi
 install -m 0644 "$APP_DIR"/deploy/systemd/*.service "$APP_DIR"/deploy/systemd/*.timer /etc/systemd/system/
 systemctl daemon-reload
 for timer in "$APP_DIR"/deploy/systemd/*.timer; do
+  # Deploys are uploaded with deploy-direct.sh; the GitHub-polling timer stays off.
+  [ "$(basename "$timer")" = larutina-deploy.timer ] && continue
   systemctl enable --now "$(basename "$timer")"
 done
 

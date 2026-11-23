@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Deploys the latest commit of origin/main to this server. Runs on the VPS.
+# Deploys LaRutina on this server. Runs on the VPS.
 #
+#   deploy.sh --direct=<archive>  deploy an upload of code/ and deploy/ (the normal
+#                          way: deploy/deploy-direct.sh on a workstation sends it)
 #   deploy.sh              deploy origin/main now if it is not already live
 #   deploy.sh --force      rebuild and redeploy even if nothing changed
 #   deploy.sh --rollback   go back to the previous successful deploy
@@ -30,7 +32,8 @@ main() {
       --force) force=1 ;;
       --rollback) mode=rollback ;;
       --status) mode=status ;;
-      -h|--help) sed -n '2,14p' "$0"; return 0 ;;
+      --direct=*) mode=direct; ARCHIVE=${arg#--direct=} ;;
+      -h|--help) sed -n '2,16p' "$0"; return 0 ;;
       *) echo "Unknown option: $arg" >&2; return 2 ;;
     esac
   done
@@ -51,6 +54,7 @@ main() {
   fi
 
   if [ "$mode" = rollback ]; then rollback; return; fi
+  if [ "$mode" = direct ]; then direct_deploy "$ARCHIVE"; return; fi
 
   git fetch --quiet origin "$BRANCH"
   local new cur failed
@@ -119,6 +123,53 @@ log() { printf '[deploy %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 
 describe() { git log -1 --format='%h "%s" (%an, %ar)' "$1" 2>/dev/null || echo "$1"; }
 
+# Direct deploy: an archive of code/ and deploy/ uploaded over SSH replaces
+# those folders (the server's deploy/.env stays) and goes through the same
+# build, backup, migrations, switch and automatic rollback as a git deploy.
+# The tag names the upload: d<UTC time>-<archive hash>.
+direct_deploy() {
+  local archive=$1 desc=${DEPLOY_DESC:-direct upload} stage=$STATE/release sum tag prev
+  [ -f "$archive" ] || { log "No archive at $archive"; return 2; }
+  rm -rf "$stage"; mkdir -p "$stage"
+  tar -xzf "$archive" -C "$stage"
+  if [ ! -f "$stage/code/package.json" ] || [ ! -f "$stage/deploy/compose.yaml" ]; then
+    log "The upload does not hold code/ and deploy/; nothing changed."; return 2
+  fi
+  sum=$(sha256sum "$archive" | cut -c1-10)
+  tag="d$(date -u +%Y%m%d%H%M)-$sum"
+  log "Deploying upload $sum: $desc"
+  rsync -a --delete "$stage/code/" "$APP_DIR/code/"
+  rsync -a --delete --exclude .env "$stage/deploy/" "$APP_DIR/deploy/"
+  rm -rf "$stage"
+  chmod +x deploy/*.sh
+  ensure_secrets
+  install_units
+  prev=$(env_get TAG)
+
+  log "Building images for $tag (the live site keeps serving meanwhile)"
+  if ! TAG=$tag "${COMPOSE[@]}" --profile tools build --pull web migrate; then
+    log "BUILD FAILED for upload $sum. The live site is unchanged."; return 1
+  fi
+  if ! migrate "$tag"; then
+    log "MIGRATIONS FAILED for upload $sum. The live site still runs the previous version."; return 1
+  fi
+  if switch_to "$tag"; then
+    echo "direct:$sum $desc" > "$STATE/deployed"
+    echo "$(date -u +%FT%TZ) $tag direct:$sum" >> "$STATE/history"
+    "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 || true
+    cleanup
+    log "LIVE: $desc ($tag)"
+  else
+    log "New container did not become healthy. Last log lines:"
+    docker logs --tail 40 "$("${COMPOSE[@]}" ps -aq web)" 2>&1 || true
+    if [ -n "$prev" ] && [ "$prev" != "$tag" ]; then
+      log "Rolling back to larutina-web:$prev"
+      switch_to "$prev" || log "Rollback container is not healthy either; check 'docker compose ps'."
+    fi
+    return 1
+  fi
+}
+
 # Identifies the server configuration of a commit: the git tree of deploy/.
 stack_id() { git rev-parse "$1:deploy" 2>/dev/null || true; }
 
@@ -151,6 +202,12 @@ install_units() {
   done
   [ $changed = 0 ] || systemctl daemon-reload
   for f in "$APP_DIR"/deploy/systemd/*.timer; do
+    # Deploys are uploaded directly (deploy-direct.sh): polling GitHub stays off,
+    # so a push never replaces what was deployed.
+    if [ "$(basename "$f")" = larutina-deploy.timer ]; then
+      systemctl disable --now larutina-deploy.timer >/dev/null 2>&1 || true
+      continue
+    fi
     systemctl is-enabled --quiet "$(basename "$f")" || systemctl enable --now "$(basename "$f")"
   done
 }
