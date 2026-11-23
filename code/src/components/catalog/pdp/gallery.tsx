@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { ProductPlaceholder } from '../product-image'
+import { ProductPlaceholder, stepTint } from '../product-image'
 
 export type GalleryImage = { src: string; width: number; height: number; alt: string }
 export type GalleryVideo = { kind: 'file' | 'embed'; src: string }
@@ -17,7 +17,7 @@ export function Gallery({ images, video, name, step, brand }: { images: GalleryI
 
   return (
     <div>
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--radius-image)] bg-shell">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--radius-image)]" style={{ backgroundColor: stepTint(step) }}>
         {!current && <ProductPlaceholder step={step} label={brand} />}
         {current?.type === 'image' && (
           <Image

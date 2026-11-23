@@ -7,6 +7,7 @@ import { parseListingState, type RawSearchParams } from '@/server/services/catal
 import { firstSentence, paragraphs } from '@/server/services/catalog/rules'
 import { getConcernPage } from '@/server/services/catalog/taxonomy'
 import { canSeeCatalog } from '@/server/services/catalog/viewer'
+import { concernPortrait } from '@/lib/images'
 
 type Props = { params: Promise<{ code: string }>; searchParams: Promise<RawSearchParams> }
 
@@ -33,7 +34,9 @@ export default async function ConcernPage({ params, searchParams }: Props) {
     <>
       <PageIntro
         crumbs={[{ label: 'Inicio', href: '/' }, { label: 'Necesidades', href: '/necesidades' }, { label: concern.name }]}
+        eyebrow="Necesidad"
         title={concern.name}
+        image={concernPortrait(concern.code)}
         intro={intro.length ? intro : paragraphs(concern.shortDescription)}
       />
       <section className="container-page" aria-label="Productos">

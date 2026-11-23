@@ -19,8 +19,8 @@ type Props = {
   total: number
 }
 
-// NAV-02: the filter form. One form serves both layouts: a sidebar from
-// `lg`, and on phones a bottom sheet behind "Filtrar y ordenar" (S-14). Each
+// NAV-02: the filter form, behind "Filtrar y ordenar" (S-14) in the design's
+// filter bar: a bottom sheet on phones, a side panel from `lg`. Each
 // change applies at once (the URL keeps the state) and the counts come back
 // from the server; without JavaScript the form still submits as a GET.
 export function ListingFilters({ basePath, extra, state, facets, fragranceFree, priceBounds, sorts, sort, total }: Props) {
@@ -49,15 +49,16 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
   const active = (['piel', 'necesidad', 'tipo', 'marca', 'momento', 'sello'] as const).reduce((n, g) => n + local[g].length, 0) + (local.sinFragancia ? 1 : 0) + (local.precioMin != null || local.precioMax != null ? 1 : 0)
 
   return (
-    <div className="lg:sticky lg:top-24 lg:self-start">
-      <div className="flex items-center gap-3 lg:hidden">
+    <div className="shrink-0">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => dialog.current?.showModal()}
-          className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-medium hover:border-ink"
+          className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border border-ink bg-paper px-4 text-sm font-medium hover:bg-shell"
           aria-haspopup="dialog"
         >
-          Filtrar y ordenar
+          <span className="lg:hidden">Filtrar y ordenar</span>
+          <span className="hidden lg:inline">Más filtros</span>
           {active > 0 && <span className="grid size-5 place-items-center rounded-full bg-ink text-[0.6875rem] text-paper">{active}</span>}
         </button>
       </div>
@@ -65,13 +66,13 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
       <dialog
         ref={dialog}
         aria-labelledby="filtros-titulo"
-        className="m-0 mt-auto max-h-[88dvh] w-full max-w-none rounded-t-3xl bg-paper p-0 text-ink backdrop:bg-ink/40 open:flex open:flex-col lg:static lg:mt-0 lg:block lg:max-h-none lg:w-auto lg:rounded-none lg:bg-transparent"
+        className="m-0 mt-auto max-h-[88dvh] w-full max-w-none rounded-t-[2rem] bg-paper p-0 text-ink backdrop:bg-ink/40 open:flex open:flex-col lg:my-0 lg:ml-auto lg:h-dvh lg:max-h-none lg:w-[26rem] lg:rounded-none lg:rounded-l-[2rem]"
         onClick={(e) => {
           // A click on the backdrop closes the sheet.
           if (e.target === dialog.current) dialog.current?.close()
         }}
       >
-        <div className="flex items-center justify-between border-b border-line px-5 py-4 lg:hidden">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h2 id="filtros-titulo" className="text-base font-medium">
             Filtrar y ordenar
           </h2>
@@ -83,7 +84,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
         <form
           method="get"
           action={basePath}
-          className="flex-1 overflow-y-auto px-5 pb-6 lg:overflow-visible lg:p-0"
+          className="flex-1 overflow-y-auto px-5 pb-6"
           onSubmit={(e) => {
             if (!hydrated) return
             e.preventDefault()
@@ -93,7 +94,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
           {Object.entries(extra ?? {}).map(([k, v]) => (
             <input key={k} type="hidden" name={k} value={v} />
           ))}
-          <h2 className="sr-only lg:not-sr-only lg:mb-2 lg:text-sm lg:font-medium">Filtros</h2>
+          <h2 className="sr-only">Filtros</h2>
           <div className="flex items-start gap-2 py-3 text-xs text-ink-muted">
             <details className="group">
               <summary className="inline-flex items-center gap-1.5 rounded-full underline-offset-2 hover:underline">
@@ -106,7 +107,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
             </details>
           </div>
 
-          <fieldset className="border-t border-line py-4 lg:hidden">
+          <fieldset className="border-t border-line py-4">
             <legend className="float-left mb-2 w-full text-sm font-medium">Ordenar por</legend>
             <div className="clear-both space-y-1">
               {sorts.map((s) => (
@@ -178,7 +179,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
           )}
 
           {!hydrated && (
-            <button type="submit" className="mt-2 hidden h-10 rounded-full bg-ink px-5 text-sm font-medium text-paper lg:inline-flex lg:items-center">
+            <button type="submit" className="mt-2 inline-flex h-10 items-center rounded-full bg-ink px-5 text-sm font-medium text-paper">
               Aplicar filtros
             </button>
           )}
@@ -187,7 +188,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
           </p>
         </form>
 
-        <div className="flex items-center gap-3 border-t border-line px-5 py-4 lg:hidden">
+        <div className="flex items-center gap-3 border-t border-line px-5 py-4">
           {hasFilters(local) && (
             <button type="button" className="h-12 rounded-full px-4 text-sm underline underline-offset-2" onClick={() => go(clearFilters(local))}>
               Limpiar filtros
