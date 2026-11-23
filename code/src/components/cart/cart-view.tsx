@@ -83,7 +83,7 @@ export function CartView({ whatsapp, paymentLine }: { whatsapp: string | null; p
             return (
               <li key={l.sku} className="flex gap-4 py-5">
                 <Link href={`/producto/${it.productCode}`} className="w-20 shrink-0 sm:w-24" tabIndex={-1} aria-hidden="true">
-                  <ProductImage image={it.image} alt="" step={it.routineStep} sizes="6rem" className="rounded-lg" placeholderSize="sm" />
+                  <ProductImage image={it.image} alt="" step={it.routineStep} sizes="6rem" className="rounded-lg" />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:justify-between">
                   <div className="min-w-0">

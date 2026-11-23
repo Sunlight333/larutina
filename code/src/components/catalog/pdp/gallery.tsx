@@ -18,7 +18,7 @@ export function Gallery({ images, video, name, step, brand }: { images: GalleryI
   return (
     <div>
       <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--radius-image)] bg-shell">
-        {!current && <ProductPlaceholder step={step} label={brand} size="lg" />}
+        {!current && <ProductPlaceholder step={step} label={brand} />}
         {current?.type === 'image' && (
           <Image
             key={current.img.src}

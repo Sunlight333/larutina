@@ -92,7 +92,7 @@ function Step({ n, step, card }: { n: number; step: RoutineStepView; card?: Awai
     <li className="flex gap-4 rounded-2xl border border-line p-4">
       {card && (
         <Link href={`/producto/${card.code}`} className="w-16 shrink-0" tabIndex={-1} aria-hidden="true">
-          <ProductImage image={card.image} alt="" step={card.routineStep} sizes="4rem" className="rounded-lg" placeholderSize="sm" />
+          <ProductImage image={card.image} alt="" step={card.routineStep} sizes="4rem" className="rounded-lg" />
         </Link>
       )}
       <div className="min-w-0">

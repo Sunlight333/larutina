@@ -69,7 +69,7 @@ function AddedPanel() {
       </div>
       {item && (
         <div className="flex gap-4 px-5 py-5">
-          <ProductImage image={item.image} alt="" step={item.routineStep} sizes="5rem" className="w-20 shrink-0 rounded-lg" placeholderSize="sm" />
+          <ProductImage image={item.image} alt="" step={item.routineStep} sizes="5rem" className="w-20 shrink-0 rounded-lg" />
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-ink-muted">{item.brand}</p>
             <p className="mt-0.5 leading-snug">{item.name}</p>

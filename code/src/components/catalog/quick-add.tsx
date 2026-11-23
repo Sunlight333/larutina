@@ -14,8 +14,9 @@ export type QuickAddProduct = {
 }
 
 // NAV-04 / S-17: "Agregar" adds the only size; with several sizes the button
-// opens the size selector instead of adding one at random.
-export function QuickAdd({ product }: { product: QuickAddProduct }) {
+// opens the size selector instead of adding one at random. `round` is the
+// design's button on the corner of the card's photo.
+export function QuickAdd({ product, variant = 'pill' }: { product: QuickAddProduct; variant?: 'pill' | 'round' }) {
   const [open, setOpen] = useState(false)
   const id = useId()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -50,13 +51,16 @@ export function QuickAdd({ product }: { product: QuickAddProduct }) {
 
   if (!sizes.some((v) => v.available)) return null
 
-  const button = 'inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper text-sm font-medium text-ink transition-colors hover:border-ink'
+  const round = variant === 'round'
+  const button = round
+    ? 'grid size-11 place-items-center rounded-full bg-paper/90 text-ink shadow-[0_8px_24px_-12px_rgb(40_30_20/0.5)] backdrop-blur transition-[transform,background-color] duration-200 hover:scale-105 hover:bg-paper active:scale-95'
+    : 'inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper text-sm font-medium text-ink transition-colors hover:border-ink'
 
   if (single) {
     return (
       <button type="button" className={button} onClick={() => add(single)} aria-label={`Agregar ${product.name} al carrito`}>
-        <Plus size={16} />
-        Agregar
+        <Plus size={round ? 20 : 16} />
+        {!round && 'Agregar'}
       </button>
     )
   }
@@ -73,7 +77,7 @@ export function QuickAdd({ product }: { product: QuickAddProduct }) {
         onClick={() => setOpen((o) => !o)}
         aria-label={`Elegir tamaño de ${product.name}`}
       >
-        Elegir tamaño
+        {round ? <Plus size={20} /> : 'Elegir tamaño'}
       </button>
       {open && (
         <div
@@ -81,7 +85,7 @@ export function QuickAdd({ product }: { product: QuickAddProduct }) {
           id={id}
           role="group"
           aria-label={`Tamaños de ${product.name}`}
-          className="animate-rise absolute inset-x-0 bottom-full z-20 mb-2 rounded-2xl border border-line bg-paper p-2 shadow-[0_18px_50px_-18px_rgb(30_20_10/0.45)]"
+          className={`animate-rise absolute bottom-full z-20 mb-2 ${round ? 'right-0 w-60' : 'inset-x-0'} rounded-2xl border border-line bg-paper p-2 shadow-[0_18px_50px_-18px_rgb(30_20_10/0.45)]`}
         >
           <div className="flex items-center justify-between px-2 pb-1 pt-0.5">
             <p className="text-xs font-medium text-ink-muted">Elegí el tamaño</p>
