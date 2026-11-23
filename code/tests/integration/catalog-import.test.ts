@@ -1,12 +1,13 @@
 // The whole import path against PostgreSQL: file → validation → one
 // transaction. Proves the CAT-02 acceptance: a file with one error reports
 // row and field and changes nothing.
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PrismaClient } from '@prisma/client'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { importCatalog } from '../../src/server/catalog-import'
 import { baseCatalog, toXlsx } from '../support/catalog-fixture'
+import { samplePath } from '../support/catalog-snapshot'
 
 let db: PrismaClient
 
@@ -96,12 +97,12 @@ describe('catalog import', () => {
 })
 
 // The client's own sample: kept out of this public repository, so this runs
-// only on a machine that has the project documents.
-const SAMPLE = path.resolve(import.meta.dirname, '../../../docs/deliverables/08-anexo-firmado-y-decisiones/LaRutina-Catalogo-Maestro-v1.1_Tonico.xlsx')
+// only on a machine that has the project documents (or CATALOG_SAMPLE set).
+const SAMPLE = samplePath()
 
-describe.skipIf(!existsSync(SAMPLE))("client's v1.1 sample", () => {
+describe.skipIf(!SAMPLE)("client's v1.1 sample", () => {
   it('imports with all relations and no errors (H0, CAT-01)', async () => {
-    const report = await importCatalog(db, { name: path.basename(SAMPLE), data: readFileSync(SAMPLE) })
+    const report = await importCatalog(db, { name: path.basename(SAMPLE!), data: readFileSync(SAMPLE!) })
     expect(report.issues.filter((i) => i.level !== 'info')).toEqual([])
     expect(report.status).toBe('APPLIED')
     expect(report.counts['Productos']?.created).toBe(15)
