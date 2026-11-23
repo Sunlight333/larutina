@@ -49,11 +49,11 @@ export async function loadExisting(db: PrismaClient): Promise<Existing> {
 export async function importCatalog(
   db: PrismaClient,
   file: { name: string; data: ArrayBuffer | Uint8Array },
-  options: { stage?: Stage; dryRun?: boolean } = {},
+  options: { stage?: Stage; dryRun?: boolean; ignoreCost?: boolean } = {},
 ): Promise<ImportReport> {
   const stage = options.stage ?? 'S1'
   const wb = await readWorkbook(file.data)
-  const { input, issues, missing } = validateCatalog(wb, await loadExisting(db), stage)
+  const { input, issues, missing } = validateCatalog(wb, await loadExisting(db), stage, { ignoreCost: options.ignoreCost })
   const errors = issues.filter((i) => i.level === 'error').length
   const warnings = issues.filter((i) => i.level === 'warning').length
 

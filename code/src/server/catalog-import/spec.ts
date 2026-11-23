@@ -32,6 +32,8 @@ export type Field = {
   min?: number
   max?: number
   maxLength?: number
+  /** Without the column, the stored values stay as they are (cost in an export for a role without cost, CAT-20). */
+  keepWhenAbsent?: boolean
 }
 
 export type SheetSpec = {
@@ -210,7 +212,7 @@ export const SHEETS = {
       f('alto_cm', 'number', 'opt', { min: 0 }),
       f('ancho_cm', 'number', 'opt', { min: 0 }),
       f('largo_cm', 'number', 'opt', { min: 0 }),
-      f('costo_ars', 'money', 'opt', { min: 0 }),
+      f('costo_ars', 'money', 'opt', { min: 0, keepWhenAbsent: true }),
     ],
   },
   Prod_Ingredientes: {

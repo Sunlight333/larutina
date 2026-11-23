@@ -21,7 +21,8 @@ export class LocalDiskStorage implements StorageProvider {
     return resolved
   }
 
-  async put(key: string, data: Buffer) {
+  // The content type matters to object storage, not to a file on disk.
+  async put(key: string, data: Buffer, _contentType?: string) {
     const file = this.file(key)
     await mkdir(path.dirname(file), { recursive: true })
     await writeFile(file, data)
