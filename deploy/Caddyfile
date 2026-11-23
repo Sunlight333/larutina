@@ -1,0 +1,18 @@
+# Caddy obtains and renews the Let's Encrypt certificate itself (HTTP-01 on
+# port 80) and redirects HTTP to HTTPS. Behind Cloudflare, use SSL mode
+# "Full (strict)" and leave Cloudflare's "Always Use HTTPS" off, so renewals
+# reach port 80 here. See README.md.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000 {
+		# Hold requests while the app container is being replaced on a deploy,
+		# instead of answering 502.
+		lb_try_duration 30s
+		lb_try_interval 500ms
+	}
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}

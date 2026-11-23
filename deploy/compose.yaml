@@ -1,0 +1,43 @@
+# Production stack on the VPS: the Next.js app behind Caddy (HTTPS).
+# Driven by deploy.sh, which sets TAG in deploy/.env. See README.md.
+name: larutina
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  web:
+    image: larutina-web:${TAG:-latest}
+    build:
+      context: ../code
+      args:
+        NEXT_PUBLIC_SITE_URL: https://${SITE_DOMAIN:-larutinabeauty.com}
+    restart: unless-stopped
+    volumes:
+      - next-cache:/app/.next/cache
+    logging: *logging
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-larutinabeauty.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging: *logging
+
+volumes:
+  next-cache:
+  caddy-data:
+  caddy-config:

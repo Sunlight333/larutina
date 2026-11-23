@@ -2,6 +2,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Self-contained server bundle for the Docker image (deploy/). Vercel ignores it.
+  output: 'standalone',
   poweredByHeader: false,
   images: {
     formats: ['image/avif', 'image/webp'],

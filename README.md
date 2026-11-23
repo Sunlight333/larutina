@@ -15,6 +15,8 @@ npm install
 npm run dev
 ```
 
-## Deploying on Vercel
+## Deploying
 
-The app is in `code/`, so the Vercel project's **Root Directory** must be set to `code` (Project Settings → Build and Deployment).
+Production runs at **https://larutinabeauty.com** on a VPS in São Paulo behind Cloudflare. Pushing to `main` deploys it within a few minutes. See [`deploy/README.md`](deploy/README.md) for how it works, manual deploys, rollback and DNS.
+
+The app can still be deployed on Vercel too: the Vercel project's **Root Directory** must be set to `code` (Project Settings → Build and Deployment).
