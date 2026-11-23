@@ -49,7 +49,7 @@ export async function SiteFooter() {
               <SignupForm action={subscribeNewsletter} consent={NEWSLETTER_CONSENT} button="Suscribirme" source="footer" inverse />
             </div>
           </div>
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4 lg:gap-8">
             <FooterColumn title="Comprar" links={s['navigation.footerShop']} />
             <FooterColumn title="Ayuda" links={s['navigation.footerHelp']} />
             <FooterColumn title={name} links={s['navigation.footerAbout']} />
