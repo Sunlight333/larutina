@@ -74,7 +74,9 @@ export async function PageView({ doc, slug, isHome, preview }: { doc: PageDoc; s
       )}
       {/* Every page keeps one h1, even a Home whose first block is not the hero. */}
       {isHome && !startsWithHero && <h1 className="sr-only">{fill(doc.title)}</h1>}
-      {blocks.map((b, i) => renderBlock(b, { pageSlug: slug, vars, headingLevel: i === 0 && b.type === 'hero' ? 1 : 2 }))}
+      {blocks.map((b, i) =>
+        renderBlock(b, { pageSlug: slug, vars, headingLevel: i === 0 && b.type === 'hero' ? 1 : 2, first: i === 0 && !preview && !showTitle, prev: blocks[i - 1]?.type ?? null, last: i === blocks.length - 1 }),
+      )}
       {faq && <JsonLd data={faq} />}
     </>
   )
