@@ -1,0 +1,143 @@
+'use client'
+
+import { useActionState, useEffect, useId, useRef, type ReactNode } from 'react'
+import type { ContactState } from '@/app/(site)/contacto/actions'
+
+// CMS-03, AY-03: reason, contact details, message and up to four photos.
+// Errors are announced and shown next to each field; what was typed stays
+// when something needs fixing.
+
+const field = 'h-12 w-full rounded-xl border border-line-strong bg-paper px-4 text-base outline-none focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-accent/40 aria-[invalid=true]:border-[oklch(0.55_0.17_25)]'
+
+export function ContactForm({
+  action,
+  reasons,
+  maxPhotos,
+  confirmation,
+  privacy,
+}: {
+  action: (prev: ContactState, form: FormData) => Promise<ContactState>
+  reasons: readonly string[]
+  maxPhotos: number
+  confirmation: ReactNode
+  privacy: ReactNode
+}) {
+  const [state, formAction, pending] = useActionState(action, null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const id = useId()
+  const errors = state?.fieldErrors ?? {}
+
+  // React resets a form after its action; keep the fields when there is something to fix.
+  useEffect(() => {
+    const form = formRef.current
+    if (!form) return
+    const keep = (e: Event) => e.preventDefault()
+    form.addEventListener('reset', keep)
+    return () => form.removeEventListener('reset', keep)
+  }, [])
+
+  if (state?.ok) {
+    return (
+      <div role="status" className="rounded-[var(--radius-card)] bg-sage-soft p-6 text-sage-ink">
+        <p className="font-display text-display-sm">{state.message}</p>
+        <div className="mt-2">{confirmation}</div>
+      </div>
+    )
+  }
+
+  const describedBy = (name: string, help?: boolean) => (errors[name] ? `${id}-${name}-error` : help ? `${id}-${name}-help` : undefined)
+  const FieldError = ({ name }: { name: string }) =>
+    errors[name] ? (
+      <p id={`${id}-${name}-error`} className="mt-1.5 text-sm font-medium text-[oklch(0.5_0.17_25)]">
+        {errors[name]}
+      </p>
+    ) : null
+  const Label = ({ name, children, optional }: { name: string; children: ReactNode; optional?: boolean }) => (
+    <label htmlFor={`${id}-${name}`} className="mb-1.5 block text-sm font-medium">
+      {children}
+      {optional && <span className="font-normal text-ink-muted"> (opcional)</span>}
+    </label>
+  )
+
+  return (
+    <form ref={formRef} action={formAction} className="space-y-5" noValidate>
+      {state && !state.ok && (
+        <p role="alert" className="rounded-xl bg-[oklch(0.95_0.03_25)] px-4 py-3 text-sm text-[oklch(0.45_0.15_25)]">
+          {state.message}
+        </p>
+      )}
+      <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
+      <div>
+        <Label name="reason">Motivo</Label>
+        <select id={`${id}-reason`} name="reason" required defaultValue="" aria-invalid={!!errors.reason} aria-describedby={describedBy('reason')} className={field}>
+          <option value="" disabled>
+            Elegí una opción
+          </option>
+          {reasons.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <FieldError name="reason" />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <Label name="name">Nombre</Label>
+          <input id={`${id}-name`} name="name" required autoComplete="name" maxLength={120} aria-invalid={!!errors.name} aria-describedby={describedBy('name')} className={field} />
+          <FieldError name="name" />
+        </div>
+        <div>
+          <Label name="email">Email</Label>
+          <input id={`${id}-email`} name="email" type="email" required autoComplete="email" maxLength={200} aria-invalid={!!errors.email} aria-describedby={describedBy('email')} className={field} />
+          <FieldError name="email" />
+        </div>
+        <div>
+          <Label name="phone" optional>
+            Teléfono
+          </Label>
+          <input id={`${id}-phone`} name="phone" type="tel" autoComplete="tel" maxLength={25} aria-invalid={!!errors.phone} aria-describedby={describedBy('phone')} className={field} />
+          <FieldError name="phone" />
+        </div>
+        <div>
+          <Label name="orderNumber" optional>
+            N° de pedido
+          </Label>
+          <input id={`${id}-orderNumber`} name="orderNumber" maxLength={40} aria-invalid={!!errors.orderNumber} aria-describedby={describedBy('orderNumber', true)} className={field} />
+          <p id={`${id}-orderNumber-help`} className="mt-1.5 text-sm text-ink-muted">
+            Si es por un pedido.
+          </p>
+          <FieldError name="orderNumber" />
+        </div>
+      </div>
+      <div>
+        <Label name="message">Mensaje</Label>
+        <textarea id={`${id}-message`} name="message" required rows={6} maxLength={4000} aria-invalid={!!errors.message} aria-describedby={describedBy('message')} className={`${field} h-auto py-3 leading-relaxed`} />
+        <FieldError name="message" />
+      </div>
+      <div>
+        <Label name="photos" optional>
+          Fotos
+        </Label>
+        <input
+          id={`${id}-photos`}
+          name="photos"
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          aria-invalid={!!errors.photos}
+          aria-describedby={describedBy('photos', true)}
+          className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-shell file:px-4 file:py-2 file:text-sm file:font-medium"
+        />
+        <p id={`${id}-photos-help`} className="mt-1.5 text-sm text-ink-muted">
+          Si te llegó un producto dañado o distinto, sumá hasta {maxPhotos} fotos (JPG, PNG o WebP, hasta 10 MB cada una).
+        </p>
+        <FieldError name="photos" />
+      </div>
+      <div className="text-sm text-ink-muted">{privacy}</div>
+      <button type="submit" disabled={pending} className="h-12 rounded-full bg-ink px-8 font-medium text-paper hover:bg-ink-soft disabled:opacity-60">
+        {pending ? 'Enviando…' : 'Enviar'}
+      </button>
+    </form>
+  )
+}
