@@ -61,7 +61,7 @@ The domain's DNS is on Cloudflare. Records, in **DNS → Records**:
 | A | `@` | server IP | see steps |
 | A | `www` | server IP | see steps |
 
-Remove any other `A`, `AAAA` or `CNAME` records on `@` and `www`. The server has no IPv6 configured, so there is no `AAAA` record.
+Remove any other `A`, `AAAA` or `CNAME` records on `@` and `www`. No `AAAA` record is needed: once proxied, Cloudflare serves visitors over IPv6 by itself and reaches the server over IPv4.
 
 1. Create both records as **DNS only** (grey cloud). Caddy gets the Let's Encrypt certificate within a minute or two of the records resolving to the server.
 2. Once `https://larutinabeauty.com` loads with a valid certificate, switch both records to **Proxied** (orange cloud).
