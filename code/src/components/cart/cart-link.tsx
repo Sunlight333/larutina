@@ -16,8 +16,8 @@ export function CartLink() {
   const n = cartCount(lines)
   return (
     <>
-      <Link href="/carrito" aria-label={`Carrito, ${n} ${n === 1 ? 'producto' : 'productos'}`} className="relative grid size-10 place-items-center rounded-full hover:bg-shell">
-        <Bag size={20} />
+      <Link href="/carrito" aria-label={`Carrito, ${n} ${n === 1 ? 'producto' : 'productos'}`} className="relative grid size-11 place-items-center rounded-full hover:bg-shell">
+        <Bag size={24} />
         {n > 0 && (
           <span className="absolute right-0.5 top-0.5 grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-full bg-ink px-1 text-[0.6875rem] font-medium leading-none text-paper tabular" aria-hidden="true">
             {n > 99 ? '99+' : n}

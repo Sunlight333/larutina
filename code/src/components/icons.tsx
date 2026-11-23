@@ -4,15 +4,16 @@ import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number }
 
-function Icon({ size = 20, children, ...props }: IconProps & { children: React.ReactNode }) {
+// Sizes are in rem (size / 16), so icons grow with the base text size.
+function Icon({ size = 22, children, ...props }: IconProps & { children: React.ReactNode }) {
   return (
     <svg
-      width={size}
-      height={size}
+      width={`${size / 16}rem`}
+      height={`${size / 16}rem`}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={1.7}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

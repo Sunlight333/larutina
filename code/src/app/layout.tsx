@@ -1,21 +1,24 @@
 import type { Metadata, Viewport } from 'next'
-import localFont from 'next/font/local'
+import { Fraunces, Montserrat } from 'next/font/google'
 import { getSettings } from '@/server/settings'
 import { mediaUrl } from '@/server/media'
 import './globals.css'
 
-// One family, self-hosted and cut down to what the design uses (weight 400
-// with its optical-size axis, plus a small italic). Placeholder until the
-// brand manual sets the type. Source: Google Fonts, SIL OFL (src/fonts/OFL.txt).
-const newsreader = localFont({
-  src: [
-    { path: '../fonts/newsreader-roman.woff2', weight: '400', style: 'normal' },
-    { path: '../fonts/newsreader-italic.woff2', weight: '400', style: 'italic' },
-  ],
+// Type from the logo (see globals.css). next/font downloads both at build time
+// and serves them from this site: no request to Google from the browser.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  axes: ['opsz', 'SOFT', 'WONK'],
+  style: ['normal', 'italic'],
   display: 'swap',
-  variable: '--font-newsreader',
-  fallback: ['Georgia', 'serif'],
-  adjustFontFallback: 'Times New Roman',
+  variable: '--font-fraunces',
+})
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-montserrat',
 })
 
 // Every page reads settings, the catalog or the session: rendered per request,
@@ -52,7 +55,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-AR" className={newsreader.variable}>
+    <html lang="es-AR" className={`${fraunces.variable} ${montserrat.variable}`}>
       <body className="flex min-h-dvh flex-col overflow-x-clip">{children}</body>
     </html>
   )

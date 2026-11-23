@@ -8,7 +8,8 @@
 
 Production is https://larutinabeauty.com, served from a VPS in São Paulo behind Cloudflare.
 
-- **Deploying means pushing to `main`.** The server polls `origin/main` every minute, builds, health-checks and switches, and rolls back automatically on failure. No server credentials are needed for this.
-- Before pushing, run `npm run typecheck` and `npm test` in `code/`. A commit that fails to build is skipped, and the site keeps running the last good version.
-- When the SSH alias `larutina-vps` is configured on this machine (`~/.ssh/config`), you can deploy immediately and see the result: `ssh larutina-vps larutina-deploy`. Also `--status`, `--rollback`, `--force`. After a deploy, confirm with `curl -sI https://larutinabeauty.com`.
+- **Deploy directly, not through GitHub:** `deploy/deploy-direct.sh` (needs the SSH alias `larutina-vps`) packs `code/` and `deploy/`, uploads them and runs the server's build, migrations, health check and switch, with automatic rollback on failure. The server no longer polls GitHub, so pushing to `main` does not deploy.
+- The script runs `npm run typecheck` and `npm test` first (`--skip-checks` skips them). A build that fails leaves the site on the last good version.
+- On the server: `ssh larutina-vps larutina-deploy --status` (also `--rollback`). After a deploy, confirm with `curl -s https://larutinabeauty.com/api/health`.
+- Write documentation with the Edit or Write tools, never inside a shell command: backticks in Markdown are command substitution in bash.
 - Never write the server password, private keys or server `.env` values into the repo, commits or docs.

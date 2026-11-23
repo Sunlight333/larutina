@@ -18,18 +18,32 @@ export async function HeroBlock({ data, ctx }: { data: BlockDataMap['hero']; ctx
   const mobile = imgs.get(data.imageMobile) ?? desktop
   const Heading = ctx.headingLevel === 1 ? 'h1' : 'h2'
 
+  // The text side borrows the logo's details: its two terracotta leaves above
+  // the headline, the terracotta swoosh under the wordmark below it, and an
+  // italic accent for the words written *between asterisks* in the panel.
   const text = (
-    <div className="max-w-xl">
-      {data.eyebrow && <p className="eyebrow">{data.eyebrow}</p>}
-      <Heading className={`font-display text-display-hero text-balance ${data.eyebrow ? 'mt-4' : ''}`}>{data.title}</Heading>
-      {data.subtitle && <p className="mt-5 max-w-md whitespace-pre-line text-lede text-ink-soft">{data.subtitle}</p>}
+    <div className="relative max-w-xl">
+      <Leaves className="h-8 w-auto text-accent" />
+      {data.eyebrow && <p className="eyebrow mt-5">{data.eyebrow}</p>}
+      <Heading className="mt-5 font-display text-display-hero text-balance">{emphasis(data.title)}</Heading>
+      <Swoosh className="mt-5 h-3.5 w-48 text-accent md:w-64" />
+      {data.subtitle && <p className="mt-6 max-w-lg whitespace-pre-line text-lede text-ink-soft">{data.subtitle}</p>}
       {(data.cta1Label || data.cta2Label) && (
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <CtaButton label={data.cta1Label} href={data.cta1Href} size="lg" className="w-full sm:w-auto" />
-          <CtaButton label={data.cta2Label} href={data.cta2Href} variant="secondary" size="lg" className="w-full bg-paper/80 sm:w-auto" />
+        <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <CtaButton label={data.cta1Label} href={data.cta1Href} size="lg" className="w-full font-semibold sm:w-auto" />
+          <CtaButton label={data.cta2Label} href={data.cta2Href} variant="secondary" size="lg" className="w-full bg-paper/70 font-semibold sm:w-auto" />
         </div>
       )}
-      {data.note && <p className="mt-4 text-sm text-ink-muted">{data.note}</p>}
+      {data.note && (
+        <p className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8rem] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          {data.note.split(/\s+·\s+/).map((part, i) => (
+            <span key={i} className="inline-flex items-center gap-3">
+              {i > 0 && <span aria-hidden="true" className="size-1.5 rotate-45 rounded-[1px] bg-accent" />}
+              {part}
+            </span>
+          ))}
+        </p>
+      )}
     </div>
   )
 
@@ -78,5 +92,37 @@ export async function HeroBlock({ data, ctx }: { data: BlockDataMap['hero']; ctx
         <div className="container-page py-10 md:py-16">{text}</div>
       </div>
     </section>
+  )
+}
+
+/** "Cuidar tu piel es *tu rutina*": the words between asterisks in italic terracotta. */
+function emphasis(title: string) {
+  return title.split(/(\*[^*]+\*)/g).map((part, i) =>
+    part.startsWith('*') && part.endsWith('*') && part.length > 2 ? (
+      <em key={i} className="font-normal italic text-accent-ink">
+        {part.slice(1, -1)}
+      </em>
+    ) : (
+      part
+    ),
+  )
+}
+
+/** The two leaves of the logo (above the "i" of the wordmark). */
+function Leaves({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 44 34" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M15.5 33C6 26.5 4.6 13.8 11.4 1.6c8.2 9 10.1 21.6 4.1 31.4z" opacity="0.78" />
+      <path d="M19.6 33.4c2.2-11.6 10.8-20.3 23.2-21.6-1.3 11.8-10.1 20.4-23.2 21.6z" />
+    </svg>
+  )
+}
+
+/** The tapered curve under the logo's wordmark. */
+function Swoosh({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 240 14" preserveAspectRatio="none" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M1 12.6C62 3.4 140 0.6 239 6.2 140 4.2 66 6.6 1 12.6z" />
+    </svg>
   )
 }

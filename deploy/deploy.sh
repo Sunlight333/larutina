@@ -155,6 +155,7 @@ direct_deploy() {
   fi
   if switch_to "$tag"; then
     echo "direct:$sum $desc" > "$STATE/deployed"
+    rm -f "$STATE/failed"
     echo "$(date -u +%FT%TZ) $tag direct:$sum" >> "$STATE/history"
     "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 || true
     cleanup

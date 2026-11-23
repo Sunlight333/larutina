@@ -133,11 +133,11 @@ export function SearchBox({ placeholder, compact = false }: { placeholder: strin
         aria-haspopup="dialog"
         className={
           compact
-            ? 'grid size-10 place-items-center rounded-full hover:bg-shell'
+            ? 'grid size-11 place-items-center rounded-full hover:bg-shell'
             : 'grid size-10 place-items-center rounded-full hover:bg-shell lg:flex lg:h-10 lg:w-56 lg:items-center lg:justify-start lg:gap-2 lg:rounded-full lg:border lg:border-line lg:px-4 lg:text-sm lg:text-ink-muted lg:hover:border-line-strong lg:hover:bg-paper xl:w-64'
         }
       >
-        <Search size={20} className="shrink-0" />
+        <Search size={23} className="shrink-0" />
         {!compact && <span className="hidden truncate lg:inline">{placeholder}</span>}
       </a>
 

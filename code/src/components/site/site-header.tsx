@@ -33,7 +33,7 @@ function NavLink({ item }: { item: LinkItem }) {
   return (
     <Link
       href={item.href}
-      className="group/link relative whitespace-nowrap px-2.5 py-2 text-[0.78rem] font-medium uppercase tracking-[0.18em] text-ink-soft transition-colors hover:text-ink xl:px-4"
+      className="group/link relative whitespace-nowrap px-2.5 py-2 text-[0.8rem] font-semibold uppercase tracking-[0.16em] text-ink-soft transition-colors hover:text-ink xl:px-4"
     >
       {item.label}
       <span
@@ -67,7 +67,7 @@ export async function SiteHeader() {
             {highlighted && (
               <Link
                 href={highlighted.href}
-                className={`hidden h-10 items-center justify-center rounded-full bg-ink text-[0.72rem] font-medium uppercase tracking-[0.18em] text-paper shadow-[0_8px_20px_-10px_rgb(62_44_34/0.7)] transition-colors hover:bg-accent-ink lg:inline-flex ${EDGE}`}
+                className={`hidden h-11 items-center justify-center rounded-full bg-ink text-[0.75rem] font-semibold uppercase tracking-[0.16em] text-paper shadow-[0_8px_20px_-10px_rgb(62_44_34/0.7)] transition-colors hover:bg-accent-ink lg:inline-flex ${EDGE}`}
               >
                 {highlighted.label}
               </Link>
@@ -107,10 +107,10 @@ export async function SiteHeader() {
             </nav>
             {highlighted && (
               <Link href={highlighted.href} aria-label={highlighted.label} className="grid size-10 place-items-center rounded-full text-ink hover:bg-shell lg:hidden">
-                <FaceScan size={21} />
+                <FaceScan size={24} />
               </Link>
             )}
-            <div className="flex items-center justify-end lg:h-10 lg:w-[9.25rem] lg:justify-center lg:gap-3 lg:rounded-full lg:border lg:border-line-strong/80 xl:w-[10rem]">
+            <div className="flex items-center justify-end lg:h-11 lg:w-[9.25rem] lg:justify-center lg:gap-3 lg:rounded-full lg:border lg:border-line-strong/80 xl:w-[10rem]">
               <span className="hidden lg:block">
                 <SearchBox placeholder={s['copy.searchPlaceholder']} compact />
               </span>

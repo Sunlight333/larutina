@@ -17,7 +17,7 @@ export type SeedPage = { slug: string; kind: PageKind; doc: PageDoc }
 const homeBlocks: Block[] = [
   // H-01 to H-04. No photo yet (prompt P-H01): the hero shows text only until one is uploaded.
   newBlock('hero', 'hero', {
-    title: 'Cuidar tu piel es tu rutina',
+    title: 'Cuidar tu piel es *tu rutina*',
     subtitle: 'Respondé {preguntas} preguntas y armamos tu rutina de mañana y de noche. Cada producto viene con el motivo por el que lo elegimos.',
     cta1Label: 'Hacer mi diagnóstico',
     cta1Href: '/diagnostico',

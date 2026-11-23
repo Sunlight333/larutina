@@ -25,11 +25,11 @@ export const BLOCK_DEFS = {
     description: 'Título principal, bajada, hasta dos botones y una foto con versión para mobile.',
     fields: [
       eyebrow,
-      title(true, 'Título (H1)'),
+      { ...title(true, 'Título (H1)'), help: 'Las palabras entre asteriscos salen en cursiva terracota: Cuidar tu piel es *tu rutina*.' },
       { kind: 'textarea', name: 'subtitle', label: 'Bajada', rows: 3, max: 400 },
       ...cta('1'),
       ...cta('2'),
-      { kind: 'text', name: 'note', label: 'Texto chico debajo de los botones', max: 120 },
+      { kind: 'text', name: 'note', label: 'Texto chico debajo de los botones', max: 120, help: 'Separá las partes con " · " y salen como una fila con separadores.' },
       ...images,
       { kind: 'focal', name: 'focusDesktop', label: 'Punto de interés en desktop', help: 'Qué parte de la foto queda siempre a la vista, en % desde la izquierda y desde arriba.' },
       { kind: 'focal', name: 'focusMobile', label: 'Punto de interés en mobile' },

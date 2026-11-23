@@ -38,7 +38,7 @@ export function MobileMenu({ items, whatsapp, mark }: { items: LinkItem[]; whats
         onClick={() => setOpen((o) => !o)}
         className="grid size-11 place-items-center rounded-full text-ink hover:bg-shell"
       >
-        {open ? <Close size={22} /> : <Menu size={22} />}
+        {open ? <Close size={26} /> : <Menu size={26} />}
       </button>
       {open && (
         <div id={id} role="dialog" aria-modal="true" aria-label="Menú" className="animate-fade fixed inset-0 z-50 overflow-y-auto bg-paper px-6 pb-10">

@@ -38,22 +38,24 @@ While the site is in "Próximamente" or maintenance mode, visitors see that page
 
 ## How to deploy
 
-**Push to `main`. That's it.** The server checks `origin/main` every minute and deploys any new commit, so a deploy works from any machine or chat session that can push to GitHub, with no server access needed. The image is built while the current version keeps serving, and the switch happens only after the new container passes its health check. Database migrations (`code/prisma/migrations`) run after the build and before the switch, preceded by a backup once the database holds data. Then any starting content still missing (Home, pages, legal drafts, announcements) is loaded; this never overwrites what was changed in the panel. If the build, the migrations or the health check fail, the previous version keeps serving or is restored automatically, and that commit is not retried until a newer one arrives. Changes to this `deploy/` folder apply the same way: a commit that changes it is deployed again by the new `deploy.sh` within a minute, which also installs new or changed timers.
+Deploys go straight to the server, not through GitHub. From a workstation with SSH access (host alias `larutina-vps`, see below), run `deploy/deploy-direct.sh` from the repository:
 
-With SSH access (host alias `larutina-vps`, see below) you can also deploy immediately and watch the output:
+1. It runs the typecheck and the tests (`--skip-checks` skips them).
+2. It packs `code/` and `deploy/` as they are on disk. Git's ignore rules keep out `.env`, `node_modules`, build output and local data, and `docs/` never goes.
+3. It uploads the archive and runs the uploaded `deploy.sh --direct` on the server.
+
+On the server, the new image is built while the current version keeps serving. Then come a backup (once the database holds data), the database migrations (`code/prisma/migrations`), and any starting content still missing (Home, pages, legal drafts, announcements), which never overwrites what was changed in the panel. The switch happens only after the new container passes its health check. If the build, the migrations or the health check fail, the previous version keeps serving or is restored automatically. New or changed timers in `deploy/systemd` are installed in the same run.
+
+The timer that used to deploy `origin/main` from GitHub stays off, so a push never replaces what was deployed. `larutina-deploy` without options still deploys `origin/main` by hand if ever needed.
 
 ```bash
-ssh larutina-vps larutina-deploy             # deploy origin/main now
-ssh larutina-vps larutina-deploy --status    # what is live, recent deploys, containers
-ssh larutina-vps larutina-deploy --rollback  # back to the previous deploy
-ssh larutina-vps larutina-deploy --force     # rebuild even if nothing changed
-ssh larutina-vps journalctl -u larutina-deploy -n 100 --no-pager   # auto-deploy log
+deploy/deploy-direct.sh                        # check, upload, deploy
+ssh larutina-vps larutina-deploy --status      # what is live, recent deploys, backups, containers
+ssh larutina-vps larutina-deploy --rollback    # back to the previous deploy
 ssh larutina-vps 'cd /opt/larutina/deploy && docker compose logs --tail 100 web'
 ```
 
-A deploy takes about two to three minutes, mostly `npm ci` and `next build`. While containers are swapped, Caddy holds requests for up to 30 seconds rather than failing them.
-
-To pause auto-deploys: `ssh larutina-vps systemctl disable --now larutina-deploy.timer` (`enable --now` to resume).
+A deploy takes about three to five minutes, mostly `npm ci` and `next build`. While containers are swapped, Caddy holds requests for up to 30 seconds rather than failing them.
 
 ## Database
 
