@@ -148,7 +148,7 @@ export async function deleteAccountAction(_prev: FormState): Promise<FormState> 
 export async function reorderAction(form: FormData) {
   const c = await currentCustomer()
   if (!c) redirect('/cuenta/ingresar?volver=/cuenta/pedidos')
-  const cartId = await browserCartId(c.id)
+  const cartId = await browserCartId()
   await reorder(getDb(), c.id, formText(form, 'number'), cartId)
   redirect('/carrito')
 }

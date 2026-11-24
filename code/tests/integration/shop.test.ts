@@ -172,7 +172,7 @@ describe('the sweep endpoint', () => {
   it('never runs twice at once', async () => {
     let release!: () => void
     const gate = new Promise<void>((r) => (release = r))
-    const counts = { expired: 0, reminders: 0, abandoned: 0, reviews: 0, backInStock: 0, emails: { sent: 0, failed: 0, skipped: 0 } }
+    const counts = { expired: 0, reminders: 0, abandoned: 0, reviews: 0, backInStock: 0, commissionsApproved: 0, emails: { sent: 0, failed: 0, skipped: 0 } }
     const first = runSweepLocked(db, async () => {
       await gate
       return counts

@@ -1,5 +1,6 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { getDb } from '@/server/db'
 import { isEmail } from '@/lib/argentina'
 import { emptyContact, type CheckoutContact, type FieldErrors } from '@/lib/commerce/checkout-form'
@@ -11,6 +12,7 @@ import { orderPath } from '@/server/commerce/orders'
 import { rateLimit } from '@/server/rate-limit'
 import { clientIp } from '@/server/request'
 import { canSeeCatalog } from '@/server/services/catalog/viewer'
+import { REF_COOKIE } from '@/lib/commerce/attribution'
 
 /**
  * Step 1 complete: the email goes on the cart, so the abandoned-cart email
@@ -55,6 +57,8 @@ export async function placeOrderAction(input: { contact: unknown; shippingKey: u
     shippingKey: typeof input.shippingKey === 'string' ? input.shippingKey : '',
     method,
     acceptedTerms: input.acceptedTerms === true,
+    // IR-17: her ambassador's link on this device.
+    refCookie: (await cookies()).get(REF_COOKIE)?.value ?? null,
   })
   if (result.ok) return { ok: true, redirect: result.redirectUrl ?? orderPath({ id: result.orderId, number: result.number }) }
   if (result.reason === 'fields') return { ok: false, reason: 'fields', errors: result.errors }

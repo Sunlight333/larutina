@@ -4,10 +4,13 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getDb } from '@/server/db'
-import { CART_COOKIE, ensureCart, findCart, findCustomerCart, hashCartToken, mergeCarts, newCartToken } from '@/server/commerce/cart'
+import { CART_COOKIE, findCart, findCustomerCart, hashCartToken, mergeCarts, newCartToken } from '@/server/commerce/cart'
 import { currentCustomer, startCustomerSession } from './session'
 import { saveFavorite } from './history'
+import { browserCart } from '@/server/commerce/cart-cookie'
 import { safeReturnPath, signInHref } from '@/lib/return-path'
+import { decodeRef, REF_COOKIE } from '@/lib/commerce/attribution'
+import { approvedByCode, linkAccountToAmbassador } from '@/server/ambassadors/program'
 
 const CART_MAX_AGE = 90 * 24 * 60 * 60
 
@@ -54,14 +57,19 @@ async function joinCart(customerId: string) {
 export async function completeSignIn(customerId: string, opts: { returnTo: unknown; save: unknown }): Promise<string> {
   await startCustomerSession(customerId)
   await joinCart(customerId).catch((e) => console.error('[cuenta] could not join the cart', e))
+  // Spec §10.2, IR-17: her ambassador's link on this device joins the account, unless a newer one is there.
+  const ref = decodeRef((await cookies()).get(REF_COOKIE)?.value)
+  if (ref) {
+    const a = await approvedByCode(getDb(), ref.code)
+    if (a) await linkAccountToAmbassador(getDb(), customerId, a.id, ref.at)
+  }
   if (typeof opts.save === 'string' && /^[a-z0-9-]{1,120}$/.test(opts.save)) await saveFavorite(getDb(), customerId, opts.save)
   return safeReturnPath(opts.returnTo)
 }
 
 /** The cart this browser writes to, created on first use; the cookie is set when it is new. */
-export async function browserCartId(customerId: string | null): Promise<string> {
-  const token = (await cookies()).get(CART_COOKIE)?.value
-  const { cartId, newToken } = await ensureCart(getDb(), token, customerId)
-  if (newToken) await setCartCookie(newToken)
-  return cartId
+export async function browserCartId(): Promise<string> {
+  // Same rules as the cart routes (commerce/cart-cookie.ts): her open cart when signed in, merged with this browser's.
+  const { cartId } = await browserCart({ create: true, write: true })
+  return cartId!
 }

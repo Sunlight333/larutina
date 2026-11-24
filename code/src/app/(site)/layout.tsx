@@ -4,6 +4,7 @@ import { AnnouncementBar } from '@/components/site/announcement-bar'
 import { SiteHeader } from '@/components/site/site-header'
 import { SiteFooter } from '@/components/site/site-footer'
 import { TeamBar } from '@/components/site/team-bar'
+import { ReferralCapture } from '@/components/site/referral-capture'
 import { MaintenancePage, WaitlistModalContent } from '@/components/site/closed-pages'
 import { WaitlistModal } from '@/components/site/waitlist-modal'
 import { getAnnouncements } from '@/server/services/site'
@@ -32,6 +33,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         {children}
       </main>
       <SiteFooter />
+      <ReferralCapture />
       {access.showWaitlist && (
         <WaitlistModal>
           <WaitlistModalContent />
