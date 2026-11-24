@@ -1,26 +1,36 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { CartView } from '@/components/cart/cart-view'
-import { PageIntro } from '@/components/catalog/page-intro'
-import { getSettings } from '@/server/settings'
+import { quoteCart, type PublicQuote } from '@/server/commerce/cart-access'
+import { readShopCart } from '@/server/commerce/cart-cookie'
+import { canSeeCatalog } from '@/server/services/catalog/viewer'
 import { whatsappLink } from '@/lib/whatsapp'
 
+// CK-18 (SEO): "Tu bolsa · Larutina Beauty", with "carrito" (D-05). The
+// layout's template adds the brand's full name from the settings.
 export const metadata: Metadata = { title: 'Tu carrito', robots: { index: false, follow: true } }
 
-const PAYMENT_NAMES: Record<string, string> = { mercadopago: 'Mercado Pago', tarjetas: 'tarjeta', transferencia: 'transferencia' }
+const METHOD_NAMES = { mercadopago: 'Mercado Pago', transfer: 'transferencia' } as const
 
-// The minimal cart of Phase 1: checkout and payment arrive in Phase 2.
+// /carrito (BO-01 to BO-13) on the server cart. Routine grouping (BO-03,
+// BO-04) arrives with routines in Phase 3.
 export default async function CartPage() {
-  const s = await getSettings()
+  if (!(await canSeeCatalog())) notFound()
+  const { db, s, methods, view, cart } = await readShopCart()
   const whatsapp = s['company.whatsappActive'] ? whatsappLink(s['company.whatsapp'], 'Hola, tengo una duda sobre mi compra') : null
-  const methods = s['commerce.paymentMethods'].map((m) => PAYMENT_NAMES[m]).filter((m): m is string => !!m)
-  // BO-10: "Pagás con Mercado Pago o transferencia", from the active methods.
-  const paymentLine = methods.length ? `Pagás con ${methods.length > 1 ? `${methods.slice(0, -1).join(', ')} o ${methods.at(-1)}` : methods[0]}.` : null
+  // BO-10: "Pagás con Mercado Pago o transferencia", from the ways to pay offered right now.
+  const names = methods.map((m) => METHOD_NAMES[m])
+  const paymentLine = names.length ? `Pagás con ${names.join(' o ')}` : null
+  // The last postcode she quoted, quoted again with the cart as it is now (BO-08).
+  const quote: PublicQuote | null = view.postcode && view.lines.length ? await quoteCart(db, view, s, { postcode: view.postcode }) : null
   return (
-    <>
-      <PageIntro title="Tu carrito" />
-      <section className="container-page mt-10 md:mt-12" aria-label="Productos en tu carrito">
-        <CartView whatsapp={whatsapp} paymentLine={paymentLine} />
-      </section>
-    </>
+    <CartView
+      initial={cart}
+      initialPostcode={view.postcode ?? ''}
+      initialQuote={quote?.ok ? quote : null}
+      freeFromCents={s['commerce.freeShippingFromCents']}
+      whatsapp={whatsapp}
+      paymentLine={paymentLine}
+    />
   )
 }
