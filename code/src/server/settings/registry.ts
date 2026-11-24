@@ -122,6 +122,9 @@ const defs = [
   { key: 'ambassadors.minimumPayoutCents', group: 'commerce', label: 'Embajadoras: mínimo para liquidar', type: 'money', default: 0, help: 'Pendiente (EB-C05). Lo que no llega se suma al mes siguiente.', adminOnly: true },
   { key: 'ambassadors.customerDiscountPct', group: 'commerce', label: 'Embajadoras: descuento que da el código (%)', type: 'number', default: 0, help: 'Pendiente (EB-C07, propuesta 5 a 10). No se suma al de rutina: se aplica el mayor; el de transferencia sí, en cascada.', adminOnly: true },
   { key: 'ambassadors.reviewDays', group: 'commerce', label: 'Embajadoras: días hábiles para responder una postulación', type: 'number', default: 0, help: 'Pendiente (EB-10). 0: el texto no menciona plazo.' },
+  { key: 'diagnosis.routineDiscountPct', group: 'commerce', label: 'Diagnóstico: descuento por llevar la rutina (%)', type: 'number', default: 10, help: 'R-18: el mismo parámetro que las rutinas armadas. 10% provisorio hasta cerrar el pricing (D-08).', adminOnly: true },
+  { key: 'diagnosis.discountHalves', group: 'commerce', label: 'Diagnóstico: descuento también por mitad', type: 'boolean', default: false, help: 'Comprar solo la mañana o solo la noche también tiene el descuento (RUT-04).' },
+  { key: 'diagnosis.firstPurchaseCoupon', group: 'commerce', label: 'Diagnóstico: cupón de primera compra', type: 'text', default: '', help: 'DIA-10: el código que se ofrece en el resultado. Vacío: no se ofrece. Se valida contra compras anteriores del mismo email o DNI.' },
   { key: 'commerce.reviewRequestDays', group: 'commerce', label: 'Pedido de reseña: días después de la entrega', type: 'number', default: 21, help: 'EML-03.' },
   { key: 'commerce.abandonedCartHours', group: 'commerce', label: 'Carrito abandonado: horas', type: 'number', default: 24, help: 'Un solo email, y solo si la clienta dejó su email en el checkout (EML-04). 0: no se envía.' },
 

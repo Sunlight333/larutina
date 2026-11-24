@@ -869,6 +869,7 @@ model Customer {
   referredAt   DateTime?   @map("referred_at")
   ambassador   Ambassador?
 
+  diagnoses Diagnosis[]
   sessions  CustomerSession[]
   tokens    CustomerToken[]
   addresses Address[]
@@ -1664,4 +1665,52 @@ model AmbassadorMaterial {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("ambassador_materials")
+}
+
+// ============================================================================
+// Diagnosis (H3): versioned rule sets and saved diagnoses (DIA-01..DIA-12).
+// ============================================================================
+
+enum RuleSetStatus {
+  DRAFT
+  PUBLISHED // the current one is the published with the highest version
+  RETIRED
+}
+
+// DIA-01, DIA-03: the questionnaire, rules and result texts as data
+// (src/lib/diagnosis/ruleset.ts). Publishing creates a new version; old ones
+// stay so any diagnosis can be reproduced with the version it ran on.
+model DiagnosisRuleSet {
+  id          String        @id @default(cuid())
+  version     Int           @unique
+  status      RuleSetStatus @default(DRAFT)
+  definition  Json
+  note        String?
+  createdBy   String?       @map("created_by")
+  publishedAt DateTime?     @map("published_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("diagnosis_rule_sets")
+}
+
+// A diagnosis as it came out (DIA-12: each one kept, the latest is the
+// current). Answers marked session-only (DIA-07) are never stored, nor
+// anything that would reveal them.
+model Diagnosis {
+  id             String    @id @default(cuid())
+  code           String    @unique // short, for links and WhatsApp (WAP-05)
+  ruleVersion    Int       @map("rule_version")
+  answers        Json // [{ questionKey, values }] without session-only questions
+  signals        Json // [{ key, value, source, confidence }]
+  interpretation Json
+  result         Json // steps with product ids, notes, flags
+  customerId     String?   @map("customer_id")
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  email          String? // when she asked for it by email (R-21)
+  emailedAt      DateTime? @map("emailed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([customerId, createdAt])
+  @@map("diagnoses")
 }

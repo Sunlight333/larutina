@@ -7,6 +7,7 @@ import type { Prisma, PrismaClient } from '@prisma/client'
 import { productsInScope, routineScope, type RoutineScope, type RoutineShape } from '@/lib/commerce/routine'
 import { variantAvailable } from '@/server/services/catalog/rules'
 import { addToCart } from './cart'
+import { loadSettings } from '@/server/settings'
 
 type Db = PrismaClient | Prisma.TransactionClient
 
@@ -15,19 +16,63 @@ export const routineOfGroup = (group: string) => group.split('~')[0]!
 
 const routineInclude = { steps: { orderBy: { position: 'asc' }, include: { alternatives: { orderBy: { position: 'asc' } } } } } satisfies Prisma.RoutineInclude
 
+/** A diagnosis result in the cart is a routine group too: "diag-<code>". */
+export const DIAGNOSIS_PREFIX = 'diag-'
+
 export async function loadRoutineShapes(db: Db, codes: string[]) {
-  if (!codes.length) return new Map<string, { name: string; discountPct: number; shape: RoutineShape }>()
-  const rows = await db.routine.findMany({ where: { code: { in: codes }, status: 'PUBLISHED', deletedAt: null }, include: routineInclude })
-  return new Map(
-    rows.map((r) => [
-      r.code,
-      {
-        name: r.name,
-        discountPct: r.discountPct ?? 0,
-        shape: { discountHalves: r.discountHalves, steps: r.steps.map((s) => ({ id: s.id, moment: s.moment, optional: s.optional, productIds: [s.mainProductId, ...s.alternatives.map((a) => a.productId)] })) },
-      },
-    ]),
-  )
+  const out = new Map<string, { name: string; discountPct: number; shape: RoutineShape }>()
+  if (!codes.length) return out
+  // R-18, R-19: her diagnosis routine earns the same routine discount, from its own setting.
+  const diagCodes = codes.filter((c) => c.startsWith(DIAGNOSIS_PREFIX)).map((c) => c.slice(DIAGNOSIS_PREFIX.length))
+  if (diagCodes.length) {
+    const s = await loadSettings(db as PrismaClient)
+    const rows = await db.diagnosis.findMany({ where: { code: { in: diagCodes } }, select: { code: true, result: true } })
+    for (const d of rows) {
+      const steps = ((d.result as { steps?: { slot: 'AM' | 'PM'; position: number; productId: string | null; alternatives: string[] }[] }).steps ?? []).filter((x) => x.productId)
+      out.set(DIAGNOSIS_PREFIX + d.code, {
+        name: 'Tu rutina del diagnóstico',
+        discountPct: s['diagnosis.routineDiscountPct'],
+        shape: { discountHalves: s['diagnosis.discountHalves'], steps: steps.map((x) => ({ id: `${x.slot}-${x.position}`, moment: x.slot, optional: false, productIds: [x.productId!, ...x.alternatives] })) },
+      })
+    }
+  }
+  const rows = await db.routine.findMany({ where: { code: { in: codes.filter((c) => !c.startsWith(DIAGNOSIS_PREFIX)) }, status: 'PUBLISHED', deletedAt: null }, include: routineInclude })
+  for (const r of rows) {
+    out.set(r.code, {
+      name: r.name,
+      discountPct: r.discountPct ?? 0,
+      shape: { discountHalves: r.discountHalves, steps: r.steps.map((s) => ({ id: s.id, moment: s.moment, optional: s.optional, productIds: [s.mainProductId, ...s.alternatives.map((a) => a.productId)] })) },
+    })
+  }
+  return out
+}
+
+/** R-19: her diagnosis routine (or one half) into the cart in one action, as one group; a step may use one of its alternatives (R-16). */
+export async function addDiagnosisToCart(db: PrismaClient, cartId: string, input: { code: string; scope: RoutineScope; swaps?: Record<string, string> }) {
+  const d = await db.diagnosis.findUnique({ where: { code: input.code }, select: { code: true, result: true } })
+  if (!d) return null
+  const steps = ((d.result as { steps?: { slot: 'AM' | 'PM'; position: number; productId: string | null; alternatives: string[] }[] }).steps ?? []).filter((x) => x.productId)
+  const group = groupKey(DIAGNOSIS_PREFIX + d.code)
+  const unavailable: string[] = []
+  const seen = new Set<string>()
+  let added = 0
+  for (const step of steps) {
+    if (input.scope !== 'full' && step.slot !== (input.scope === 'am' ? 'AM' : 'PM')) continue
+    const key = `${step.slot}-${step.position}`
+    const swap = input.swaps?.[key]
+    const productId = swap && step.alternatives.includes(swap) ? swap : step.productId!
+    // A product of the morning and the night goes in once (R-18).
+    if (seen.has(productId)) continue
+    seen.add(productId)
+    const product = await db.product.findUnique({ where: { id: productId }, include: { variants: { orderBy: [{ isMain: 'desc' }, { priceCents: 'asc' }] } } })
+    const variant = product?.variants.find((v) => variantAvailable(product.status, v.stock))
+    if (!variant || !(await addToCart(db, cartId, { sku: variant.sku, quantity: 1, source: 'DIAGNOSIS', sourceRef: d.code, routineGroup: group }))) {
+      unavailable.push(product?.name ?? productId)
+      continue
+    }
+    added++
+  }
+  return { added, group, unavailable }
 }
 
 export type CartRoutine = { group: string; code: string; name: string; scope: RoutineScope | null; discountPct: number; lineIds: string[] }

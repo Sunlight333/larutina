@@ -141,6 +141,16 @@ export const EMAIL_TEMPLATES: EmailTemplateDef[] = [
     variables: ['marca'],
   },
   {
+    key: 'routine_email',
+    code: 'EM-13',
+    label: 'Tu rutina por email',
+    subject: 'Tu rutina de mañana y de noche',
+    preheader: 'Con el motivo de cada producto.',
+    body: 'Esto es lo que armamos con tus respuestas, con el motivo de cada producto.\n\n{rutina}\n\n{cupon}',
+    ctaLabel: 'Ver y sumar a mi carrito',
+    variables: ['rutina', 'cupon', 'marca'],
+  },
+  {
     key: 'account_deleted',
     code: 'CU-17',
     label: 'Cuenta eliminada',
