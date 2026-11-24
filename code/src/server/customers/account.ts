@@ -117,6 +117,13 @@ export async function requestPasswordReset(db: PrismaClient, email: string) {
   })
 }
 
+/** CU-05: whether a reset link can still be used, so an expired one says so before she types. */
+export async function resetLinkValid(db: PrismaClient, token: string): Promise<boolean> {
+  if (!token || token.length > 100) return false
+  const row = await db.customerToken.findUnique({ where: { id: hashToken(token) } })
+  return !!row && !row.usedAt && row.expiresAt > new Date() && row.purpose === 'RESET_PASSWORD'
+}
+
 export async function resetPassword(db: PrismaClient, token: string, password: string, repeat: string): Promise<{ ok: true; customerId: string } | { ok: false; error: string; field?: 'password' | 'repeat' }> {
   const row = token ? await db.customerToken.findUnique({ where: { id: hashToken(token) } }) : null
   if (!row || row.usedAt || row.expiresAt < new Date() || row.purpose !== 'RESET_PASSWORD') return { ok: false, error: ACCOUNT_ERRORS.linkExpired }
