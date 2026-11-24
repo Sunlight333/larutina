@@ -493,21 +493,22 @@ model Endorsement {
 // ------------------------------------------------------------- routines ----
 
 model Routine {
-  id          String             @id @default(cuid())
-  code        String             @unique
-  name        String
-  goal        String
-  moment      Moment
-  difficulty  RoutineDifficulty?
-  discountPct Int?               @map("discount_pct")
-  description String?
-  status      RoutineStatus      @default(DRAFT)
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-  deletedAt   DateTime?          @map("deleted_at")
-  skinTypes   RoutineSkinType[]
-  concerns    RoutineConcern[]
-  steps       RoutineStep[]
+  id             String             @id @default(cuid())
+  code           String             @unique
+  name           String
+  goal           String
+  moment         Moment
+  difficulty     RoutineDifficulty?
+  discountPct    Int?               @map("discount_pct")
+  discountHalves Boolean            @default(false) @map("discount_halves") // RUT-04: also for the morning or the night alone (panel only, not in the template)
+  description    String?
+  status         RoutineStatus      @default(DRAFT)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+  skinTypes      RoutineSkinType[]
+  concerns       RoutineConcern[]
+  steps          RoutineStep[]
 
   @@map("routines")
 }

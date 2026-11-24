@@ -1,5 +1,6 @@
 // What the browser receives about a cart. Built field by field, so the cost
 // (CAT-20), the parcel measurements and internal ids never leave the server.
+import { routinePrice } from '@/lib/commerce/routine'
 import type { CartView } from './cart'
 
 export type PublicCartLine = {
@@ -35,6 +36,8 @@ export type PublicCart = {
   discountCents: number
   totalCents: number
   codeOutdone: boolean
+  /** BO-03: routines in the cart, with the saving when their discount applies. */
+  routines: { group: string; name: string; scope: 'full' | 'am' | 'pm' | null; count: number; savingsCents: number }[]
 }
 
 export function publicCart(view: CartView): PublicCart {
@@ -70,5 +73,11 @@ export function publicCart(view: CartView): PublicCart {
     discountCents: view.pricing.discountCents,
     totalCents: view.pricing.totalCents,
     codeOutdone: view.pricing.codeOutdone,
+    routines: view.routines.map((r) => {
+      const mine = view.lines.filter((l) => l.routineGroup === r.group)
+      const eligible = view.lines.filter((l) => r.lineIds.includes(l.id))
+      const savings = view.pricing.applied === 'routine' ? routinePrice(eligible.map((l) => l.unitChargedCents * l.quantity), r.discountPct).discountCents : 0
+      return { group: r.group, name: r.name, scope: r.scope, count: mine.length, savingsCents: savings }
+    }),
   }
 }

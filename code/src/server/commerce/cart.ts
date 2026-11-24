@@ -11,6 +11,7 @@ import { resolveImages } from '@/server/media'
 import { MOMENT_LABELS, STEP_LABELS } from '@/server/services/catalog/labels'
 import { chargedCents, presaleLabel, publishedProductWhere, sizeLabel, variantAvailable } from '@/server/services/catalog/rules'
 import { checkCoupon } from './coupons'
+import { cartRoutines, type CartRoutine } from './routines'
 
 type Db = PrismaClient | Prisma.TransactionClient
 
@@ -57,13 +58,15 @@ export type CartView = {
   /** BO-11 notices produced while reading the cart. */
   notices: string[]
   pricing: Pricing
+  /** Routines in the cart and whether each is complete (BO-03, RUT-03). */
+  routines: CartRoutine[]
   count: number
 }
 
 const EMPTY_PRICING = priceCart({ lines: [] })
 
 export function emptyCartView(): CartView {
-  return { id: null, email: null, couponCode: null, couponError: null, postcode: null, lines: [], notices: [], pricing: EMPTY_PRICING, count: 0 }
+  return { id: null, email: null, couponCode: null, couponError: null, postcode: null, lines: [], notices: [], pricing: EMPTY_PRICING, routines: [], count: 0 }
 }
 
 const cartInclude = {
@@ -163,8 +166,12 @@ export async function viewCart(db: Db, cart: CartRow | null, opts: { transferPct
     if (check.ok) code = check.discount
     else couponError = check.error
   }
+  // Only the lines of a complete routine (or half, when allowed) earn its discount.
+  const routines = await cartRoutines(db, lines)
+  const eligible = new Map(routines.flatMap((r) => (r.discountPct > 0 ? r.lineIds.map((id) => [id, r.group] as const) : [])))
   const pricing = priceCart({
-    lines: lines.map((l) => ({ key: l.id, unitChargedCents: l.unitChargedCents, quantity: l.quantity, routineGroup: l.routineGroup })),
+    lines: lines.map((l) => ({ key: l.id, unitChargedCents: l.unitChargedCents, quantity: l.quantity, routineGroup: eligible.get(l.id) ?? null })),
+    routineGroups: Object.fromEntries(routines.filter((r) => r.discountPct > 0 && r.lineIds.length).map((r) => [r.group, r.discountPct])),
     code,
     transferPct: opts.transferPct ?? 0,
     capPct: opts.capPct ?? 0,
@@ -178,6 +185,7 @@ export async function viewCart(db: Db, cart: CartRow | null, opts: { transferPct
     lines,
     notices,
     pricing,
+    routines,
     count: lines.reduce((n, l) => n + l.quantity, 0),
   }
 }
