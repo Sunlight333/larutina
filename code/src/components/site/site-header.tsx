@@ -61,7 +61,7 @@ export async function SiteHeader() {
   return (
     <HeaderShell>
       <div className="relative border-b border-line bg-paper/92 backdrop-blur-md supports-[backdrop-filter]:bg-paper/80">
-        {/* A thin terracotta rule under the bar, echoing the line under the wordmark. */}
+        {/* A thin terracotta rule under the bar. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent" />
 
         <div className="container-page grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-3 transition-[height] duration-300 lg:h-[6.5rem] lg:gap-6 group-data-[scrolled=true]/header:lg:h-[4.25rem]">
@@ -104,7 +104,8 @@ export async function SiteHeader() {
                 'group-data-[scrolled=true]/header:lg:mt-1.5 group-data-[scrolled=true]/header:lg:size-[3.75rem]',
               ].join(' ')}
             >
-              <LogoMark className="size-full" priority sizes="(min-width: 1024px) 132px, 76px" />
+              {/* The monogram is taller than wide; at 62% of the medallion its corners stay well inside the ring. */}
+              <LogoMark className="size-[62%]" priority sizes="(min-width: 1024px) 82px, 48px" />
             </span>
           </Link>
 

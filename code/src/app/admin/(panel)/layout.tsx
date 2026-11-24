@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { requireAdmin } from '@/server/auth/session'
 import { siteHref } from '@/lib/hosts'
 import { can, ROLE_LABELS } from '@/server/auth/permissions'
-import { Wordmark } from '@/components/site/wordmark'
+import { LogoFull } from '@/components/site/logo'
 import { logout } from '../login/actions'
 import { NAV } from './nav'
 import { AdminNavLink } from './nav-link'
@@ -17,7 +17,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <aside className="border-b border-line bg-paper lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-5 py-4">
           <Link href="/" aria-label="Inicio del panel">
-            <Wordmark markClassName="size-9" />
+            <LogoFull className="w-32" alt="" />
           </Link>
           <a href={siteHref('/')} className="text-xs text-ink-muted underline underline-offset-2">
             Ver sitio

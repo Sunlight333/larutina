@@ -21,7 +21,7 @@ export async function WaitlistPage() {
   const image = own ?? { src: campaign.src, alt: '' }
   return (
     <main id="contenido" className="relative grid min-h-dvh overflow-hidden bg-paper lg:grid-cols-2">
-      {/* Soft terracotta sun behind the logo, from the emblem. */}
+      {/* Soft terracotta glow behind the logo. */}
       <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 size-[46rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--color-accent-soft),transparent)]" />
       <section className="relative flex flex-col items-center justify-between gap-10 px-6 py-10 text-center md:py-14">
         <span aria-hidden="true" />

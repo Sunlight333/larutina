@@ -5,7 +5,7 @@ import { getDb } from '@/server/db'
 import { resolveImages } from '@/server/media'
 import { getLegalLinks } from '@/server/services/site'
 import { whatsappLink } from '@/lib/whatsapp'
-import logoSculpted from '@/assets/brand/logo-sculpted.png'
+import { LogoFull } from '@/components/site/logo'
 import { SignupForm } from '@/components/site/signup-form'
 import { LanguagePills } from '@/components/site/language-switcher'
 import { subscribeNewsletter } from '@/app/(site)/actions'
@@ -44,9 +44,9 @@ export async function SiteFooter() {
       <div className="container-page relative pb-10 pt-10 md:pt-14">
         <div className="grid gap-12 lg:grid-cols-[1.35fr_2fr] lg:gap-14">
           <div className="max-w-md">
-            {/* The client's logo file exactly as delivered (docs/logo, Sculpted Logo-12), straight on the sand. */}
-            <Link href="/" className="-ml-5 inline-block transition-transform sm:-ml-7 duration-500 ease-[var(--ease-out-soft)] hover:-translate-y-1">
-              <Image src={logoSculpted} alt={s['brand.fullName']} sizes="(min-width: 640px) 416px, 320px" className="h-auto w-80 sm:w-[26rem]" />
+            {/* The client's logotipo, straight on the sand. */}
+            <Link href="/" className="inline-block transition-transform duration-500 ease-[var(--ease-out-soft)] hover:-translate-y-1">
+              <LogoFull alt={s['brand.fullName']} className="w-56 sm:w-64" />
             </Link>
             <p className="mt-3 text-[0.9375rem] font-semibold leading-relaxed text-ink-soft">{s['brand.tagline']}</p>
             <LanguagePills className="mt-7" />
