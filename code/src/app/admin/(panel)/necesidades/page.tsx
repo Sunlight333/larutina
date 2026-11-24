@@ -35,7 +35,7 @@ export default async function ConcernsPage({ searchParams }: { searchParams: Pro
               label: 'Necesidad',
               render: (c) => (
                 <div>
-                  <Link href={`/admin/necesidades/${c.code}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`/necesidades/${c.code}`} className="font-medium underline-offset-2 hover:underline">
                     {c.name}
                   </Link>
                   <p className="text-xs text-ink-muted">{c.code}</p>

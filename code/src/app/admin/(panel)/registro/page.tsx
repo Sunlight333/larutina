@@ -52,7 +52,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           },
         ]}
       />
-      <Pagination basePath="/admin/registro" sp={sp} total={total} page={page} size={size} />
+      <Pagination basePath="/registro" sp={sp} total={total} page={page} size={size} />
     </>
   )
 }

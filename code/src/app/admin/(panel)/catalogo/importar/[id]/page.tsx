@@ -33,7 +33,7 @@ export default async function ImportReportPage({ params }: { params: Promise<{ i
 
   return (
     <>
-      <PageHeader title={job.fileName} description={<ImportStatusBadge status={job.status} />} back={{ href: '/admin/catalogo/importar', label: 'Importar planilla' }} />
+      <PageHeader title={job.fileName} description={<ImportStatusBadge status={job.status} />} back={{ href: '/catalogo/importar', label: 'Importar planilla' }} />
       <div className="space-y-6">
         {job.status === 'REJECTED' && (
           <Notice tone="danger" title="No se importó nada">

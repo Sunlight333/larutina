@@ -25,7 +25,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ code:
     .map((c) => ({ value: c.id, label: `${'— '.repeat(c.depth)}${c.name}` }))
   return (
     <>
-      <PageHeader title={category.name} description={`Código ${category.code}`} back={{ href: '/admin/categorias', label: 'Categorías' }} actions={<AdminLink href={`/admin/productos?categoria=${category.code}`}>Ver sus {category._count.products} productos</AdminLink>} />
+      <PageHeader title={category.name} description={`Código ${category.code}`} back={{ href: '/categorias', label: 'Categorías' }} actions={<AdminLink href={`/productos?categoria=${category.code}`}>Ver sus {category._count.products} productos</AdminLink>} />
       <fieldset disabled={!can(admin.role, 'catalog.edit')} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <Card>
           <AdminForm action={updateCategoryAction.bind(null, category.code)}>

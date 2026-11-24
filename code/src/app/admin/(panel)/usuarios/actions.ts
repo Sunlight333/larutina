@@ -71,5 +71,5 @@ export async function resetTwoFactor(id: string, _prev: FormState): Promise<Form
 }
 
 export async function goToUser(form: FormData) {
-  redirect(`/admin/usuarios/${String(form.get('id'))}`)
+  redirect(`/usuarios/${String(form.get('id'))}`)
 }

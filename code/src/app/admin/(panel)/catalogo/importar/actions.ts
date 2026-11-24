@@ -18,7 +18,7 @@ export async function importAction(_prev: FormState, form: FormData): Promise<Fo
   const report = await runImport(getDb(), admin, file!, { stage, dryRun: str(form, 'mode') !== 'importar', canCost: can(admin.role, 'catalog.cost') })
   revalidatePath('/admin/catalogo/importar')
   if (report.status === 'APPLIED') revalidatePath('/', 'layout')
-  redirect(`/admin/catalogo/importar/${report.jobId}`)
+  redirect(`/catalogo/importar/${report.jobId}`)
 }
 
 /** "Importar este archivo": the file validated before, validated again and applied. */
@@ -28,5 +28,5 @@ export async function applyValidatedAction(jobId: string, _prev: FormState): Pro
   if ('error' in result) return fail(result.error)
   revalidatePath('/admin/catalogo/importar')
   if (result.status === 'APPLIED') revalidatePath('/', 'layout')
-  redirect(`/admin/catalogo/importar/${result.jobId}`)
+  redirect(`/catalogo/importar/${result.jobId}`)
 }

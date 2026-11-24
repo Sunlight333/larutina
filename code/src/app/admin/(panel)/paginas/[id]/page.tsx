@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getDb } from '@/server/db'
 import { requireAdmin } from '@/server/auth/session'
+import { siteHref } from '@/lib/hosts'
 import { blockCatalog } from '@/server/services/content/blocks'
 import { draftOf, HOME_SLUG, PAGE_KIND_LABELS, pageStatus } from '@/server/services/content/pages'
 import { VARIABLE_HELP } from '@/lib/copy-variables'
@@ -22,7 +23,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   const doc = draftOf(page)
   const status = pageStatus(page)
   const isHome = page.slug === HOME_SLUG
-  const url = isHome ? '/' : `/${page.slug}`
+  const url = siteHref(isHome ? '/' : `/${page.slug}`)
 
   return (
     <>
@@ -33,7 +34,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
             <code>{url}</code> · {PAGE_KIND_LABELS[page.kind]} <PageStatusBadge status={status} />
           </span>
         }
-        back={{ href: '/admin/paginas', label: 'Home y páginas' }}
+        back={{ href: '/paginas', label: 'Home y páginas' }}
         actions={
           <>
             <AdminLink href={`${url}?vista-previa=1`} target="_blank">

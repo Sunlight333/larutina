@@ -6,7 +6,7 @@ import { login } from './actions'
 
 export default async function LoginPage() {
   const admin = await currentAdmin()
-  if (admin?.mfaPassed) redirect('/admin')
+  if (admin?.mfaPassed) redirect('/')
   return (
     <>
       <h1 className="mb-5 text-lg font-semibold">Ingresar al panel</h1>

@@ -38,7 +38,7 @@ export default async function PagesList({ searchParams }: { searchParams: Promis
                 key: 'title',
                 label: 'Página',
                 render: (p) => (
-                  <Link className="font-medium underline-offset-2 hover:underline" href={`/admin/paginas/${p.id}`}>
+                  <Link className="font-medium underline-offset-2 hover:underline" href={`/paginas/${p.id}`}>
                     {p.title}
                   </Link>
                 ),

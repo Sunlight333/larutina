@@ -27,7 +27,7 @@ export default async function NewProductPage() {
       <PageHeader
         title="Nuevo producto"
         description="Queda en Borrador: no se ve en el sitio hasta que lo publiques. Ingredientes, necesidades e imágenes se cargan después de crearlo."
-        back={{ href: '/admin/productos', label: 'Productos' }}
+        back={{ href: '/productos', label: 'Productos' }}
       />
       <Card>
         <AdminForm action={createProductAction} submitLabel="Crear producto">

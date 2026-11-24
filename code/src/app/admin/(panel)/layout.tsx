@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requireAdmin } from '@/server/auth/session'
+import { siteHref } from '@/lib/hosts'
 import { can, ROLE_LABELS } from '@/server/auth/permissions'
 import { Wordmark } from '@/components/site/wordmark'
 import { logout } from '../login/actions'
@@ -15,12 +16,12 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh bg-shell lg:grid lg:grid-cols-[15.5rem_1fr]">
       <aside className="border-b border-line bg-paper lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-5 py-4">
-          <Link href="/admin" aria-label="Inicio del panel">
+          <Link href="/" aria-label="Inicio del panel">
             <Wordmark markClassName="size-9" />
           </Link>
-          <Link href="/" className="text-xs text-ink-muted underline underline-offset-2">
+          <a href={siteHref('/')} className="text-xs text-ink-muted underline underline-offset-2">
             Ver sitio
-          </Link>
+          </a>
         </div>
         <details className="group lg:hidden" >
           <summary className="cursor-pointer px-5 pb-3 text-sm font-medium">Menú</summary>

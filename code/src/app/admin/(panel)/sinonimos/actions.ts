@@ -28,5 +28,5 @@ export async function deleteSynonymAction(id: string, _prev: FormState): Promise
   const result = await deleteSynonym(getDb(), admin, id)
   if (!result.ok) return result
   revalidatePath('/admin/sinonimos')
-  redirect('/admin/sinonimos?borrado=1')
+  redirect('/sinonimos?borrado=1')
 }

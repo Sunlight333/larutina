@@ -27,13 +27,13 @@ export default async function SubscribersPage() {
           <Card title="Exportar" description="CSV en UTF-8, se abre con Excel o Google Sheets. Exportar la lista de espera marca esas filas como exportadas.">
             {/* Plain links, not next/link: a prefetch must never trigger an export. */}
             <div className="flex flex-wrap gap-2">
-              <a href="/admin/exportar/lista-de-espera?solo-nuevos=1" className={adminButton('primary')} download>
+              <a href="/exportar/lista-de-espera?solo-nuevos=1" className={adminButton('primary')} download>
                 Lista de espera: solo nuevos
               </a>
-              <a href="/admin/exportar/lista-de-espera" className={adminButton('secondary')} download>
+              <a href="/exportar/lista-de-espera" className={adminButton('secondary')} download>
                 Lista de espera: todo
               </a>
-              <a href="/admin/exportar/newsletter" className={adminButton('secondary')} download>
+              <a href="/exportar/newsletter" className={adminButton('secondary')} download>
                 Newsletter
               </a>
             </div>

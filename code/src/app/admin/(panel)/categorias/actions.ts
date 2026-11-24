@@ -14,7 +14,7 @@ export async function createCategoryAction(_prev: FormState, form: FormData): Pr
   const result = await saveCategory(getDb(), admin, null, read(form))
   if (!result.ok) return result
   revalidatePath('/admin/categorias')
-  redirect(`/admin/categorias/${result.code}`)
+  redirect(`/categorias/${result.code}`)
 }
 
 export async function updateCategoryAction(code: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -30,5 +30,5 @@ export async function deleteCategoryAction(code: string, _prev: FormState): Prom
   const result = await deleteCategory(getDb(), admin, code)
   if (!result.ok) return result
   revalidatePath('/admin/categorias')
-  redirect('/admin/categorias?borrada=1')
+  redirect('/categorias?borrada=1')
 }

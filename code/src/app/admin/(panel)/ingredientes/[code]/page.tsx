@@ -31,7 +31,7 @@ export default async function IngredientPage({ params }: { params: Promise<{ cod
             {ingredient.status === 'REVIEW' ? <Badge tone="warning">Nuevo · revisar</Badge> : <Badge tone="success">Revisado</Badge>}
           </span>
         }
-        back={{ href: '/admin/ingredientes', label: 'Ingredientes' }}
+        back={{ href: '/ingredientes', label: 'Ingredientes' }}
       />
       <fieldset disabled={!can(admin.role, 'catalog.edit')} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <Card>
@@ -66,7 +66,7 @@ export default async function IngredientPage({ params }: { params: Promise<{ cod
             <ul className="space-y-1 text-sm">
               {ingredient.products.map((p) => (
                 <li key={p.productId}>
-                  <Link href={`/admin/productos/${p.product.code}?s=ingredientes`} className="underline-offset-2 hover:underline">
+                  <Link href={`/productos/${p.product.code}?s=ingredientes`} className="underline-offset-2 hover:underline">
                     {p.product.name}
                   </Link>
                   {p.isStar && <span className="text-xs text-ink-muted"> · estrella</span>}

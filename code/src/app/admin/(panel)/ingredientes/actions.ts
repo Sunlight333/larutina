@@ -22,7 +22,7 @@ export async function createIngredientAction(_prev: FormState, form: FormData): 
   const result = await saveIngredient(getDb(), admin, null, read(form), form.getAll('concernIds').map(String))
   if (!result.ok) return result
   revalidatePath('/admin/ingredientes')
-  redirect(`/admin/ingredientes/${result.code}`)
+  redirect(`/ingredientes/${result.code}`)
 }
 
 export async function updateIngredientAction(code: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -47,5 +47,5 @@ export async function deleteIngredientAction(code: string, _prev: FormState): Pr
   const result = await deleteIngredient(getDb(), admin, code)
   if (!result.ok) return result
   revalidatePath('/admin/ingredientes')
-  redirect('/admin/ingredientes?borrado=1')
+  redirect('/ingredientes?borrado=1')
 }

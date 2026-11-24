@@ -17,7 +17,7 @@ export default async function SynonymPage({ params }: { params: Promise<{ id: st
   if (!synonym) notFound()
   return (
     <>
-      <PageHeader title={synonym.term} back={{ href: '/admin/sinonimos', label: 'Sinónimos' }} />
+      <PageHeader title={synonym.term} back={{ href: '/sinonimos', label: 'Sinónimos' }} />
       <fieldset disabled={!can(admin.role, 'catalog.edit')} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <Card>
           <AdminForm action={updateSynonymAction.bind(null, synonym.id)}>

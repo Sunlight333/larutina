@@ -1,4 +1,5 @@
 import type { SiteMode } from '@/server/site-access'
+import { adminHref } from '@/lib/hosts'
 
 export function TeamBar({ mode, isAdmin }: { mode: SiteMode; isAdmin: boolean }) {
   const text =
@@ -9,7 +10,7 @@ export function TeamBar({ mode, isAdmin }: { mode: SiteMode; isAdmin: boolean })
     <div className="bg-night-deep px-4 py-2 text-center text-[0.8125rem] text-paper">
       {text}{' '}
       {isAdmin ? (
-        <a href="/admin" className="underline underline-offset-2">
+        <a href={adminHref()}className="underline underline-offset-2">
           Ir al panel
         </a>
       ) : (

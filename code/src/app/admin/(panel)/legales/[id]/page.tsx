@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getDb } from '@/server/db'
 import { requireAdmin } from '@/server/auth/session'
+import { siteHref } from '@/lib/hosts'
 import { AdminForm, SubmitButton } from '@/components/admin/form'
 import { TextArea, TextField } from '@/components/admin/fields'
 import { KeepFormValues } from '@/components/admin/keep-values'
@@ -26,9 +27,9 @@ export default async function EditLegal({ params }: { params: Promise<{ id: stri
       <PageHeader
         title={doc.title}
         description={<code>/legales/{doc.code}</code>}
-        back={{ href: '/admin/legales', label: 'Legales' }}
+        back={{ href: '/legales', label: 'Legales' }}
         actions={
-          <AdminLink href={`/legales/${doc.code}?vista-previa=1`} target="_blank">
+          <AdminLink href={siteHref(`/legales/${doc.code}?vista-previa=1`)} target="_blank">
             Vista previa del borrador
           </AdminLink>
         }
@@ -63,7 +64,7 @@ export default async function EditLegal({ params }: { params: Promise<{ id: stri
             <ol className="space-y-3 text-sm">
               {doc.versions.map((v, i) => (
                 <li key={v.id}>
-                  <Link href={`/legales/${doc.code}/v/${v.version}`} target="_blank" className="font-medium underline-offset-2 hover:underline">
+                  <Link href={siteHref(`/legales/${doc.code}/v/${v.version}`)} target="_blank" className="font-medium underline-offset-2 hover:underline">
                     Versión {v.version}
                   </Link>
                   {i === 0 && <span className="text-ink-muted"> · vigente</span>}

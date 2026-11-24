@@ -36,7 +36,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         {groups.map((g) => (
           <Link
             key={g}
-            href={`/admin/configuracion?grupo=${g}`}
+            href={`/configuracion?grupo=${g}`}
             aria-current={g === group ? 'page' : undefined}
             className={`rounded-full px-3 py-1.5 text-sm ${g === group ? 'bg-ink text-paper' : 'bg-paper text-ink-soft hover:text-ink'}`}
           >

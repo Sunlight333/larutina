@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     // Indexing is decided by the panel (site.indexing) through the robots
-    // meta tag and robots.txt; the panel itself is never indexed.
+    // meta tag and robots.txt. The panel itself is never indexed: on its host
+    // (admin.…) src/proxy.ts adds X-Robots-Tag and Cache-Control: no-store.
     return [
       {
         source: '/:path*',
@@ -28,7 +29,6 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
-      { source: '/admin/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }, { key: 'Cache-Control', value: 'no-store' }] },
     ]
   },
 }

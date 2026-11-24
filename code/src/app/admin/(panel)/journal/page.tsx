@@ -22,7 +22,7 @@ export default async function JournalList({ searchParams }: { searchParams: Prom
   const catName = new Map(categories.map((c) => [c.slug, c.name]))
   return (
     <>
-      <PageHeader title="Journal" description="Artículos con autor, “Revisado por”, productos y rutinas insertados. Se editan como borrador y se ven al publicar." actions={<AdminLink href="/admin/journal/categorias">Categorías</AdminLink>} />
+      <PageHeader title="Journal" description="Artículos con autor, “Revisado por”, productos y rutinas insertados. Se editan como borrador y se ven al publicar." actions={<AdminLink href="/journal/categorias">Categorías</AdminLink>} />
       {param(sp, 'borrado') !== undefined && (
         <div className="mb-4">
           <Notice tone="success">El artículo pasó a la papelera.</Notice>
@@ -40,7 +40,7 @@ export default async function JournalList({ searchParams }: { searchParams: Prom
                 key: 'title',
                 label: 'Artículo',
                 render: (a) => (
-                  <Link href={`/admin/journal/${a.id}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`/journal/${a.id}`} className="font-medium underline-offset-2 hover:underline">
                     {a.title}
                   </Link>
                 ),
@@ -50,7 +50,7 @@ export default async function JournalList({ searchParams }: { searchParams: Prom
               { key: 'updated', label: 'Última edición', render: (a) => formatDateTime(a.updatedAt) },
             ]}
           />
-          <Pagination basePath="/admin/journal" sp={sp} total={total} page={page} size={size} />
+          <Pagination basePath="/journal" sp={sp} total={total} page={page} size={size} />
         </div>
         <Card title="Nuevo artículo">
           <AdminForm action={createArticleAction} submitLabel="Crear borrador">

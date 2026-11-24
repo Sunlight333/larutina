@@ -63,6 +63,8 @@ services:
     profiles: [tools]
     environment:
       DATABASE_URL: *database-url
+      # Shown by larutina-admin (scripts/admin.ts) after creating a user.
+      PANEL_URL: https://admin.${SITE_DOMAIN:-larutinabeauty.com}
     depends_on:
       db:
         condition: service_healthy

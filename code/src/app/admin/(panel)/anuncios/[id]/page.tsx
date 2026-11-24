@@ -15,7 +15,7 @@ export default async function EditAnnouncement({ params }: { params: Promise<{ i
   if (!a) notFound()
   return (
     <>
-      <PageHeader title="Anuncio" back={{ href: '/admin/anuncios', label: 'Barra de anuncios' }} />
+      <PageHeader title="Anuncio" back={{ href: '/anuncios', label: 'Barra de anuncios' }} />
       <div className="max-w-xl space-y-4">
         <Card>
           <AdminForm action={updateAnnouncementAction.bind(null, a.id)}>

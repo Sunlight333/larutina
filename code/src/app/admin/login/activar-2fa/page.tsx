@@ -12,9 +12,9 @@ import { logout, verifyCode } from '../actions'
 // is stored when this page first renders and activated by the first valid code.
 export default async function EnrolPage() {
   const admin = await currentAdmin()
-  if (!admin) redirect('/admin/login')
-  if (admin.mfaPassed) redirect('/admin')
-  if (admin.totpEnabled) redirect('/admin/login/codigo')
+  if (!admin) redirect('/login')
+  if (admin.mfaPassed) redirect('/')
+  if (admin.totpEnabled) redirect('/login/codigo')
 
   const db = getDb()
   const user = await db.adminUser.findUniqueOrThrow({ where: { id: admin.id } })

@@ -24,7 +24,7 @@ async function main() {
         const user = await db.adminUser.create({ data: { email: email.toLowerCase(), name, role: role as AdminRole, passwordHash: await hashPassword(password) } })
         await db.auditLog.create({ data: { action: 'user.create', entityType: 'AdminUser', entityId: user.id, label: user.email, actorEmail: 'cli' } })
         console.log(`Created ${user.email} (${user.role}). Temporary password: ${password}`)
-        console.log('Two-factor setup is asked at the first sign-in, at /admin/login.')
+        console.log(`Two-factor setup is asked at the first sign-in, at ${process.env.PANEL_URL ? `${process.env.PANEL_URL}/login` : 'the panel'}.`)
         break
       }
       case 'reset-password': {

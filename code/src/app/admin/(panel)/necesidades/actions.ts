@@ -20,7 +20,7 @@ export async function createConcernAction(_prev: FormState, form: FormData): Pro
   const result = await saveConcern(getDb(), admin, null, read(form))
   if (!result.ok) return result
   revalidatePath('/admin/necesidades')
-  redirect(`/admin/necesidades/${result.code}`)
+  redirect(`/necesidades/${result.code}`)
 }
 
 export async function updateConcernAction(code: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -36,5 +36,5 @@ export async function deleteConcernAction(code: string, _prev: FormState): Promi
   const result = await deleteConcern(getDb(), admin, code)
   if (!result.ok) return result
   revalidatePath('/admin/necesidades')
-  redirect('/admin/necesidades?borrada=1')
+  redirect('/necesidades?borrada=1')
 }

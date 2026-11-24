@@ -41,7 +41,7 @@ export default async function IngredientsPage({ searchParams }: { searchParams: 
         {toReview > 0 && status !== 'REVIEW' && (
           <Notice tone="warning">
             Hay {toReview} {toReview === 1 ? 'ingrediente' : 'ingredientes'} para revisar.{' '}
-            <Link href="/admin/ingredientes?estado=REVIEW" className="underline">
+            <Link href="/ingredientes?estado=REVIEW" className="underline">
               Ver solo esos
             </Link>
           </Notice>
@@ -67,7 +67,7 @@ export default async function IngredientsPage({ searchParams }: { searchParams: 
                 label: 'Ingrediente',
                 render: (i) => (
                   <div>
-                    <Link href={`/admin/ingredientes/${i.code}`} className="font-medium underline-offset-2 hover:underline">
+                    <Link href={`/ingredientes/${i.code}`} className="font-medium underline-offset-2 hover:underline">
                       {i.commonName}
                     </Link>
                     <p className="text-xs text-ink-muted">
@@ -107,7 +107,7 @@ export default async function IngredientsPage({ searchParams }: { searchParams: 
               },
             ]}
           />
-          <Pagination basePath="/admin/ingredientes" sp={sp} total={total} page={page.page} size={page.size} />
+          <Pagination basePath="/ingredientes" sp={sp} total={total} page={page.page} size={page.size} />
         </div>
         {canEdit && (
           <Card title="Nuevo ingrediente">

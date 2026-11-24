@@ -34,7 +34,7 @@ export async function createPageAction(_prev: FormState, form: FormData): Promis
     return asFormState(e)
   }
   revalidatePath('/admin/paginas')
-  redirect(`/admin/paginas/${id}`)
+  redirect(`/paginas/${id}`)
 }
 
 export async function savePageAction(id: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -76,7 +76,7 @@ export async function deletePageAction(id: string, _prev: FormState): Promise<Fo
     return asFormState(e)
   }
   revalidatePath('/', 'layout')
-  redirect('/admin/paginas?borrada=1')
+  redirect('/paginas?borrada=1')
 }
 
 /** Loads the content file's pages, legal drafts and announcements that are missing; never overwrites. */

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Uptime and health watch (INF-04), run every minute by larutina-monitor.timer.
-# Checks the site through Caddy, the app's /api/health (app + database), the
-# containers, disk space and the age of the last backup. A problem is alerted
+# Checks the site and the panel (admin.…) through Caddy, the app's /api/health
+# (app + database), the containers, disk space and the age of the last backup. A problem is alerted
 # once when it starts and once when it clears, through ALERT_WEBHOOK_URL in
 # deploy/.env (any endpoint that accepts a JSON POST: Slack, Discord, a
 # Telegram relay…). Without a webhook, problems only go to the journal.
@@ -48,6 +48,7 @@ check() {
 }
 
 site()     { curl -fsS -o /dev/null -m 15 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/live"; }
+panel()    { curl -fsS -o /dev/null -m 15 --resolve "admin.$DOMAIN:443:127.0.0.1" "https://admin.$DOMAIN/login"; }
 health()   { curl -fsS -m 15 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/health" | grep -q '"ok":true'; }
 containers() {
   local bad
@@ -59,6 +60,7 @@ restore()  { [ -n "$(find /var/lib/larutina/restore-check -mtime -8 2>/dev/null)
 backup()   { [ -n "$(find /var/backups/larutina -name 'larutina-daily-*.dump' -mtime -2 2>/dev/null | head -1)" ] || { echo "no daily backup in the last 48 h"; return 1; }; }
 
 check site site
+check panel panel
 check health health
 check containers containers
 check disk disk

@@ -42,20 +42,20 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
 
   await db.adminUser.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } })
   await createSession(user.id, { mfaPassed: false, ip, userAgent: await userAgent() })
-  redirect(user.totpEnabledAt ? '/admin/login/codigo' : '/admin/login/activar-2fa')
+  redirect(user.totpEnabledAt ? '/login/codigo' : '/login/activar-2fa')
 }
 
 /** Second step: the 6-digit code from the authenticator app. */
 export async function verifyCode(_prev: FormState, form: FormData): Promise<FormState> {
   const admin = await currentAdmin()
-  if (!admin) redirect('/admin/login')
+  if (!admin) redirect('/login')
   if (!rateLimit(`totp:${admin.sessionId}`, 8, 15 * 60 * 1000).ok) {
     await destroySession()
-    redirect('/admin/login')
+    redirect('/login')
   }
   const db = getDb()
   const user = await db.adminUser.findUniqueOrThrow({ where: { id: admin.id } })
-  if (!user.totpSecret) redirect('/admin/login/activar-2fa')
+  if (!user.totpSecret) redirect('/login/activar-2fa')
   const step = verifyTotp(user.totpSecret, str(form, 'code'), user.totpLastStep)
   if (step === null) return fail('El código no es válido o ya se usó. Probá con el siguiente.', { code: 'Código incorrecto' })
 
@@ -66,12 +66,12 @@ export async function verifyCode(_prev: FormState, form: FormData): Promise<Form
   })
   await markMfaPassed(admin.sessionId)
   await audit(db, { id: user.id, email: user.email }, { action: enrolling ? 'login.2fa-enabled' : 'login', entityType: 'AdminUser', entityId: user.id, label: user.email, ip: await clientIp() })
-  redirect('/admin')
+  redirect('/')
 }
 
 export async function logout() {
   const admin = await currentAdmin()
   if (admin) await audit(getDb(), { id: admin.id, email: admin.email }, { action: 'logout', entityType: 'AdminUser', entityId: admin.id, label: admin.email })
   await destroySession()
-  redirect('/admin/login')
+  redirect('/login')
 }

@@ -35,7 +35,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
             key: 'who',
             label: 'De',
             render: (m) => (
-              <Link href={`/admin/mensajes/${m.id}`} className="font-medium underline-offset-2 hover:underline">
+              <Link href={`/mensajes/${m.id}`} className="font-medium underline-offset-2 hover:underline">
                 {m.name}
                 <span className="block text-xs font-normal text-ink-muted">{m.email}</span>
               </Link>
@@ -47,7 +47,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
           { key: 'status', label: 'Estado', render: (m) => <MessageStatusBadge status={m.status} /> },
         ]}
       />
-      <Pagination basePath="/admin/mensajes" sp={sp} total={total} page={page} size={size} />
+      <Pagination basePath="/mensajes" sp={sp} total={total} page={page} size={size} />
     </>
   )
 }

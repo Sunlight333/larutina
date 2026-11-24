@@ -110,7 +110,7 @@ export function IngredientsSection({ product }: { product: Product }) {
                     <td className="px-3 py-1.5 tabular-nums text-ink-muted">{pi.inciOrder}</td>
                     <td className="px-3 py-1.5">
                       <input type="hidden" name="codes" value={pi.ingredient.code} />
-                      <Link href={`/admin/ingredientes/${pi.ingredient.code}`} className="underline-offset-2 hover:underline">
+                      <Link href={`/ingredientes/${pi.ingredient.code}`} className="underline-offset-2 hover:underline">
                         {pi.ingredient.commonName}
                       </Link>
                       {pi.ingredient.commonName !== pi.ingredient.inciName && <span className="text-xs text-ink-muted"> · {pi.ingredient.inciName}</span>}

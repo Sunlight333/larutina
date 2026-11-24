@@ -47,7 +47,7 @@ export default async function BrandsPage({ searchParams }: { searchParams: Promi
               label: 'Marca',
               render: (b) => (
                 <div>
-                  <Link href={`/admin/marcas/${b.code}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`/marcas/${b.code}`} className="font-medium underline-offset-2 hover:underline">
                     {b.name}
                   </Link>
                   <p className="text-xs text-ink-muted">{b.code}</p>
@@ -55,7 +55,7 @@ export default async function BrandsPage({ searchParams }: { searchParams: Promi
               ),
             },
             { key: 'country', label: 'País', render: (b) => b.countryOfOrigin ?? '—' },
-            { key: 'products', label: 'Productos', className: 'text-right tabular-nums', render: (b) => <Link href={`/admin/productos?marca=${b.code}`}>{b._count.products}</Link> },
+            { key: 'products', label: 'Productos', className: 'text-right tabular-nums', render: (b) => <Link href={`/productos?marca=${b.code}`}>{b._count.products}</Link> },
           ]}
         />
         {can(admin.role, 'catalog.edit') && (

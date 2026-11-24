@@ -12,7 +12,7 @@ export default async function JournalCategories() {
   const categories = await getDb().articleCategory.findMany({ orderBy: [{ position: 'asc' }, { name: 'asc' }] })
   return (
     <>
-      <PageHeader title="Categorías del journal" description="Se muestran como filtro en /journal, en este orden." back={{ href: '/admin/journal', label: 'Journal' }} />
+      <PageHeader title="Categorías del journal" description="Se muestran como filtro en /journal, en este orden." back={{ href: '/journal', label: 'Journal' }} />
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-3">
           {categories.length === 0 && <EmptyState>Todavía no hay categorías.</EmptyState>}

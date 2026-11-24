@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 export function AdminNavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const path = usePathname()
-  const active = href === '/admin' ? path === '/admin' : path === href || path.startsWith(`${href}/`)
+  // The browser's path on the panel host; drop the internal /admin prefix in case it shows.
+  const path = usePathname().replace(/^\/admin(?=\/|$)/, '') || '/'
+  const active = href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`)
   return (
     <Link
       href={href}

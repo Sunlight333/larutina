@@ -4,6 +4,7 @@ import { DATA_FIELDS, type DataValues } from '@/server/services/admin/catalog/pr
 import { STATUS_OPTIONS } from '@/server/services/admin/catalog/products'
 import { AdminForm, SubmitButton } from '@/components/admin/form'
 import { Select } from '@/components/admin/fields'
+import { siteHref } from '@/lib/hosts'
 import { Card, formatDate } from '@/components/admin/ui'
 import { deleteProductAction, publishAction, statusAction } from '../actions'
 import { CompletenessBadge } from '../badges'
@@ -30,7 +31,7 @@ export function DraftCard({ code, draft, columns }: { code: string; draft: DataV
       </ul>
       <AdminForm action={publishAction.bind(null, code)} submitLabel={null} className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <a href={`/producto/${code}?vista-previa=1`} target="_blank" rel="noopener" className="inline-flex h-9 items-center rounded-lg border border-line-strong px-3.5 text-sm font-medium hover:border-ink">
+          <a href={siteHref(`/producto/${code}?vista-previa=1`)} target="_blank" rel="noopener" className="inline-flex h-9 items-center rounded-lg border border-line-strong px-3.5 text-sm font-medium hover:border-ink">
             Ver vista previa ↗
           </a>
           <SubmitButton name="op" value="publicar-cambios" confirm="¿Publicar estos cambios en el sitio?">

@@ -23,7 +23,7 @@ export default async function UsersPage() {
           rows={users}
           rowKey={(u) => u.id}
           columns={[
-            { key: 'name', label: 'Nombre', render: (u) => <Link className="font-medium underline-offset-2 hover:underline" href={`/admin/usuarios/${u.id}`}>{u.name}</Link> },
+            { key: 'name', label: 'Nombre', render: (u) => <Link className="font-medium underline-offset-2 hover:underline" href={`/usuarios/${u.id}`}>{u.name}</Link> },
             { key: 'email', label: 'Email', render: (u) => u.email },
             { key: 'role', label: 'Rol', render: (u) => ROLE_LABELS[u.role] },
             { key: 'state', label: 'Estado', render: (u) => (!u.active ? <Badge tone="danger">Inactivo</Badge> : u.totpEnabledAt ? <Badge tone="success">Activo</Badge> : <Badge tone="warning">Sin 2FA todavía</Badge>) },

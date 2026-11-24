@@ -40,5 +40,5 @@ export async function deleteAnnouncementAction(id: string, _prev: FormState): Pr
   const admin = await requireAdmin('content.edit')
   await deleteAnnouncement(getDb(), admin, id)
   done()
-  redirect('/admin/anuncios')
+  redirect('/anuncios')
 }

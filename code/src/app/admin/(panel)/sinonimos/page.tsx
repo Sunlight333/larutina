@@ -42,7 +42,7 @@ export default async function SynonymsPage({ searchParams }: { searchParams: Pro
               key: 'term',
               label: 'Término',
               render: (s) => (
-                <Link href={`/admin/sinonimos/${s.id}`} className="font-medium underline-offset-2 hover:underline">
+                <Link href={`/sinonimos/${s.id}`} className="font-medium underline-offset-2 hover:underline">
                   {s.term}
                 </Link>
               ),

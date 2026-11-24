@@ -34,7 +34,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       <PageHeader
         title="Productos"
         description="Los productos nuevos quedan en Borrador. Lo publicado se edita en borrador y se publica con vista previa."
-        actions={canEdit && <AdminLink href="/admin/productos/nuevo" variant="primary">Nuevo producto</AdminLink>}
+        actions={canEdit && <AdminLink href="/productos/nuevo" variant="primary">Nuevo producto</AdminLink>}
       />
       {sp.borrado !== undefined && (
         <div className="mb-4">
@@ -86,7 +86,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               label: 'Producto',
               render: (r) => (
                 <div>
-                  <Link href={`/admin/productos/${r.code}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`/productos/${r.code}`} className="font-medium underline-offset-2 hover:underline">
                     {r.name}
                   </Link>
                   <p className="text-xs text-ink-muted">
@@ -139,7 +139,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </div>
         )}
       </AdminForm>
-      <Pagination basePath="/admin/productos" sp={sp} total={total} page={page.page} size={page.size} />
+      <Pagination basePath="/productos" sp={sp} total={total} page={page.page} size={page.size} />
       <p className="mt-2 text-xs text-ink-muted">Estados: {STATUS_OPTIONS.map((o) => statusLabel(o.value)).join(' · ')}.</p>
     </>
   )

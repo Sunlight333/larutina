@@ -46,7 +46,7 @@ export async function createProductAction(_prev: FormState, form: FormData): Pro
   const result = await createProduct(getDb(), admin, input, { canCost: can(admin.role, 'catalog.cost'), dermatologistLabelEnabled: s['catalog.dermatologistLabelEnabled'] })
   if (!result.ok || !result.code) return result
   touched()
-  redirect(`/admin/productos/${result.code}?creado=1`)
+  redirect(`/productos/${result.code}?creado=1`)
 }
 
 export async function saveDataAction(code: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -78,7 +78,7 @@ export async function deleteProductAction(code: string, _prev: FormState): Promi
   const result = await deleteProduct(getDb(), admin, code)
   if (!result.ok) return result
   touched()
-  redirect('/admin/productos?borrado=1')
+  redirect('/productos?borrado=1')
 }
 
 export async function createVariantAction(code: string, _prev: FormState, form: FormData): Promise<FormState> {

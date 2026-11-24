@@ -38,10 +38,10 @@ export default async function PanelHome({ searchParams }: { searchParams: Promis
         )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Productos activos" value={count('ACTIVE') + count('PRESALE')} href={can(admin.role, 'catalog.view') ? '/admin/productos?estado=ACTIVE' : undefined} />
-          <Stat label="En borrador" value={count('DRAFT')} href={can(admin.role, 'catalog.view') ? '/admin/productos?estado=DRAFT' : undefined} />
-          <Stat label="Lista de espera" value={waitlist} href={can(admin.role, 'subscribers.export') ? '/admin/suscriptores' : undefined} />
-          <Stat label="Mensajes nuevos" value={messages} href={can(admin.role, 'messages.view') ? '/admin/mensajes' : undefined} />
+          <Stat label="Productos activos" value={count('ACTIVE') + count('PRESALE')} href={can(admin.role, 'catalog.view') ? '/productos?estado=ACTIVE' : undefined} />
+          <Stat label="En borrador" value={count('DRAFT')} href={can(admin.role, 'catalog.view') ? '/productos?estado=DRAFT' : undefined} />
+          <Stat label="Lista de espera" value={waitlist} href={can(admin.role, 'subscribers.export') ? '/suscriptores' : undefined} />
+          <Stat label="Mensajes nuevos" value={messages} href={can(admin.role, 'messages.view') ? '/mensajes' : undefined} />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">

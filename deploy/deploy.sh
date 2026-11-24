@@ -25,6 +25,17 @@ main() {
   ENV_FILE=$APP_DIR/deploy/.env
   COMPOSE=(docker compose -f "$APP_DIR/deploy/compose.yaml" --env-file "$ENV_FILE")
 
+  # Caddy mounts the Caddyfile as a single file. A deploy replaces that file,
+  # and the running container keeps reading the old copy, so a reload alone
+  # misses the change: recreate Caddy when the two differ, reload otherwise.
+  refresh_caddy() {
+    if "${COMPOSE[@]}" exec -T caddy cat /etc/caddy/Caddyfile 2>/dev/null | cmp -s - "$APP_DIR/deploy/Caddyfile"; then
+      "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 || true
+    else
+      "${COMPOSE[@]}" up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+    fi
+  }
+
   local mode=deploy auto=0 force=0
   for arg in "$@"; do
     case $arg in
@@ -104,7 +115,7 @@ main() {
     stack_id "$new" > "$STATE/stack"
     rm -f "$STATE/failed"
     echo "$(date -u +%FT%TZ) $tag $new" >> "$STATE/history"
-    "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 || true
+    refresh_caddy
     cleanup
     log "LIVE: $(describe "$new")"
   else
@@ -157,7 +168,7 @@ direct_deploy() {
     echo "direct:$sum $desc" > "$STATE/deployed"
     rm -f "$STATE/failed"
     echo "$(date -u +%FT%TZ) $tag direct:$sum" >> "$STATE/history"
-    "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 || true
+    refresh_caddy
     cleanup
     log "LIVE: $desc ($tag)"
   else
@@ -281,6 +292,7 @@ status() {
   echo "Recent deploys:"; tail -5 "$STATE/history" | sed 's/^/  /'
   echo "Latest backups:"; "$APP_DIR/deploy/backup.sh" --list 2>/dev/null | tail -3 | sed 's/^/  /'
   echo "Restore check: $(cat "$STATE/restore-check" 2>/dev/null || echo 'not run yet')"
+  echo "Off-site copy: $(cat "$STATE/offsite" 2>/dev/null || echo 'not run yet')"
   echo; "${COMPOSE[@]}" ps
 }
 

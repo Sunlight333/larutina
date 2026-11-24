@@ -26,13 +26,13 @@ export default async function BulkPage() {
         <Card title="Exportar">
           <div className="flex flex-wrap gap-2">
             {/* Plain links: these are file downloads from route handlers, not pages. */}
-            <a href="/admin/catalogo/exportar" className={link}>
+            <a href="/catalogo/exportar" className={link}>
               Catálogo completo (plantilla v1.1)
             </a>
-            <a href="/admin/catalogo/exportar?formato=lote" className={link}>
+            <a href="/catalogo/exportar?formato=lote" className={link}>
               Planilla de precios y stock
             </a>
-            <a href="/admin/catalogo/exportar?vacia=1" className={link}>
+            <a href="/catalogo/exportar?vacia=1" className={link}>
               Plantilla v1.1 vacía
             </a>
           </div>

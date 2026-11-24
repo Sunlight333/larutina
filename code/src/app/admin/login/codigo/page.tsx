@@ -6,9 +6,9 @@ import { logout, verifyCode } from '../actions'
 
 export default async function CodePage() {
   const admin = await currentAdmin()
-  if (!admin) redirect('/admin/login')
-  if (admin.mfaPassed) redirect('/admin')
-  if (!admin.totpEnabled) redirect('/admin/login/activar-2fa')
+  if (!admin) redirect('/login')
+  if (admin.mfaPassed) redirect('/')
+  if (!admin.totpEnabled) redirect('/login/activar-2fa')
   return (
     <>
       <h1 className="text-lg font-semibold">Código de verificación</h1>

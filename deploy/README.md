@@ -1,6 +1,6 @@
 # Deploy
 
-Production runs on a VPS in São Paulo (Vultr, Ubuntu 24.04) behind Cloudflare, at **https://larutinabeauty.com**.
+Production runs on a VPS in São Paulo (Vultr, Ubuntu 24.04) behind Cloudflare, at **https://larutinabeauty.com**, with the management panel at **https://admin.larutinabeauty.com**. Both are the same app; it tells them apart by the host.
 
 ```
 visitor ─► Cloudflare (DNS, proxy) ─► VPS :443 Caddy (Let's Encrypt) ─► web: Next.js standalone ─► db: PostgreSQL 17
@@ -11,7 +11,7 @@ visitor ─► Cloudflare (DNS, proxy) ─► VPS :443 Caddy (Let's Encrypt) ─
 | --- | --- |
 | [`../code/Dockerfile`](../code/Dockerfile) | Builds the app into a small Node 24 image (`output: 'standalone'`), and the one-shot migration image |
 | [`compose.yaml`](compose.yaml) | The stack: `web` (the app), `db` (PostgreSQL), `caddy` (HTTPS, `www` → apex redirect), and `migrate` (run by the deploy only) |
-| [`Caddyfile`](Caddyfile) | Domain, certificate, reverse proxy |
+| [`Caddyfile`](Caddyfile) | Domains (site, `admin.` panel, `www` redirect), certificates, reverse proxy |
 | [`deploy.sh`](deploy.sh) | Runs on the server: build, backup, migrations, switch, health check, automatic rollback |
 | [`backup.sh`](backup.sh) | Database dumps (nightly, and before every deploy that migrates), nightly media copy, weekly restore rehearsal |
 | [`monitor.sh`](monitor.sh) | Every minute: site, app and database health, containers, disk, backup age; alerts on change |
@@ -25,7 +25,7 @@ Uploaded media (catalog images, contact attachments) live in the `larutina_media
 
 ## First admin and panel users
 
-The panel is at `/admin`. Every user signs in with a password and a code from an authenticator app (set up at the first sign-in). Create the first user on the server; the rest from the panel (Sistema → Usuarios):
+The panel is at **https://admin.larutinabeauty.com** (sign-in at `/login`). Old links to `larutinabeauty.com/admin/…` redirect there. Every user signs in with a password and a code from an authenticator app (set up at the first sign-in). The session cookie is set for the whole domain, so a signed-in user is also recognised on the storefront. Create the first user on the server; the rest from the panel (Sistema → Usuarios):
 
 ```bash
 ssh larutina-vps larutina-admin create <email> "<Nombre>" ADMIN   # prints a temporary password
@@ -83,7 +83,7 @@ docker compose start web
 
 ## Monitoring
 
-`monitor.sh` runs every minute on the server. It checks the site through Caddy (`/api/live`), the app and database (`/api/health`), that every container is running and healthy, disk use under 85%, a nightly backup in the last 48 hours, and a successful restore rehearsal in the last 8 days. Each problem is reported once when it starts (after two failed checks in a row, so a deploy swap does not page) and once when it clears. The app also reports every unhandled server error.
+`monitor.sh` runs every minute on the server. It checks the site through Caddy (`/api/live`), the panel's sign-in page on `admin.` (which also catches an expired panel certificate), the app and database (`/api/health`), that every container is running and healthy, disk use under 85%, a nightly backup in the last 48 hours, and a successful restore rehearsal in the last 8 days. Each problem is reported once when it starts (after two failed checks in a row, so a deploy swap does not page) and once when it clears. The app also reports every unhandled server error.
 
 Alerts go to `ALERT_WEBHOOK_URL` in `/opt/larutina/deploy/.env`: any URL that accepts a JSON POST with a `text` or `content` field (a Slack or Discord incoming webhook works as is). After adding it, run `larutina-deploy --force` so the app picks it up, and `/opt/larutina/deploy/monitor.sh --test` to see an alert arrive. Without it, problems are only written to the journal (`journalctl -u larutina-monitor`).
 
@@ -125,11 +125,12 @@ The domain's DNS is on Cloudflare. Records, in **DNS → Records**:
 | --- | --- | --- | --- |
 | A | `@` | server IP | see steps |
 | A | `www` | server IP | see steps |
+| A | `admin` | server IP | see steps |
 
-Remove any other `A`, `AAAA` or `CNAME` records on `@` and `www`. No `AAAA` record is needed: once proxied, Cloudflare serves visitors over IPv6 by itself and reaches the server over IPv4.
+Remove any other `A`, `AAAA` or `CNAME` records on `@`, `www` and `admin`. No `AAAA` record is needed: once proxied, Cloudflare serves visitors over IPv6 by itself and reaches the server over IPv4.
 
-1. Create both records as **DNS only** (grey cloud). Caddy gets the Let's Encrypt certificate within a minute or two of the records resolving to the server.
-2. Once `https://larutinabeauty.com` loads with a valid certificate, switch both records to **Proxied** (orange cloud).
+1. Create the records as **DNS only** (grey cloud). Caddy gets a Let's Encrypt certificate for each name within a minute or two of it resolving to the server.
+2. Once `https://larutinabeauty.com` and `https://admin.larutinabeauty.com/login` load with a valid certificate, switch the records to **Proxied** (orange cloud).
 3. **SSL/TLS → Overview:** encryption mode **Full (strict)**. Not Flexible: that causes a redirect loop.
 4. **SSL/TLS → Edge Certificates:** leave **Always Use HTTPS** off. Caddy already redirects HTTP to HTTPS, and keeping port 80 reachable lets it renew the certificate through the proxy with no extra rules. If it must be on, add a rule that exempts `/.well-known/acme-challenge/*` from it.
 5. Don't put bot challenges in front of `/.well-known/acme-challenge/*` (Bot Fight Mode, "Under Attack", WAF rules); they block renewals.
@@ -143,4 +144,4 @@ curl -fsSL https://raw.githubusercontent.com/Sunlight333/larutina/main/deploy/se
 larutina-deploy
 ```
 
-The first deploy creates an empty database with a new password. To move the data, copy a backup from the old server and restore it as above. Then point DNS at the new IP as above. To serve another domain, set `SITE_DOMAIN` in `/opt/larutina/deploy/.env` and run `larutina-deploy --force`.
+The first deploy creates an empty database with a new password. To move the data, copy a backup from the old server and restore it as above. Then point DNS at the new IP as above. To serve another domain, set `SITE_DOMAIN` in `/opt/larutina/deploy/.env` and run `larutina-deploy --force`. The panel then moves to `admin.` on that domain, which needs its own DNS record.

@@ -44,7 +44,7 @@ export default async function ImportPage() {
               <input id="import-file" name="file" type="file" required accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-describedby="import-file-help" className="block text-sm" />
               <p id="import-file-help" className="text-xs text-ink-muted">
                 Hasta {MAX_IMPORT_BYTES / 1024 / 1024} MB. El formato es la planilla completa en .xlsx, con todas sus hojas: un .csv no alcanza, porque cada producto se arma con varias hojas. Para cambiar solo precios, stock o estado con un .csv, usá{' '}
-                <Link href="/admin/catalogo/lote" className="underline">
+                <Link href="/catalogo/lote" className="underline">
                   Actualizar en lote
                 </Link>
                 .
@@ -63,13 +63,13 @@ export default async function ImportPage() {
         <Card title="Plantilla">
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="/admin/catalogo/exportar" className="underline">
+              <a href="/catalogo/exportar" className="underline">
                 Descargar el catálogo actual
               </a>{' '}
               <span className="text-ink-muted">para editarlo y volver a importarlo.</span>
             </li>
             <li>
-              <a href="/admin/catalogo/exportar?vacia=1" className="underline">
+              <a href="/catalogo/exportar?vacia=1" className="underline">
                 Descargar la plantilla vacía
               </a>
             </li>
@@ -86,7 +86,7 @@ export default async function ImportPage() {
             key: 'date',
             label: 'Fecha',
             render: (j) => (
-              <Link href={`/admin/catalogo/importar/${j.id}`} className="underline-offset-2 hover:underline">
+              <Link href={`/catalogo/importar/${j.id}`} className="underline-offset-2 hover:underline">
                 {formatDateTime(j.createdAt)}
               </Link>
             ),

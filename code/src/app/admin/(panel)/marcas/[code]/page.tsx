@@ -21,7 +21,7 @@ export default async function BrandPage({ params }: { params: Promise<{ code: st
   const canEdit = can(admin.role, 'catalog.edit')
   return (
     <>
-      <PageHeader title={brand.name} description={`Código ${brand.code}`} back={{ href: '/admin/marcas', label: 'Marcas' }} actions={<AdminLink href={`/admin/productos?marca=${brand.code}`}>Ver sus {brand._count.products} productos</AdminLink>} />
+      <PageHeader title={brand.name} description={`Código ${brand.code}`} back={{ href: '/marcas', label: 'Marcas' }} actions={<AdminLink href={`/productos?marca=${brand.code}`}>Ver sus {brand._count.products} productos</AdminLink>} />
       <fieldset disabled={!canEdit} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <Card>
           <AdminForm action={updateBrandAction.bind(null, brand.code)}>

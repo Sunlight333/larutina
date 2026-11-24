@@ -36,7 +36,7 @@ export default async function LegalList() {
               key: 'title',
               label: 'Documento',
               render: (d) => (
-                <Link href={`/admin/legales/${d.id}`} className="font-medium underline-offset-2 hover:underline">
+                <Link href={`/legales/${d.id}`} className="font-medium underline-offset-2 hover:underline">
                   {d.title}
                 </Link>
               ),

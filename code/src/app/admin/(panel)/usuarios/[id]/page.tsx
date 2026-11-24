@@ -16,7 +16,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   if (!user) notFound()
   return (
     <>
-      <PageHeader title={user.name} description={user.email} back={{ href: '/admin/usuarios', label: 'Usuarios' }} />
+      <PageHeader title={user.name} description={user.email} back={{ href: '/usuarios', label: 'Usuarios' }} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Datos y rol">
           <AdminForm action={updateUser.bind(null, user.id)}>

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getDb } from '@/server/db'
 import { requireAdmin } from '@/server/auth/session'
+import { siteHref } from '@/lib/hosts'
 import { mediaUrl } from '@/server/media'
 import { articleDraft, articleStatus } from '@/server/services/content/articles'
 import { AdminForm, SubmitButton } from '@/components/admin/form'
@@ -32,14 +33,14 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
             <code>/journal/{a.slug}</code> <PageStatusBadge status={status} female={false} />
           </span>
         }
-        back={{ href: '/admin/journal', label: 'Journal' }}
+        back={{ href: '/journal', label: 'Journal' }}
         actions={
           <>
-            <AdminLink href={`/journal/${a.slug}?vista-previa=1`} target="_blank">
+            <AdminLink href={siteHref(`/journal/${a.slug}?vista-previa=1`)} target="_blank">
               Vista previa
             </AdminLink>
             {a.published && (
-              <AdminLink href={`/journal/${a.slug}`} target="_blank" variant="ghost">
+              <AdminLink href={siteHref(`/journal/${a.slug}`)} target="_blank" variant="ghost">
                 Ver en el sitio
               </AdminLink>
             )}

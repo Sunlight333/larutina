@@ -17,7 +17,7 @@ export default async function ConcernPage({ params }: { params: Promise<{ code: 
   if (!concern) notFound()
   return (
     <>
-      <PageHeader title={concern.name} description={`Código ${concern.code}`} back={{ href: '/admin/necesidades', label: 'Necesidades' }} />
+      <PageHeader title={concern.name} description={`Código ${concern.code}`} back={{ href: '/necesidades', label: 'Necesidades' }} />
       <fieldset disabled={!can(admin.role, 'catalog.edit')} className="grid gap-6 lg:grid-cols-[1fr_18rem]">
         <Card>
           <AdminForm action={updateConcernAction.bind(null, concern.code)}>

@@ -79,7 +79,7 @@ export default async function MediaLibrary({ searchParams }: { searchParams: Pro
               })}
             </ul>
           )}
-          <Pagination basePath="/admin/medios" sp={sp} total={total} page={page} size={size} />
+          <Pagination basePath="/medios" sp={sp} total={total} page={page} size={size} />
         </div>
       </div>
     </>

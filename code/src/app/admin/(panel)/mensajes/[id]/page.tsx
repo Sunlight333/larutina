@@ -18,7 +18,7 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
   const subject = encodeURIComponent(`Re: ${m.reason}`)
   return (
     <>
-      <PageHeader title={m.name} description={<MessageStatusBadge status={m.status} />} back={{ href: '/admin/mensajes', label: 'Mensajes' }} />
+      <PageHeader title={m.name} description={<MessageStatusBadge status={m.status} />} back={{ href: '/mensajes', label: 'Mensajes' }} />
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-6">
           <Card>
@@ -43,10 +43,10 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {m.attachments.map((_key, i) => (
                   <li key={i}>
-                    <a href={`/admin/adjuntos/${m.id}/${i}`} target="_blank" rel="noopener" className="block overflow-hidden rounded-lg border border-line bg-shell">
+                    <a href={`/adjuntos/${m.id}/${i}`} target="_blank" rel="noopener" className="block overflow-hidden rounded-lg border border-line bg-shell">
                       {/* A plain img: the image optimizer would fetch without the admin session. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/admin/adjuntos/${m.id}/${i}`} alt={`Foto ${i + 1} adjunta`} className="aspect-square w-full object-cover" />
+                      <img src={`/adjuntos/${m.id}/${i}`} alt={`Foto ${i + 1} adjunta`} className="aspect-square w-full object-cover" />
                     </a>
                   </li>
                 ))}

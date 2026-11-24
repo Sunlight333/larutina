@@ -38,7 +38,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
               label: 'Categoría',
               render: (c) => (
                 <div style={{ paddingLeft: `${c.depth * 1.25}rem` }}>
-                  <Link href={`/admin/categorias/${c.code}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`/categorias/${c.code}`} className="font-medium underline-offset-2 hover:underline">
                     {c.name}
                   </Link>
                   <p className="text-xs text-ink-muted">{c.code}</p>
@@ -46,7 +46,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
               ),
             },
             { key: 'order', label: 'Orden', className: 'tabular-nums', render: (c) => c.sortOrder ?? '—' },
-            { key: 'products', label: 'Productos', className: 'text-right tabular-nums', render: (c) => <Link href={`/admin/productos?categoria=${c.code}`}>{c._count.products}</Link> },
+            { key: 'products', label: 'Productos', className: 'text-right tabular-nums', render: (c) => <Link href={`/productos?categoria=${c.code}`}>{c._count.products}</Link> },
           ]}
         />
         {can(admin.role, 'catalog.edit') && (

@@ -4,12 +4,14 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { AdminRole } from '@prisma/client'
 import { getDb } from '@/server/db'
+import { SESSION_COOKIE_DOMAIN } from '@/lib/hosts'
 import { can, type Permission } from './permissions'
 
 // Admin sessions in the database (ADR-009): the cookie holds a random token,
 // the table its SHA-256, so a leaked table cannot be replayed. 12 h absolute,
-// 2 h idle. The cookie path is "/" so the storefront can recognise the team
-// while the site is in waitlist or maintenance mode (GEN-09).
+// 2 h idle. The panel runs on admin.larutinabeauty.com; the cookie is set for
+// the whole domain, path "/", so the storefront can recognise the team while
+// the site is in waitlist or maintenance mode, and for previews (GEN-09).
 
 export const SESSION_COOKIE = 'lr_admin'
 const ABSOLUTE_MS = 12 * 60 * 60 * 1000
@@ -38,6 +40,7 @@ export async function createSession(userId: string, opts: { mfaPassed: boolean; 
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
+    domain: SESSION_COOKIE_DOMAIN,
     maxAge: ABSOLUTE_MS / 1000,
   })
 }
@@ -50,7 +53,8 @@ export async function destroySession() {
   const jar = await cookies()
   const token = jar.get(SESSION_COOKIE)?.value
   if (token) await getDb().adminSession.deleteMany({ where: { id: hashToken(token) } })
-  jar.delete(SESSION_COOKIE)
+  // Only a delete with the same Domain removes the cookie.
+  jar.delete({ name: SESSION_COOKIE, path: '/', domain: SESSION_COOKIE_DOMAIN })
 }
 
 /** The signed-in admin for this request, or null. Does not require 2FA. */
@@ -84,8 +88,8 @@ export async function teamMember(): Promise<AdminSessionUser | null> {
  */
 export async function requireAdmin(permission?: Permission): Promise<AdminSessionUser> {
   const admin = await currentAdmin()
-  if (!admin) redirect('/admin/login')
-  if (!admin.mfaPassed) redirect(admin.totpEnabled ? '/admin/login/codigo' : '/admin/login/activar-2fa')
-  if (permission && !can(admin.role, permission)) redirect('/admin?sin-permiso=1')
+  if (!admin) redirect('/login')
+  if (!admin.mfaPassed) redirect(admin.totpEnabled ? '/login/codigo' : '/login/activar-2fa')
+  if (permission && !can(admin.role, permission)) redirect('/?sin-permiso=1')
   return admin
 }

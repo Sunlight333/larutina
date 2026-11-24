@@ -24,7 +24,7 @@ export async function createBrandAction(_prev: FormState, form: FormData): Promi
   const result = await saveBrand(getDb(), admin, null, r.input)
   if (!result.ok) return result
   revalidatePath('/admin/marcas')
-  redirect(`/admin/marcas/${result.code}`)
+  redirect(`/marcas/${result.code}`)
 }
 
 export async function updateBrandAction(code: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -42,5 +42,5 @@ export async function deleteBrandAction(code: string, _prev: FormState): Promise
   const result = await deleteBrand(getDb(), admin, code)
   if (!result.ok) return result
   revalidatePath('/admin/marcas')
-  redirect('/admin/marcas?borrada=1')
+  redirect('/marcas?borrada=1')
 }

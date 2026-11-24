@@ -31,7 +31,7 @@ export async function createArticleAction(_prev: FormState, form: FormData): Pro
   } catch (e) {
     return asFormState(e)
   }
-  redirect(`/admin/journal/${id}`)
+  redirect(`/journal/${id}`)
 }
 
 export async function saveArticleAction(id: string, _prev: FormState, form: FormData): Promise<FormState> {
@@ -65,7 +65,7 @@ export async function deleteArticleAction(id: string, _prev: FormState): Promise
   const admin = await requireAdmin('content.edit')
   await deleteArticle(getDb(), admin, id)
   revalidatePath('/journal', 'layout')
-  redirect('/admin/journal?borrado=1')
+  redirect('/journal?borrado=1')
 }
 
 export async function createCategoryAction(_prev: FormState, form: FormData): Promise<FormState> {

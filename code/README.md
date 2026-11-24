@@ -18,12 +18,15 @@ npm run dev
 
 `db:dev` needs no Docker or system install: the `embedded-postgres` package ships the server (on Windows it starts through `pg_ctl`). `DEV_PG_PORT` runs it on another port.
 
-Sign in at `/admin` (password, then the authenticator app set up at the first sign-in). The site starts in "Próximamente" mode: visitors see the waitlist, signed-in users see the whole site, and Configuración → Sitio has a preview link for people without an account.
+The panel has its own host: `admin.larutinabeauty.com` in production, `http://admin.localhost:3000` locally (browsers resolve `*.localhost` to your machine; `localhost:3000/admin` redirects there). Sign in at `/login` on that host (password, then the authenticator app set up at the first sign-in). The site starts in "Próximamente" mode: visitors see the waitlist, signed-in users see the whole site, and Configuración → Sitio has a preview link for people without an account. Locally, the panel's session cookie stays on `admin.localhost`, so to see a closed site locally, use the preview link. In production, the cookie covers the whole domain.
+
+Both hosts are one app. `src/proxy.ts` serves `app/admin` at the root of the panel host, so links inside the panel are written without `/admin` (`/productos`, `/login`). Links between the panel and the storefront are absolute (`siteHref`, `adminHref` in `src/lib/hosts.ts`). `revalidatePath` still takes the internal route path (`/admin/productos`).
 
 ## What is where
 
 ```
-src/proxy.ts                       site gate: visitors get /proximamente while the site is closed
+src/proxy.ts                       hosts (panel on admin.…) and the site gate: visitors get /proximamente while the site is closed
+src/lib/hosts.ts                   site and panel URLs, the session cookie's domain
 src/app/(site)/                    storefront routes (layout: header, footer, announcement bar)
 src/app/admin/                     panel: login and 2FA, then (panel)/ with every section (nav.ts)
 src/app/api/                       search suggestions, cart prices, /api/health, /api/live
