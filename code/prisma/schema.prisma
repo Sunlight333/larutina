@@ -361,6 +361,8 @@ model Product {
   evaluations             ProductEvaluation[]
   routineSteps            RoutineStep[]
   routineAlternatives     RoutineStepAlternative[]
+  favorites               Favorite[]
+  reviews                 Review[]
 
   @@index([brandId])
   @@index([categoryId])
@@ -388,6 +390,12 @@ model ProductVariant {
   costCents       Int?     @map("cost_cents") // admin role only (CAT-20)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  reservations StockReservation[]
+  movements    InventoryMovement[]
+  backInStock  BackInStockRequest[]
 
   @@index([productId])
   @@map("product_variants")
@@ -832,4 +840,642 @@ model MediaAsset {
 
   @@index([fileName])
   @@map("media_assets")
+}
+
+// ============================================================================
+// Commerce (H2): customers, carts, coupons, orders, payments, stock,
+// shipping, refunds, withdrawals, back-in-stock, reviews, emails.
+// docs: 03-data-model §1.3, §2 "Pricing and checkout"; 06 Phase 2.
+// ============================================================================
+
+// CTA-01..03. A customer account; guests buy without one (CMP-03) and can
+// create it later with only a password (IR-12).
+model Customer {
+  id           String    @id @default(cuid())
+  email        String    @unique // lower case
+  passwordHash String?   @map("password_hash") // null: no password yet
+  firstName    String?   @map("first_name")
+  lastName     String?   @map("last_name")
+  dni          String?
+  phone        String?
+  newsletter   Boolean   @default(false)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  lastLoginAt  DateTime? @map("last_login_at")
+
+  sessions  CustomerSession[]
+  tokens    CustomerToken[]
+  addresses Address[]
+  favorites Favorite[]
+  carts     Cart[]
+  orders    Order[]
+  reviews   Review[]
+
+  @@map("customers")
+}
+
+// Same scheme as admin sessions: the cookie holds a random token, the table its SHA-256.
+model CustomerSession {
+  id         String   @id // sha256(token)
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime @map("expires_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([customerId])
+  @@map("customer_sessions")
+}
+
+enum CustomerTokenPurpose {
+  RESET_PASSWORD
+}
+
+model CustomerToken {
+  id         String               @id // sha256(token)
+  customerId String               @map("customer_id")
+  customer   Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  purpose    CustomerTokenPurpose
+  expiresAt  DateTime             @map("expires_at")
+  usedAt     DateTime?            @map("used_at")
+  createdAt  DateTime             @default(now()) @map("created_at")
+
+  @@index([customerId])
+  @@map("customer_tokens")
+}
+
+// CMP-03: an Argentine address.
+model Address {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  firstName  String   @map("first_name")
+  lastName   String   @map("last_name")
+  dni        String
+  phone      String
+  street     String // street and number
+  unit       String? // piso y depto
+  postcode   String
+  locality   String
+  province   String // code from src/lib/argentina.ts
+  notes      String?
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@map("addresses")
+}
+
+// PDP-09.
+model Favorite {
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@id([customerId, productId])
+  @@map("favorites")
+}
+
+// ---------------------------------------------------------------- cart ----
+
+// CMP-01: persistent across sessions (cookie token), linked to the account at
+// login. The email is kept only once the customer leaves it at checkout (EML-04).
+model Cart {
+  id                   String     @id @default(cuid())
+  token                String     @unique // sha256 of the cookie value
+  customerId           String?    @map("customer_id")
+  customer             Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  email                String?
+  couponCode           String?    @map("coupon_code")
+  ambassadorCode       String?    @map("ambassador_code") // H3 (EMB-02)
+  postcode             String? // last shipping quote
+  abandonedEmailSentAt DateTime?  @map("abandoned_email_sent_at")
+  convertedAt          DateTime?  @map("converted_at") // an order was placed from it
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+  items                CartItem[]
+
+  @@index([customerId])
+  @@index([updatedAt])
+  @@map("carts")
+}
+
+// Where an item came from (CMP-01: analytics and attribution).
+enum ItemSource {
+  PDP
+  LISTING
+  ROUTINE
+  DIAGNOSIS
+  WHATSAPP
+  AMBASSADOR
+  SEARCH
+  OTHER
+}
+
+model CartItem {
+  id           String         @id @default(cuid())
+  cartId       String         @map("cart_id")
+  cart         Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId    String         @map("variant_id")
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity     Int
+  source       ItemSource     @default(OTHER)
+  sourceRef    String?        @map("source_ref") // routine code, diagnosis id
+  routineGroup String?        @map("routine_group") // items added as one routine (BO-03); discount in H3
+  addedAt      DateTime       @default(now()) @map("added_at")
+
+  @@unique([cartId, variantId])
+  @@map("cart_items")
+}
+
+// ------------------------------------------------------------- coupons ----
+
+enum CouponKind {
+  PERCENT
+  AMOUNT
+}
+
+// CMP-08.
+model Coupon {
+  id                   String             @id @default(cuid())
+  code                 String             @unique // upper case
+  kind                 CouponKind
+  value                Int // percent (1-100) or centavos
+  description          String?
+  startsAt             DateTime?          @map("starts_at")
+  endsAt               DateTime?          @map("ends_at")
+  minSubtotalCents     Int?               @map("min_subtotal_cents")
+  maxUses              Int?               @map("max_uses")
+  firstPurchaseOnly    Boolean            @default(false) @map("first_purchase_only") // by email or DNI
+  combinesWithTransfer Boolean            @default(true) @map("combines_with_transfer")
+  active               Boolean            @default(true)
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  deletedAt            DateTime?          @map("deleted_at")
+  redemptions          CouponRedemption[]
+
+  @@map("coupons")
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String   @map("coupon_id")
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  orderId   String   @unique @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  email     String
+  dni       String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([couponId])
+  @@map("coupon_redemptions")
+}
+
+// -------------------------------------------------------------- orders ----
+
+// PED-01. Refunds leave their own status (partial or total).
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  PARTIALLY_REFUNDED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  MERCADOPAGO
+  TRANSFER
+}
+
+// Prices, discounts and addresses are snapshots: an order never recomputes
+// from the catalog. Discounts follow the cascade of CMP-02 (routine or code,
+// the larger; then transfer), capped; each line carries its share so
+// commissions and refunds can work per line (X-03).
+model Order {
+  id            String        @id @default(cuid())
+  number        String        @unique // LR-000142
+  customerId    String?       @map("customer_id")
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  cartId        String?       @map("cart_id")
+  status        OrderStatus   @default(PENDING_PAYMENT)
+  paymentMethod PaymentMethod @map("payment_method")
+
+  email           String
+  firstName       String  @map("first_name")
+  lastName        String  @map("last_name")
+  dni             String
+  phone           String
+  shippingAddress Json    @map("shipping_address") // { street, unit, postcode, locality, province, notes }
+  invoice         Json? // Factura A: { cuit, businessName } (CK-10)
+  newsletterOptIn Boolean @default(false) @map("newsletter_opt_in")
+
+  subtotalCents         Int     @map("subtotal_cents") // charged prices × quantities
+  routineDiscountCents  Int     @default(0) @map("routine_discount_cents")
+  codeDiscountCents     Int     @default(0) @map("code_discount_cents")
+  transferDiscountCents Int     @default(0) @map("transfer_discount_cents")
+  discountCents         Int     @default(0) @map("discount_cents") // all of the above, after the cap
+  shippingCents         Int     @default(0) @map("shipping_cents")
+  totalCents            Int     @map("total_cents")
+  couponCode            String? @map("coupon_code")
+  ambassadorCode        String? @map("ambassador_code")
+  shipping              Json // the chosen quote
+  termsAccepted         Json    @map("terms_accepted") // [{ code, version }] (CMP-06)
+
+  reservedUntil       DateTime? @map("reserved_until") // unpaid orders release stock after this
+  reminderSentAt      DateTime? @map("reminder_sent_at")
+  placedAt            DateTime  @default(now()) @map("placed_at")
+  paidAt              DateTime? @map("paid_at")
+  preparingAt         DateTime? @map("preparing_at")
+  shippedAt           DateTime? @map("shipped_at")
+  deliveredAt         DateTime? @map("delivered_at")
+  cancelledAt         DateTime? @map("cancelled_at")
+  refundedAt          DateTime? @map("refunded_at")
+  reviewRequestSentAt DateTime? @map("review_request_sent_at")
+  anonymizedAt        DateTime? @map("anonymized_at") // CTA-03
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  items        OrderItem[]
+  events       OrderEvent[]
+  payments     Payment[]
+  reservations StockReservation[]
+  shipment     Shipment?
+  refunds      Refund[]
+  redemption   CouponRedemption?
+  withdrawals  WithdrawalRequest[]
+
+  @@index([status, placedAt])
+  @@index([email])
+  @@index([customerId, placedAt])
+  @@index([status, reservedUntil])
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String          @id @default(cuid())
+  orderId          String          @map("order_id")
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId        String?         @map("variant_id")
+  variant          ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productId        String?         @map("product_id")
+  productCode      String          @map("product_code")
+  productName      String          @map("product_name")
+  brandName        String          @map("brand_name")
+  sku              String
+  sizeLabel        String          @map("size_label")
+  image            String? // file name in the media library
+  quantity         Int
+  unitPriceCents   Int             @map("unit_price_cents") // list price
+  unitChargedCents Int             @map("unit_charged_cents") // promo or list
+  subtotalCents    Int             @map("subtotal_cents") // charged × quantity
+  discountCents    Int             @default(0) @map("discount_cents") // this line's share
+  totalCents       Int             @map("total_cents") // subtotal − discount: commission base, no shipping
+  unitCostCents    Int?            @map("unit_cost_cents") // admin only (CAT-20)
+  source           ItemSource      @default(OTHER)
+  sourceRef        String?         @map("source_ref")
+  routineGroup     String?         @map("routine_group")
+  refundedQuantity Int             @default(0) @map("refunded_quantity")
+  reviews          Review[]
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+enum ActorType {
+  SYSTEM
+  ADMIN
+  CUSTOMER
+  PROVIDER
+}
+
+// PED-01: append-only; every change of state, payment or shipment, with its author.
+model OrderEvent {
+  id         String       @id @default(cuid())
+  orderId    String       @map("order_id")
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type       String // status, payment, shipment, refund, note, withdrawal
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus? @map("to_status")
+  message    String?
+  data       Json?
+  actorType  ActorType    @map("actor_type")
+  actorId    String?      @map("actor_id")
+  actorLabel String?      @map("actor_label") // admin email, "Mercado Pago", ...
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+// ------------------------------------------------------------- payments ----
+
+// One row per payment attempt: Mercado Pago can try several times on one
+// order. For transfers, one row holds the receipt and its review. Card data
+// never reach this table (CMP-07).
+model Payment {
+  id           String    @id @default(cuid())
+  orderId      String    @map("order_id")
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider     String // mercadopago | transfer | simulator
+  externalId   String?   @unique @map("external_id") // provider payment id
+  preferenceId String?   @map("preference_id")
+  status       String // approved | pending | in_process | rejected | cancelled | refunded | charged_back | awaiting_transfer | receipt_uploaded
+  statusDetail String?   @map("status_detail")
+  method       String? // credit_card, debit_card, account_money, ticket, bank_transfer
+  installments Int?
+  amountCents  Int       @map("amount_cents")
+  receipt      String? // private media key of the transfer receipt
+  receiptAt    DateTime? @map("receipt_at")
+  reviewedBy   String?   @map("reviewed_by")
+  reviewedAt   DateTime? @map("reviewed_at")
+  raw          Json? // provider response as read from its API
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+// CMP-04: every notification is stored once by its key, so a replay is a no-op.
+model PaymentNotification {
+  id          String    @id @default(cuid())
+  provider    String
+  dedupeKey   String    @unique @map("dedupe_key")
+  resourceId  String?   @map("resource_id")
+  payload     Json
+  receivedAt  DateTime  @default(now()) @map("received_at")
+  processedAt DateTime? @map("processed_at")
+  error       String?
+
+  @@map("payment_notifications")
+}
+
+// ---------------------------------------------------------------- stock ----
+
+enum ReservationStatus {
+  ACTIVE
+  COMMITTED
+  RELEASED
+}
+
+// PED-02: stock is taken from the variant when the payment starts (an atomic
+// conditional update, so two buyers never take the last unit) and given back
+// if the order is not paid in time. A kit reserves its own SKU (D-06).
+model StockReservation {
+  id         String            @id @default(cuid())
+  orderId    String            @map("order_id")
+  order      Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId  String            @map("variant_id")
+  variant    ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity   Int
+  status     ReservationStatus @default(ACTIVE)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  resolvedAt DateTime?         @map("resolved_at")
+
+  @@unique([orderId, variantId])
+  @@map("stock_reservations")
+}
+
+enum MovementType {
+  RESERVATION // − at payment start
+  RELEASE // + an unpaid order expired or was cancelled
+  RETURN // + refunded items put back
+  ADJUSTMENT // ± from the panel
+}
+
+// The stock ledger: every change to ProductVariant.stock outside the import.
+model InventoryMovement {
+  id         String         @id @default(cuid())
+  variantId  String         @map("variant_id")
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  type       MovementType
+  quantity   Int // signed
+  stockAfter Int            @map("stock_after")
+  orderId    String?        @map("order_id")
+  note       String?
+  actor      String? // admin email or "sistema"
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  @@index([variantId, createdAt])
+  @@map("inventory_movements")
+}
+
+// ------------------------------------------------------------- shipping ----
+
+// ENV-04: the standard boxes; an order ships in the smallest that fits.
+model ShippingBox {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  heightCm         Decimal  @map("height_cm") @db.Decimal(6, 1)
+  widthCm          Decimal  @map("width_cm") @db.Decimal(6, 1)
+  lengthCm         Decimal  @map("length_cm") @db.Decimal(6, 1)
+  emptyWeightGrams Int      @default(0) @map("empty_weight_grams")
+  maxWeightGrams   Int?     @map("max_weight_grams")
+  isDefault        Boolean  @default(false) @map("is_default") // products without measurements (CAT-11)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("shipping_boxes")
+}
+
+// ENV-03: when the provider's API does not answer, these rates quote instead.
+// A zone is a set of provinces; the first active zone holding the province
+// wins (by position).
+model ShippingRate {
+  id         String   @id @default(cuid())
+  zone       String
+  provinces  String[] // province codes
+  carrier    String // what the customer sees
+  priceCents Int      @map("price_cents")
+  minDays    Int      @map("min_days")
+  maxDays    Int      @map("max_days")
+  position   Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("shipping_rates")
+}
+
+enum ShipmentStatus {
+  PENDING // waiting to be created at the provider
+  CREATED // label ready
+  DISPATCHED
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+// ENV-01, ENV-05: created at the provider when the order is paid; what the
+// API does not cover (tracking, delivered) is set from the panel.
+model Shipment {
+  id           String         @id @default(cuid())
+  orderId      String         @unique @map("order_id")
+  order        Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider     String // zipnova | manual
+  status       ShipmentStatus @default(PENDING)
+  carrier      String?
+  service      String?
+  externalId   String?        @map("external_id")
+  trackingCode String?        @map("tracking_code")
+  trackingUrl  String?        @map("tracking_url")
+  label        String? // private media key of the label
+  boxCode      String?        @map("box_code")
+  weightGrams  Int?           @map("weight_grams")
+  costCents    Int?           @map("cost_cents") // what the provider charges LaRutina
+  error        String?
+  raw          Json?
+  dispatchedAt DateTime?      @map("dispatched_at")
+  deliveredAt  DateTime?      @map("delivered_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@map("shipments")
+}
+
+// -------------------------------------------------------------- refunds ----
+
+// PED-03: partial or total; items optionally back in stock. Each refund fires
+// the commission hook (X-03; commissions arrive in H3).
+model Refund {
+  id               String   @id @default(cuid())
+  orderId          String   @map("order_id")
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amountCents      Int      @map("amount_cents")
+  total            Boolean // the whole remaining amount
+  reason           String
+  items            Json // [{ orderItemId, quantity, restock }]
+  providerRefundId String?  @map("provider_refund_id")
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("refunds")
+}
+
+// ---------------------------------------------- withdrawal, stock alerts ----
+
+// PED-04 (Res. SCI 424/2020): no account needed; the code is emailed at once.
+model WithdrawalRequest {
+  id          String    @id @default(cuid())
+  code        String    @unique // ARR-XXXXXX
+  orderId     String?   @map("order_id")
+  order       Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderNumber String    @map("order_number")
+  name        String
+  email       String
+  phone       String?
+  dni         String?
+  reason      String?
+  status      String    @default("received") // received | in_progress | closed
+  note        String? // internal
+  emailSentAt DateTime? @map("email_sent_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@map("withdrawal_requests")
+}
+
+// NAV-07: one notice per request, sent once when stock goes from 0 to more.
+model BackInStockRequest {
+  id         String         @id @default(cuid())
+  email      String
+  variantId  String         @map("variant_id")
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now()) @map("created_at")
+  notifiedAt DateTime?      @map("notified_at")
+
+  @@index([variantId, notifiedAt])
+  @@index([email])
+  @@map("back_in_stock_requests")
+}
+
+// -------------------------------------------------------------- reviews ----
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// PDP-07: only from verified buyers (one per purchased line), moderated
+// before publishing. The block shows from a configurable minimum.
+model Review {
+  id          String       @id @default(cuid())
+  productId   String       @map("product_id")
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItemId String       @unique @map("order_item_id")
+  orderItem   OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  customerId  String?      @map("customer_id")
+  customer    Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  authorName  String       @map("author_name") // first name and initial
+  rating      Int // 1–5
+  title       String?
+  body        String
+  status      ReviewStatus @default(PENDING)
+  moderatedBy String?      @map("moderated_by")
+  moderatedAt DateTime?    @map("moderated_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@index([productId, status])
+  @@map("reviews")
+}
+
+// ---------------------------------------------------------------- email ----
+
+// EML-01: a row only once the text of an email is changed in the panel; the
+// defaults live in code (src/server/email/templates.ts), from the content file.
+model EmailTemplate {
+  key       String   @id
+  subject   String
+  preheader String   @default("")
+  body      String // Markdown subset with {variables}
+  ctaLabel  String   @default("") @map("cta_label")
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("email_templates")
+}
+
+enum EmailStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED // no provider configured: kept in the log only
+}
+
+// Outbox and log at once: emails are written here in the same transaction as
+// the change that causes them, and the sweep sends them. The dedupe key makes
+// each transactional email go out once (EML-02).
+model EmailMessage {
+  id          String      @id @default(cuid())
+  template    String
+  dedupeKey   String?     @unique @map("dedupe_key")
+  to          String
+  subject     String
+  html        String
+  text        String
+  status      EmailStatus @default(QUEUED)
+  attempts    Int         @default(0)
+  lastError   String?     @map("last_error")
+  providerId  String?     @map("provider_id")
+  relatedType String?     @map("related_type") // order, customer, withdrawal
+  relatedId   String?     @map("related_id")
+  sendAfter   DateTime    @default(now()) @map("send_after")
+  sentAt      DateTime?   @map("sent_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  @@index([status, sendAfter])
+  @@index([relatedType, relatedId])
+  @@map("email_messages")
 }
