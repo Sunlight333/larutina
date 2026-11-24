@@ -138,6 +138,85 @@ export const Droplet = (p: IconProps) => (
   </Icon>
 )
 
+// ─── Account ─────────────────────────────────────────────────────────────────
+
+export const User = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="8.2" r="3.9" />
+    <path d="M4.8 20.2c.9-3.7 3.7-5.9 7.2-5.9s6.3 2.2 7.2 5.9" />
+  </Icon>
+)
+
+/** The favourites heart; `filled` paints it in when the product is saved. */
+export const Heart = ({ filled = false, ...p }: IconProps & { filled?: boolean }) => (
+  <Icon {...p}>
+    <path d="M12 19.6s-7.6-4.5-7.6-10.1A4.3 4.3 0 0112 6.9a4.3 4.3 0 017.6 2.6c0 5.6-7.6 10.1-7.6 10.1z" fill={filled ? 'currentColor' : 'none'} />
+  </Icon>
+)
+
+export const Package = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3.5l8 4v9l-8 4-8-4v-9z" />
+    <path d="M4 7.5l8 4 8-4M12 11.5v9M8 5.5l8 4" />
+  </Icon>
+)
+
+export const Truck = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3.5 6.5h10v9h-10zM13.5 9.5h3.6l3.4 3.4v2.6h-7" />
+    <circle cx="7.5" cy="17.5" r="1.8" />
+    <circle cx="17" cy="17.5" r="1.8" />
+  </Icon>
+)
+
+export const MapPin = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" />
+    <circle cx="12" cy="10" r="2.4" />
+  </Icon>
+)
+
+export const Lock = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
+    <path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5M12 14.5v2" />
+  </Icon>
+)
+
+export const Mail = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3.5" y="5.5" width="17" height="13" rx="2.5" />
+    <path d="M4.5 7l7.5 6 7.5-6" />
+  </Icon>
+)
+
+export const Trash = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2a1.5 1.5 0 001.5 1.3h6.2a1.5 1.5 0 001.5-1.3L17.5 7" />
+    <path d="M10 11v5.5M14 11v5.5" />
+  </Icon>
+)
+
+export const LogOut = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14 4.5H7a2 2 0 00-2 2v11a2 2 0 002 2h7" />
+    <path d="M10.5 12h10M17 8.5l3.5 3.5-3.5 3.5" />
+  </Icon>
+)
+
+export const Pencil = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M15.5 4.5l4 4L9 19H5v-4z" />
+    <path d="M13 7l4 4" />
+  </Icon>
+)
+
+export const Home = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 01-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 014 19z" />
+  </Icon>
+)
+
 // ─── Value and feature icons ─────────────────────────────────────────────────
 
 export const Clock = (p: IconProps) => (

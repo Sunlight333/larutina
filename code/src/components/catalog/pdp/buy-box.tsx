@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { formatARS } from '@/lib/money'
 import { addToCart, MAX_QTY } from '@/components/cart/store'
-import { Bag } from '@/components/icons'
+import { Bag, Star } from '@/components/icons'
+import { BackInStock } from './back-in-stock'
 import type { BuyVariant } from '@/server/services/catalog/product'
 
 type Props = {
@@ -12,6 +13,14 @@ type Props = {
   presale: string | null
   /** False for drafts the team is previewing: they cannot be bought yet. */
   published: boolean
+  /** F-06: "★ [promedio] · [n] reseñas", only from the configured minimum of approved reviews. */
+  rating?: { average: number; count: number } | null
+  /** F-07: "Pagá en cuotas…" from the settings; nothing when empty. */
+  installments?: string
+  /** F-08: the "Guardar" heart, beside the button. */
+  favorite?: ReactNode
+  /** G-13: the email to suggest for the back-in-stock notice (signed-in customer). */
+  email?: string
 }
 
 // F-07 and PDP-02: size selector with its price, unit price and price
@@ -19,7 +28,7 @@ type Props = {
 // (CAT-09), quantity and "Agregar al carrito". F-25: on phones a bar with
 // the price and the button stays at the bottom once the main button scrolls
 // out of view.
-export function BuyBox({ product, variants, presale, published }: Props) {
+export function BuyBox({ product, variants, presale, published, rating, installments, favorite, email }: Props) {
   const firstAvailable = variants.findIndex((v) => v.available)
   const [selected, setSelected] = useState(firstAvailable >= 0 ? firstAvailable : 0)
   const [qty, setQty] = useState(1)
@@ -47,6 +56,7 @@ export function BuyBox({ product, variants, presale, published }: Props) {
 
   return (
     <div>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <p className="flex flex-wrap items-baseline gap-x-3 tabular" aria-live="polite">
         <span className={`font-display text-[2.25rem] leading-none ${promo ? 'text-accent-ink' : ''}`}>
           {promo && <span className="sr-only">Precio promocional: </span>}
@@ -59,6 +69,15 @@ export function BuyBox({ product, variants, presale, published }: Props) {
           </s>
         )}
       </p>
+      {rating && (
+        <a href="#resenas" className="inline-flex items-center gap-1.5 rounded-full bg-shell px-3 py-1.5 text-[0.9375rem] font-semibold tabular hover:bg-sand">
+          <Star size={17} />
+          {rating.average.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+          <span className="font-normal text-ink-soft">· {rating.count} reseñas</span>
+        </a>
+      )}
+      </div>
+      {installments && <p className="mt-2 text-[0.9375rem] font-medium text-sage-ink">{installments}</p>}
       <dl className="mt-2 space-y-0.5 text-[0.8125rem] text-ink-muted tabular">
         {v.unitPrice && (
           <div className="flex gap-1">
@@ -120,6 +139,8 @@ export function BuyBox({ product, variants, presale, published }: Props) {
           {label}
         </button>
       </div>
+      {published && !v.available && <BackInStock key={v.sku} sku={v.sku} email={email} />}
+      {favorite && <div className="mt-4">{favorite}</div>}
 
       {showBar && published && (
         <div className="animate-fade fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">

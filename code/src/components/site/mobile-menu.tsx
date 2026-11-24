@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowRight, Close, Menu } from '@/components/icons'
+import { ArrowRight, Close, Menu, User } from '@/components/icons'
 import { navIcon } from '@/components/site/nav-icons'
 import { LanguagePills } from '@/components/site/language-switcher'
 import type { LinkItem } from '@/server/settings/registry'
 
-// Mobile menu (G-06): large links on cards with their icons, "Diagnóstico" as the button, and the
-// WhatsApp line at the foot. Closes on navigation and with Esc.
+// Mobile menu (G-06): large links on cards with their icons, "Diagnóstico" as the button,
+// "Mi cuenta" (G-03) and the WhatsApp line at the foot. Closes on navigation and with Esc.
 export function MobileMenu({ items, whatsapp, mark }: { items: LinkItem[]; whatsapp: string | null; mark: ReactNode }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -91,6 +91,14 @@ export function MobileMenu({ items, whatsapp, mark }: { items: LinkItem[]; whats
               )
             })}
           </nav>
+          <Link
+            href="/cuenta"
+            className="animate-rise mt-4 flex h-15 items-center justify-center gap-2.5 rounded-full border border-line-strong bg-paper text-[0.9375rem] font-bold uppercase tracking-[0.12em] text-ink shadow-[var(--shadow-soft)]"
+            style={{ animationDelay: `${120 + regular.length * 60}ms` }}
+          >
+            <User size={24} className="text-accent-ink" />
+            Mi cuenta
+          </Link>
           <LanguagePills label={false} className="animate-rise mt-8 [&_ul]:justify-center" />
           {whatsapp && (
             <a href={whatsapp} className="mt-8 block text-center text-sm text-ink-soft underline underline-offset-4">

@@ -15,6 +15,7 @@ export const RESERVED_SLUGS = [
   'productos', 'producto', 'marcas', 'marca', 'categoria', 'necesidad', 'necesidades', 'ingrediente', 'ingredientes', 'buscar', 'carrito',
   'journal', 'legales', 'contacto', 'diagnostico', 'rutinas', 'arrepentimiento', 'admin', 'api', 'media', 'vista-previa', HOME_SLUG,
   'sitemap.xml', 'robots.txt',
+  'cuenta', 'resenas',
 ] as const
 
 export const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/

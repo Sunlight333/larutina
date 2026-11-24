@@ -6,7 +6,7 @@ import { LogoMark } from '@/components/site/logo'
 import { HeaderShell } from '@/components/site/header-shell'
 import { MobileMenu } from '@/components/site/mobile-menu'
 import { LanguageMenu } from '@/components/site/language-switcher'
-import { FaceScan } from '@/components/icons'
+import { FaceScan, User } from '@/components/icons'
 import { navIcon } from '@/components/site/nav-icons'
 import { whatsappLink } from '@/lib/whatsapp'
 
@@ -14,16 +14,17 @@ import { whatsappLink } from '@/lib/whatsapp'
 // The emblem sits in the centre, large, in a cream medallion resting on the
 // header's bottom line. Each side mirrors the other:
 //
-//   [Diagnóstico]   PRODUCTOS  NECESIDADES   (emblem)   MARCAS  JOURNAL   [⌕ ⚑ 🛍]
+//   [Diagnóstico]   PRODUCTOS  NECESIDADES   (emblem)   MARCAS  JOURNAL   [⌕ ⚑ 👤 🛍]
 //
 // the links from the panel (navigation.menu) split evenly and gather towards
 // the emblem; at the outer edges, the item marked "destacado" as a filled
-// button on the left and search + cart in an outlined capsule of the same
-// width on the right, the language flag between them. On phones: menu + search | emblem | diagnosis + cart.
+// button on the left and search, account and cart (G-03) in an outlined
+// capsule of the same width on the right, the language flag after search.
+// On phones: menu + search | emblem | diagnosis + cart ("Mi cuenta" is in the menu).
 // Equal side columns keep the emblem on the page's exact centre whatever the
 // menu holds. On scroll the medallion shrinks into the bar.
 
-const EDGE = 'lg:w-[10.25rem] xl:w-[11rem]' // the button and the capsule share it
+const EDGE = 'lg:w-[12.25rem]' // the button and the capsule share it; the capsule's four icons just fit
 
 function split(menu: LinkItem[]) {
   const regular = menu.filter((i) => !i.highlight)
@@ -119,14 +120,18 @@ export async function SiteHeader() {
                 <FaceScan size={24} />
               </Link>
             )}
-            <div className={`flex items-center justify-end lg:h-12 lg:justify-center lg:gap-1.5 lg:rounded-full lg:border lg:border-line-strong/80 lg:bg-paper/60 ${EDGE}`}>
+            <div className={`flex items-center justify-end lg:h-12 lg:justify-center lg:gap-1 lg:rounded-full lg:border lg:border-line-strong/80 lg:bg-paper/60 ${EDGE}`}>
               <span className="hidden lg:block">
                 <SearchBox placeholder={s['copy.searchPlaceholder']} compact />
               </span>
               <span aria-hidden="true" className="hidden h-4 w-px bg-line-strong lg:block" />
               <LanguageMenu className="hidden lg:block" />
-              <span aria-hidden="true" className="hidden h-4 w-px bg-line-strong lg:block" />
-              <CartLink />
+              <span className="flex items-center">
+                <Link href="/cuenta" aria-label="Mi cuenta" className="hidden size-10 place-items-center rounded-full transition-colors hover:bg-shell lg:grid">
+                  <User size={24} />
+                </Link>
+                <CartLink />
+              </span>
             </div>
           </div>
         </div>
