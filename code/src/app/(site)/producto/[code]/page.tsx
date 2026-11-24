@@ -22,6 +22,7 @@ import {
   Moon,
   ShieldCheck,
   Sparkle,
+  Star,
   StepIcon,
   Sun,
 } from '@/components/icons'
@@ -30,6 +31,12 @@ import { Breadcrumb } from '@/components/catalog/page-intro'
 import { ProductGrid } from '@/components/catalog/product-grid'
 import { Gallery } from '@/components/catalog/pdp/gallery'
 import { BuyBox } from '@/components/catalog/pdp/buy-box'
+import { FavoriteButton } from '@/components/account/favorite-button'
+import { getDb } from '@/server/db'
+import { productReviews } from '@/server/commerce/aftersale'
+import { currentCustomer } from '@/server/customers/session'
+import { isFavorite } from '@/server/customers/history'
+import { signInHref } from '@/lib/return-path'
 import { getSettings } from '@/server/settings'
 import { toCards } from '@/server/services/catalog/cards'
 import { getProductDetail, type ProductDetail } from '@/server/services/catalog/product'
@@ -101,9 +108,9 @@ function Pill({ icon, children }: { icon: React.ReactNode; children: React.React
 
 // PDP-01..03 and the CAT display fields (F-01 to F-26), in the approved
 // design's product page: photo and buying on top, then one section per
-// subject with its icon. Not here on purpose: reviews (Phase 2, F-06/F-22)
-// and endorsements, whose table exists but whose block stays hidden until
-// Phase 2 (CAT-21).
+// subject with its icon. Reviews (F-06, F-22) show only from the configured
+// minimum of approved ones (PDP-07). Not here on purpose: endorsements, whose
+// table exists but whose block stays hidden (CAT-21).
 export default async function ProductPage({ params, searchParams }: Props) {
   const p = await load((await params).code, wantsPreview(await searchParams))
   if (!p) notFound()
@@ -112,6 +119,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const [sameLine, ...relationCards] = await Promise.all([toCards(p.sameLine?.items ?? []), ...p.relations.map((r) => toCards(r.items))])
   const main = p.images[0]
   const size = p.variants[0]?.sizeLabel
+  const db = getDb()
+  const customer = await currentCustomer()
+  const [saved, reviews] = await Promise.all([
+    customer && p.published ? isFavorite(db, customer.id, p.id) : false,
+    productReviews(db, p.id, s['catalog.reviewsMinimum']),
+  ])
+  const here = `/producto/${p.code}`
 
   return (
     <article>
@@ -168,6 +182,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
               variants={p.variants}
               presale={p.presale}
               published={p.published}
+              rating={reviews.show && reviews.average ? { average: reviews.average, count: reviews.count } : null}
+              installments={s['commerce.installmentsText'].trim()}
+              email={customer?.email}
+              favorite={p.published ? <FavoriteButton productId={p.id} saved={saved} signedIn={!!customer} signInHref={signInHref(here, { save: p.code })} /> : undefined}
             />
           </div>
 
@@ -433,6 +451,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
           </Block>
         )}
 
+        <Reviews reviews={reviews} writeHref={customer ? '/cuenta/pedidos' : signInHref('/cuenta/pedidos')} />
+
         <IngredientsAndInfo p={p} />
 
         <aside className="mt-6 grid items-center gap-6 overflow-hidden rounded-[2rem] bg-ink p-6 text-paper sm:grid-cols-[auto_1fr_auto] sm:p-8" aria-label="Diagnóstico">
@@ -446,6 +466,55 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </aside>
       </div>
     </article>
+  )
+}
+
+/** F-22: average and count, then each review (name, stars, how long she has used it, title and text). Below the minimum, only the invitation. */
+function Reviews({ reviews, writeHref }: { reviews: Awaited<ReturnType<typeof productReviews>>; writeHref: string }) {
+  return (
+    <Block title="Reseñas" id="resenas" icon={<Chat size={22} />}>
+      {!reviews.show || !reviews.average ? (
+        <p className="max-w-2xl text-[1rem] leading-relaxed text-ink-soft">Todavía no tiene reseñas. Si lo probaste, contanos cómo te fue.</p>
+      ) : (
+        <div className="max-w-3xl">
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <p className="flex items-center gap-4">
+              <span className="font-display text-[3rem] leading-none tabular">{reviews.average.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+              <span>
+                <Stars value={reviews.average} size={20} />
+                <span className="mt-1 block text-[0.9375rem] text-ink-soft">{reviews.count} reseñas</span>
+              </span>
+            </p>
+            <ButtonLink href={writeHref} variant="secondary">
+              Escribí tu reseña
+            </ButtonLink>
+          </div>
+          <ul className="mt-8 grid gap-4 md:grid-cols-2">
+            {reviews.reviews.map((r, i) => (
+              <li key={r.id} className={`bg-shell p-5 sm:p-6 ${i % 2 ? 'rounded-[2rem_1.25rem_2rem_1.25rem]' : 'rounded-[1.25rem_2rem_1.25rem_2rem]'}`}>
+                <Stars value={r.rating} size={16} />
+                {r.title && <p className="mt-3 font-display text-[1.15rem] leading-snug">{r.title}</p>}
+                <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{r.body}</p>
+                <p className="mt-4 text-sm">
+                  <span className="font-semibold">{r.authorName}</span>
+                  {r.usageTime && <span className="text-ink-muted"> · {r.usageTime}</span>}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Block>
+  )
+}
+
+function Stars({ value, size }: { value: number; size: number }) {
+  return (
+    <span className="flex items-center gap-0.5" role="img" aria-label={`${value.toLocaleString('es-AR')} de 5 estrellas`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star key={n} size={size} filled={Math.max(0, Math.min(1, value - n + 1))} />
+      ))}
+    </span>
   )
 }
 
