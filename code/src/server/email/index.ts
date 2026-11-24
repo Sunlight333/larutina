@@ -44,7 +44,7 @@ export function emailProvider(): EmailProvider | null {
 }
 
 export function siteUrl(s: Pick<SettingValues, 'brand.domain'>): string {
-  return (process.env.SITE_URL || `https://${s['brand.domain']}`).replace(/\/+$/, '')
+  return (process.env.NEXT_PUBLIC_SITE_URL || `https://${s['brand.domain']}`).replace(/\/+$/, '')
 }
 
 export function emailFrame(s: SettingValues, ctaPath: string | null, extra: Partial<EmailFrame> = {}): EmailFrame {
