@@ -1421,6 +1421,7 @@ model Review {
   authorName  String       @map("author_name") // first name and initial
   rating      Int // 1–5
   title       String?
+  usageTime   String?      @map("usage_time") // F-22: "hace cuánto lo usa"
   body        String
   status      ReviewStatus @default(PENDING)
   moderatedBy String?      @map("moderated_by")

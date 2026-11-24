@@ -141,6 +141,16 @@ export const EMAIL_TEMPLATES: EmailTemplateDef[] = [
     variables: ['marca'],
   },
   {
+    key: 'account_deleted',
+    code: 'CU-17',
+    label: 'Cuenta eliminada',
+    subject: 'Eliminamos tu cuenta',
+    preheader: 'Como pediste, borramos tus datos.',
+    body: 'Como pediste, borramos tus datos de perfil, tu historial de diagnósticos, tu rutina y tus favoritos. Los datos de tus compras los tenemos que guardar por obligaciones fiscales y contables durante el plazo que exige la ley.',
+    ctaLabel: '',
+    variables: ['nombre', 'marca'],
+  },
+  {
     key: 'back_in_stock',
     code: 'EM-12',
     label: 'Volvió el stock',
@@ -159,6 +169,16 @@ export const EMAIL_TEMPLATES: EmailTemplateDef[] = [
     body: 'Recibimos tu solicitud para el pedido #{numero}. Tu código de trámite es **{codigo}**. Te escribimos para coordinar el retiro, sin costo para vos.',
     ctaLabel: 'Ver mi pedido',
     variables: ['nombre', 'numero', 'codigo', 'marca'],
+  },
+  {
+    key: 'withdrawal_team',
+    code: 'PED-04',
+    label: 'Arrepentimiento: aviso al equipo',
+    subject: 'Botón de arrepentimiento: pedido #{numero} · {codigo}',
+    preheader: 'Hay que coordinar el retiro.',
+    body: '{nombre} pidió arrepentirse del pedido #{numero}. Código de trámite: **{codigo}**.\n\nContacto: {contacto}\n\nMotivo: {motivo}\n\nHay que escribirle para coordinar el retiro, sin costo para ella.',
+    ctaLabel: 'Ver en el panel',
+    variables: ['nombre', 'numero', 'codigo', 'contacto', 'motivo', 'marca'],
   },
 ]
 
