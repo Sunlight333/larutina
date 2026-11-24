@@ -101,3 +101,13 @@ describe('discount cascade (CMP-02)', () => {
     }
   })
 })
+
+describe('margin warning (ADM-05)', async () => {
+  const { worstCase } = await import('@/lib/commerce/margin')
+  it('applies the larger of routine or code, then transfer, under the cap', () => {
+    const w = worstCase({ chargedCents: ARS(10000), costCents: ARS(8600), routinePct: 10, codePct: 5, transferPct: 5, capPct: 0 })
+    expect(w.lowestCents).toBe(ARS(8550))
+    expect(w.belowCost).toBe(true)
+    expect(worstCase({ chargedCents: ARS(10000), costCents: ARS(8600), routinePct: 10, codePct: 5, transferPct: 5, capPct: 12 }).belowCost).toBe(false)
+  })
+})
