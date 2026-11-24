@@ -14,6 +14,7 @@ import { enqueueEmail, sendQueuedEmails, siteUrl } from '@/server/email'
 import { loadSettings, type SettingValues } from '@/server/settings'
 import { sign } from '@/server/secret'
 import { publishedProductWhere, variantAvailable } from '@/server/services/catalog/rules'
+import { approveDueCommissions } from '@/server/ambassadors/commissions'
 import { bankDetails, dayLabel, hourLabel, moveOrder, orderPath, orderVars, SYSTEM } from './orders'
 
 const HOUR = 3_600_000
@@ -193,6 +194,7 @@ export async function runSweep(db: PrismaClient, now = new Date()) {
     abandoned: await sendAbandonedCarts(db, s, now),
     reviews: await sendReviewRequests(db, s, now),
     backInStock: await sendBackInStock(db, s, now),
+    commissionsApproved: await approveDueCommissions(db, s, now),
     emails: await sendQueuedEmails(db),
   }
   return result

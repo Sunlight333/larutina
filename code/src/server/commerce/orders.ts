@@ -11,6 +11,7 @@ import { CANCEL_REASONS, type CancelReason } from '@/server/email/templates'
 import { loadSettings, type SettingValues } from '@/server/settings'
 import { sign } from '@/server/secret'
 import { commitStock, releaseStock } from './stock'
+import { createCommissionForOrder } from '@/server/ambassadors/commissions'
 
 type Tx = Prisma.TransactionClient
 
@@ -105,6 +106,8 @@ export async function moveOrder(tx: Tx, orderId: string, to: OrderStatus, actor:
 
   if (to === 'PAID') {
     await commitStock(tx, orderId)
+    // EMB-03: her attribution and commission, once, with the payment.
+    await createCommissionForOrder(tx, orderId, s)
     if (!updated.shipment) {
       const ship = updated.shipping as { provider?: string; carrier?: string; service?: string; boxCode?: string | null; weightGrams?: number }
       await tx.shipment.create({ data: { orderId, provider: ship.provider === 'tabla' || !ship.provider ? 'manual' : ship.provider, carrier: ship.carrier ?? null, service: ship.service ?? null, boxCode: ship.boxCode ?? null, weightGrams: ship.weightGrams ?? null } })

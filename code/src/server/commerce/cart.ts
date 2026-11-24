@@ -10,7 +10,10 @@ import type { Parcel } from '@/lib/commerce/boxes'
 import { resolveImages } from '@/server/media'
 import { MOMENT_LABELS, STEP_LABELS } from '@/server/services/catalog/labels'
 import { chargedCents, presaleLabel, publishedProductWhere, sizeLabel, variantAvailable } from '@/server/services/catalog/rules'
-import { checkCoupon } from './coupons'
+import { checkCode } from './coupons'
+import { approvedByCode } from '@/server/ambassadors/program'
+import { loadSettings } from '@/server/settings'
+import type { CodeDiscount } from '@/lib/commerce/pricing'
 import { cartRoutines, type CartRoutine } from './routines'
 
 type Db = PrismaClient | Prisma.TransactionClient
@@ -53,6 +56,8 @@ export type CartView = {
   email: string | null
   couponCode: string | null
   couponError: string | null
+  /** The typed code is an ambassador's (BO-06: "Recomendación de [Nombre]"), or her link saved one on the cart (G-10). */
+  ambassador: { id: string; code: string; firstName: string; source: 'code' | 'link' } | null
   postcode: string | null
   lines: CartLineView[]
   /** BO-11 notices produced while reading the cart. */
@@ -66,7 +71,7 @@ export type CartView = {
 const EMPTY_PRICING = priceCart({ lines: [] })
 
 export function emptyCartView(): CartView {
-  return { id: null, email: null, couponCode: null, couponError: null, postcode: null, lines: [], notices: [], pricing: EMPTY_PRICING, routines: [], count: 0 }
+  return { id: null, email: null, couponCode: null, couponError: null, ambassador: null, postcode: null, lines: [], notices: [], pricing: EMPTY_PRICING, routines: [], count: 0 }
 }
 
 const cartInclude = {
@@ -160,11 +165,18 @@ export async function viewCart(db: Db, cart: CartRow | null, opts: { transferPct
 
   const subtotalCents = lines.reduce((a, l) => a + l.unitChargedCents * l.quantity, 0)
   let couponError: string | null = null
-  let code = null
+  let code: CodeDiscount | null = null
+  let ambassador: CartView['ambassador'] = null
   if (cart.couponCode && lines.length) {
-    const check = await checkCoupon(db, cart.couponCode, { subtotalCents, email: opts.email ?? cart.email, dni: opts.dni })
-    if (check.ok) code = check.discount
-    else couponError = check.error
+    const check = await checkCode(db, cart.couponCode, { subtotalCents, email: opts.email ?? cart.email, dni: opts.dni }, await loadSettings(db as PrismaClient))
+    if (check.ok) {
+      code = check.discount
+      if (check.kind === 'ambassador') ambassador = { ...check.ambassador, source: 'code' }
+    } else couponError = check.error
+  }
+  if (!ambassador && cart.ambassadorCode) {
+    const a = await approvedByCode(db, cart.ambassadorCode)
+    if (a) ambassador = { id: a.id, code: a.code!, firstName: a.firstName, source: 'link' }
   }
   // Only the lines of a complete routine (or half, when allowed) earn its discount.
   const routines = await cartRoutines(db, lines)
@@ -181,6 +193,7 @@ export async function viewCart(db: Db, cart: CartRow | null, opts: { transferPct
     email: cart.email,
     couponCode: cart.couponCode,
     couponError,
+    ambassador,
     postcode: cart.postcode,
     lines,
     notices,

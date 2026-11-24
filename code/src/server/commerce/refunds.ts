@@ -11,6 +11,7 @@ import { loadSettings } from '@/server/settings'
 import { addOrderEvent, lockOrder, moveOrder, orderVars, type OrderActor } from './orders'
 import { paymentProvider, type PaymentProvider } from './payments'
 import { returnStock } from './stock'
+import { commissionOnRefund } from '@/server/ambassadors/commissions'
 
 type Tx = Prisma.TransactionClient
 
@@ -96,6 +97,7 @@ export async function refundOrder(db: PrismaClient, orderId: string, admin: { id
       },
       s,
     )
+    await commissionOnRefund(tx, updated, { id: refund.id, amountCents, total, lines: input.lines.filter((l) => l.quantity > 0) })
     for (const hook of hooks) await hook(tx, updated, { id: refund.id, amountCents, total })
     return refund
   })

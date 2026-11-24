@@ -5,6 +5,8 @@
 import type { Coupon, Prisma, PrismaClient } from '@prisma/client'
 import { formatARS } from '@/lib/money'
 import type { CodeDiscount } from '@/lib/commerce/pricing'
+import type { SettingValues } from '@/server/settings'
+import { ambassadorDiscount, approvedByCode } from '@/server/ambassadors/program'
 
 type Db = PrismaClient | Prisma.TransactionClient
 
@@ -48,4 +50,25 @@ export async function checkCoupon(
     if (previous > 0) return { ok: false, error: COUPON_ERRORS.firstPurchase }
   }
   return { ok: true, coupon, discount: { kind: coupon.kind, value: coupon.value, combinesWithTransfer: coupon.combinesWithTransfer } }
+}
+
+export type CodeCheck =
+  | { ok: true; kind: 'coupon'; coupon: Coupon; ambassador: null; discount: CodeDiscount }
+  | { ok: true; kind: 'ambassador'; coupon: null; ambassador: { id: string; code: string; firstName: string }; discount: CodeDiscount | null }
+  | { ok: false; error: string }
+
+/**
+ * BO-06: the one code field takes a discount code or an ambassador's code.
+ * Her code gives the customer her discount (EB-C07, possibly none) and always
+ * records her commission (BO-07).
+ */
+export async function checkCode(db: Db, rawCode: string, ctx: { subtotalCents: number; email?: string | null; dni?: string | null; now?: Date }, settings: SettingValues): Promise<CodeCheck> {
+  const code = normalizeCode(rawCode)
+  if (await db.coupon.count({ where: { code } })) {
+    const c = await checkCoupon(db, code, ctx)
+    return c.ok ? { ok: true, kind: 'coupon', coupon: c.coupon, ambassador: null, discount: c.discount } : c
+  }
+  const a = await approvedByCode(db, code)
+  if (a) return { ok: true, kind: 'ambassador', coupon: null, ambassador: { id: a.id, code: a.code!, firstName: a.firstName }, discount: ambassadorDiscount(a, settings) }
+  return { ok: false, error: COUPON_ERRORS.unknown }
 }

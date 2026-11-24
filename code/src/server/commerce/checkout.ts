@@ -10,6 +10,8 @@ import { loadSettings, type SettingValues } from '@/server/settings'
 import { enqueueEmail, siteUrl } from '@/server/email'
 import { findCart, viewCart, type CartView } from './cart'
 import { checkCoupon, normalizeCode } from './coupons'
+import { decodeRef, isSelfPurchase, resolveAttribution } from '@/lib/commerce/attribution'
+import { approvedByCode } from '@/server/ambassadors/program'
 import { bankDetails, dayLabel, hourLabel, moveOrder, orderDetail, orderPath, orderVars, transferConfigured, SYSTEM } from './orders'
 import { paymentProvider, type PaymentProvider } from './payments'
 import { quoteShipping, optionKey, type QuoteOption } from './shipping/quote'
@@ -40,6 +42,8 @@ export type PlaceInput = {
   shippingKey: string
   method: PaymentChoice
   acceptedTerms: boolean
+  /** The ambassador link cookie of this device (IR-17 level 3). */
+  refCookie?: string | null
 }
 
 export type PlaceResult =
@@ -93,6 +97,31 @@ export async function placeOrder(
   const legal = await db.legalDocument.findMany({ where: { code: { in: [...ACCEPTED_DOCUMENTS] } }, include: { versions: { orderBy: { version: 'desc' }, take: 1 } } })
   const termsAccepted = ACCEPTED_DOCUMENTS.map((code) => ({ code, version: legal.find((d) => d.code === code)?.versions[0]?.version ?? null }))
 
+  // IR-17: typed code > code saved on the cart by her link > her link on this device > her link on the account.
+  const ref = decodeRef(input.refCookie)
+  const [linkCart, linkCookie, account] = await Promise.all([
+    cartRow.ambassadorCode ? approvedByCode(db, cartRow.ambassadorCode) : null,
+    ref ? approvedByCode(db, ref.code) : null,
+    input.customerId ? db.customer.findUnique({ where: { id: input.customerId }, select: { referredById: true, referredAt: true, referredBy: { select: { status: true, code: true } } } }) : null,
+  ])
+  const picked = resolveAttribution({
+    code: cart.ambassador?.source === 'code' ? { ambassadorId: cart.ambassador.id, code: cart.ambassador.code } : null,
+    cart: linkCart ? { ambassadorId: linkCart.id, code: linkCart.code! } : null,
+    cookie: linkCookie && ref ? { ambassadorId: linkCookie.id, code: linkCookie.code!, at: ref.at } : null,
+    account: account?.referredById && account.referredBy?.status === 'APPROVED' && account.referredBy.code ? { ambassadorId: account.referredById, code: account.referredBy.code, at: account.referredAt } : null,
+    windowDays: s['ambassadors.windowDays'],
+    now,
+  })
+  let attribution = picked
+  let selfPurchase = false
+  if (picked) {
+    const amb = await db.ambassador.findUniqueOrThrow({ where: { id: picked.ambassadorId }, select: { email: true, customerId: true, cuit: true } })
+    if (isSelfPurchase({ ambassador: amb, order: { email: c.email, customerId: input.customerId, dni: c.dni } })) {
+      attribution = null
+      selfPurchase = true
+    }
+  }
+
   const reservationMs = input.method === 'transfer' ? s['commerce.transferReservationHours'] * 3_600_000 : s['commerce.cardReservationMinutes'] * 60_000
   const reservedUntil = new Date(now.getTime() + reservationMs)
   const totalCents = cart.pricing.totalCents + option.priceCents
@@ -110,10 +139,13 @@ export async function placeOrder(
       let couponId: string | null = null
       if (cart.couponCode) {
         const row = await tx.coupon.findUnique({ where: { code: normalizeCode(cart.couponCode) }, select: { id: true } })
-        if (row) await tx.$queryRaw`SELECT id FROM coupons WHERE id = ${row.id} FOR UPDATE`
-        const check = await checkCoupon(tx, cart.couponCode, { subtotalCents: cart.pricing.subtotalCents, email: c.email, dni: c.dni, now })
-        if (!check.ok) throw new CouponRejected(check.error)
-        couponId = check.coupon.id
+        // An ambassador's code is not a coupon: nothing to redeem (her commission comes with the payment).
+        if (row) {
+          await tx.$queryRaw`SELECT id FROM coupons WHERE id = ${row.id} FOR UPDATE`
+          const check = await checkCoupon(tx, cart.couponCode, { subtotalCents: cart.pricing.subtotalCents, email: c.email, dni: c.dni, now })
+          if (!check.ok) throw new CouponRejected(check.error)
+          couponId = check.coupon.id
+        }
       }
 
       const seq = await tx.$queryRaw<{ n: bigint }[]>`SELECT nextval('order_number_seq') AS n`
@@ -140,7 +172,9 @@ export async function placeOrder(
           shippingCents: option.priceCents,
           totalCents,
           couponCode: cart.couponCode ? normalizeCode(cart.couponCode) : null,
-          ambassadorCode: cartRow.ambassadorCode,
+          ambassadorCode: attribution?.code ?? null,
+          ambassadorId: attribution?.ambassadorId ?? null,
+          attributionSource: attribution?.source ?? null,
           shipping: {
             provider: option.provider,
             carrier: option.carrier,
@@ -191,6 +225,7 @@ export async function placeOrder(
       await reserveStock(tx, created.id, cart.lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity, status: statuses.get(l.variantId) ?? 'ACTIVE' })))
       if (couponId) await tx.couponRedemption.create({ data: { couponId, orderId: created.id, email: c.email, dni: c.dni } })
       await tx.orderEvent.create({ data: { orderId: created.id, type: 'status', toStatus: 'PENDING_PAYMENT', message: input.method === 'transfer' ? 'Pedido reservado: esperando la transferencia' : 'Pedido creado: esperando el pago', actorType: 'CUSTOMER', actorId: input.customerId, actorLabel: c.email } })
+      if (selfPurchase) await tx.orderEvent.create({ data: { orderId: created.id, type: 'note', message: 'Compra de la propia embajadora: no genera comisión (EB-C03).', actorType: 'SYSTEM', actorLabel: 'Sistema' } })
       await tx.cart.update({ where: { id: cartRow.id }, data: { email: c.email } })
 
       if (c.newsletter) {

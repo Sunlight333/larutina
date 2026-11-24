@@ -85,3 +85,38 @@ describe('order states (PED-01)', () => {
     expect(STATUS_LABELS.SHIPPED).toBe('Enviado')
   })
 })
+
+describe('ambassador attribution (IR-17, EB-C03)', async () => {
+  const { resolveAttribution, isSelfPurchase, commissionFor, decodeRef, encodeRef } = await import('@/lib/commerce/attribution')
+  const now = new Date('2026-12-20T12:00:00Z')
+  const days = (n: number) => new Date(now.getTime() - n * 86_400_000)
+  const a = (id: string, at?: Date) => ({ ambassadorId: id, code: id.toUpperCase(), at })
+
+  it('code > cart > cookie > account, and links only within the window', () => {
+    expect(resolveAttribution({ code: a('uno'), cart: a('dos'), cookie: a('tres', days(1)), account: a('cuatro', days(1)), windowDays: 30, now })?.source).toBe('CODE')
+    expect(resolveAttribution({ cart: a('dos'), cookie: a('tres', days(1)), windowDays: 30, now })?.ambassadorId).toBe('dos')
+    expect(resolveAttribution({ cookie: a('tres', days(31)), account: a('cuatro', days(2)), windowDays: 30, now })?.source).toBe('ACCOUNT')
+    expect(resolveAttribution({ cookie: a('tres', days(31)), account: a('cuatro', days(40)), windowDays: 30, now })).toBeNull()
+  })
+
+  it('blocks her own purchases by email, account or the DNI inside her CUIT', () => {
+    const amb = { email: 'Prof@Mail.com', customerId: 'c1', cuit: '27-30123456-4' }
+    expect(isSelfPurchase({ ambassador: amb, order: { email: 'prof@mail.com', customerId: null, dni: '1' } })).toBe(true)
+    expect(isSelfPurchase({ ambassador: amb, order: { email: 'x@mail.com', customerId: 'c1', dni: '1' } })).toBe(true)
+    expect(isSelfPurchase({ ambassador: amb, order: { email: 'x@mail.com', customerId: null, dni: '30123456' } })).toBe(true)
+    expect(isSelfPurchase({ ambassador: amb, order: { email: 'x@mail.com', customerId: 'c2', dni: '30123457' } })).toBe(false)
+  })
+
+  it('computes per line on the price without VAT, with each line’s rate', () => {
+    const c = commissionFor([{ orderItemId: 'i1', totalCents: 1_210_000, vatPct: 21, ratePct: 15 }, { orderItemId: 'i2', totalCents: 1_105_000, vatPct: 10.5, ratePct: 10 }], true)
+    expect(c.lines.map((l) => l.baseCents)).toEqual([1_000_000, 1_000_000])
+    expect(c.amountCents).toBe(150_000 + 100_000)
+    expect(commissionFor([{ orderItemId: 'i1', totalCents: 1_210_000, vatPct: 21, ratePct: 15 }], false).amountCents).toBe(181_500)
+  })
+
+  it('reads back the link cookie it wrote, and nothing else', () => {
+    const at = new Date('2026-12-01T10:00:00Z')
+    expect(decodeRef(encodeRef('ANAPEREZ', at))).toEqual({ code: 'ANAPEREZ', at })
+    expect(decodeRef('anaperez.123')).toBeNull()
+  })
+})

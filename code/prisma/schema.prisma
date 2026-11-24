@@ -362,6 +362,7 @@ model Product {
   routineSteps            RoutineStep[]
   routineAlternatives     RoutineStepAlternative[]
   favorites               Favorite[]
+  commissionPct           Decimal?                 @map("commission_pct") @db.Decimal(5, 2) // EB-C01: this product's rate, over the ambassador's and the general one
   reviews                 Review[]
 
   @@index([brandId])
@@ -852,17 +853,21 @@ model MediaAsset {
 // CTA-01..03. A customer account; guests buy without one (CMP-03) and can
 // create it later with only a password (IR-12).
 model Customer {
-  id           String    @id @default(cuid())
-  email        String    @unique // lower case
-  passwordHash String?   @map("password_hash") // null: no password yet
-  firstName    String?   @map("first_name")
-  lastName     String?   @map("last_name")
+  id           String      @id @default(cuid())
+  email        String      @unique // lower case
+  passwordHash String?     @map("password_hash") // null: no password yet
+  firstName    String?     @map("first_name")
+  lastName     String?     @map("last_name")
   dni          String?
   phone        String?
-  newsletter   Boolean   @default(false)
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  lastLoginAt  DateTime? @map("last_login_at")
+  newsletter   Boolean     @default(false)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  lastLoginAt  DateTime?   @map("last_login_at")
+  referredById String?     @map("referred_by_id") // IR-17: her ambassador, linked to the account
+  referredBy   Ambassador? @relation("ReferredBy", fields: [referredById], references: [id], onDelete: SetNull)
+  referredAt   DateTime?   @map("referred_at")
+  ambassador   Ambassador?
 
   sessions  CustomerSession[]
   tokens    CustomerToken[]
@@ -1076,17 +1081,20 @@ model Order {
   invoice         Json? // Factura A: { cuit, businessName } (CK-10)
   newsletterOptIn Boolean @default(false) @map("newsletter_opt_in")
 
-  subtotalCents         Int     @map("subtotal_cents") // charged prices × quantities
-  routineDiscountCents  Int     @default(0) @map("routine_discount_cents")
-  codeDiscountCents     Int     @default(0) @map("code_discount_cents")
-  transferDiscountCents Int     @default(0) @map("transfer_discount_cents")
-  discountCents         Int     @default(0) @map("discount_cents") // all of the above, after the cap
-  shippingCents         Int     @default(0) @map("shipping_cents")
-  totalCents            Int     @map("total_cents")
-  couponCode            String? @map("coupon_code")
-  ambassadorCode        String? @map("ambassador_code")
+  subtotalCents         Int                @map("subtotal_cents") // charged prices × quantities
+  routineDiscountCents  Int                @default(0) @map("routine_discount_cents")
+  codeDiscountCents     Int                @default(0) @map("code_discount_cents")
+  transferDiscountCents Int                @default(0) @map("transfer_discount_cents")
+  discountCents         Int                @default(0) @map("discount_cents") // all of the above, after the cap
+  shippingCents         Int                @default(0) @map("shipping_cents")
+  totalCents            Int                @map("total_cents")
+  couponCode            String?            @map("coupon_code")
+  ambassadorCode        String?            @map("ambassador_code")
+  ambassadorId          String?            @map("ambassador_id") // resolved at placement (IR-17); attributed only when paid
+  ambassador            Ambassador?        @relation(fields: [ambassadorId], references: [id], onDelete: SetNull)
+  attributionSource     AttributionSource? @map("attribution_source")
   shipping              Json // the chosen quote
-  termsAccepted         Json    @map("terms_accepted") // [{ code, version }] (CMP-06)
+  termsAccepted         Json               @map("terms_accepted") // [{ code, version }] (CMP-06)
 
   reservedUntil       DateTime? @map("reserved_until") // unpaid orders release stock after this
   reminderSentAt      DateTime? @map("reminder_sent_at")
@@ -1110,6 +1118,8 @@ model Order {
   refunds      Refund[]
   redemption   CouponRedemption?
   withdrawals  WithdrawalRequest[]
+  attribution  Attribution?
+  commission   Commission?
 
   @@index([status, placedAt])
   @@index([email])
@@ -1480,4 +1490,178 @@ model EmailMessage {
   @@index([status, sendAfter])
   @@index([relatedType, relatedId])
   @@map("email_messages")
+}
+
+// ============================================================================
+// Ambassadors (H3): professionals who recommend (EB-00), their links and
+// codes, attribution, commissions and monthly settlements.
+// docs: 03-data-model §1.4, §2 "Ambassadors"; A4 EB-00..EB-C10; spec §10.
+// ============================================================================
+
+enum AmbassadorStatus {
+  PENDING // applied, under review (EB-11)
+  APPROVED
+  REJECTED
+  LEFT // gave up or was removed (EB-C10)
+}
+
+model Ambassador {
+  id                  String           @id @default(cuid())
+  customerId          String?          @unique @map("customer_id") // her login: a customer account
+  customer            Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  status              AmbassadorStatus @default(PENDING)
+  code                String?          @unique // set on approval; upper case (EB-13)
+  firstName           String           @map("first_name")
+  lastName            String           @map("last_name")
+  email               String
+  phone               String
+  profession          String // Cosmetóloga · Esteticista · Dermatóloga · Otra (EB-09)
+  license             String? // matrícula o título
+  licenseFile         String?          @map("license_file") // private media key
+  city                String
+  workplaces          String[] // consultorio, centro, a domicilio, online
+  social              String?
+  motivation          String
+  privacyVersion      Int?             @map("privacy_version")
+  commissionPct       Decimal?         @map("commission_pct") @db.Decimal(5, 2) // her own rate; else the general one (EB-C01)
+  customerDiscountPct Int?             @map("customer_discount_pct") // what her code gives the customer; else the general one (EB-C07)
+  cuit                String? // for the invoice and the self-purchase block
+  payoutAccount       String?          @map("payout_account") // CBU or alias in her name (EB-C05)
+  note                String? // internal
+  rejectReason        String?          @map("reject_reason")
+  approvedAt          DateTime?        @map("approved_at")
+  leftAt              DateTime?        @map("left_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  visits       ReferralVisit[]
+  attributions Attribution[]
+  commissions  Commission[]
+  adjustments  CommissionAdjustment[]
+  payouts      CommissionPayout[]
+  referred     Customer[]             @relation("ReferredBy")
+  orders       Order[]
+
+  @@index([status])
+  @@map("ambassadors")
+}
+
+// EB-14: visits with her link, counted per device per day.
+model ReferralVisit {
+  id           String     @id @default(cuid())
+  ambassadorId String     @map("ambassador_id")
+  ambassador   Ambassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  visitor      String // random device id (cookie)
+  path         String
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([ambassadorId, createdAt])
+  @@index([visitor, createdAt])
+  @@map("referral_visits")
+}
+
+// IR-17: which of the four sources won the order.
+enum AttributionSource {
+  CODE // typed in the cart or checkout code field
+  CART // saved on the cart from her link (?ref, /r/CODE)
+  COOKIE // her link within the window on this device
+  ACCOUNT // linked to the customer's account
+}
+
+// EMB-03: one per order, ever; created in the transaction that marks the order paid.
+model Attribution {
+  id           String            @id @default(cuid())
+  orderId      String            @unique @map("order_id")
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ambassadorId String            @map("ambassador_id")
+  ambassador   Ambassador        @relation(fields: [ambassadorId], references: [id], onDelete: Restrict)
+  source       AttributionSource
+  code         String
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  @@index([ambassadorId])
+  @@map("attributions")
+}
+
+enum CommissionStatus {
+  PENDING // the purchase can still be returned (EB-15)
+  APPROVED // paid in the next settlement
+  PAID
+  CANCELLED // returned or cancelled
+}
+
+// EMB-04: the rate is frozen when the commission is generated; the base is
+// what the customer paid for products, after discounts, without shipping and
+// (by default) without VAT (EB-C02). Per line, since rates can be per product.
+model Commission {
+  id           String            @id @default(cuid())
+  ambassadorId String            @map("ambassador_id")
+  ambassador   Ambassador        @relation(fields: [ambassadorId], references: [id], onDelete: Restrict)
+  orderId      String            @unique @map("order_id")
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  status       CommissionStatus  @default(PENDING)
+  baseCents    Int               @map("base_cents")
+  amountCents  Int               @map("amount_cents")
+  lines        Json // [{ orderItemId, baseCents, ratePct, amountCents }]
+  withoutVat   Boolean           @map("without_vat")
+  approvedAt   DateTime?         @map("approved_at")
+  paidAt       DateTime?         @map("paid_at")
+  cancelledAt  DateTime?         @map("cancelled_at")
+  cancelReason String?           @map("cancel_reason")
+  payoutId     String?           @map("payout_id")
+  payout       CommissionPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  @@index([ambassadorId, status])
+  @@index([status])
+  @@map("commissions")
+}
+
+// EB-C04, IR-16: a refund after the commission was paid is deducted from the next settlement.
+model CommissionAdjustment {
+  id           String            @id @default(cuid())
+  ambassadorId String            @map("ambassador_id")
+  ambassador   Ambassador        @relation(fields: [ambassadorId], references: [id], onDelete: Restrict)
+  orderId      String            @map("order_id")
+  amountCents  Int               @map("amount_cents") // negative
+  reason       String
+  payoutId     String?           @map("payout_id")
+  payout       CommissionPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  @@index([ambassadorId, payoutId])
+  @@map("commission_adjustments")
+}
+
+// EMB-05: the monthly settlement of one ambassador; paid by transfer against her invoice.
+model CommissionPayout {
+  id            String                 @id @default(cuid())
+  ambassadorId  String                 @map("ambassador_id")
+  ambassador    Ambassador             @relation(fields: [ambassadorId], references: [id], onDelete: Restrict)
+  period        String // "2026-12"
+  amountCents   Int                    @map("amount_cents")
+  invoiceNumber String?                @map("invoice_number")
+  paidAt        DateTime?              @map("paid_at")
+  createdBy     String                 @map("created_by")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  commissions   Commission[]
+  adjustments   CommissionAdjustment[]
+
+  @@unique([ambassadorId, period])
+  @@map("commission_payouts")
+}
+
+// EB-18: files and links for the ambassadors' panel.
+model AmbassadorMaterial {
+  id        String   @id @default(cuid())
+  title     String
+  kind      String // file | link
+  url       String? // for links
+  fileKey   String?  @map("file_key") // private media key, for files
+  fileName  String?  @map("file_name")
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("ambassador_materials")
 }
