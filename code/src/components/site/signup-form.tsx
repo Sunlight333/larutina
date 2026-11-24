@@ -59,7 +59,7 @@ export function SignupForm({
         </button>
       </div>
       <label className="flex items-start gap-2 text-[0.8125rem] leading-snug opacity-80">
-        <input type="checkbox" name="consent" required className="mt-0.5 size-4 shrink-0 accent-current" />
+        <input type="checkbox" name="consent" required className="mt-0.5 shrink-0" />
         <span>{consent}</span>
       </label>
       {state && !state.ok && (

@@ -88,28 +88,29 @@ export function HeroCarousel({ slides, children }: { slides: HeroSlide[]; childr
             </div>
           )
         })}
-        {/* Phones: the photo fades into the paper under it. Desktop: a wash behind the headline, and one under the header. */}
+        {/* Phones: the photo fades into the paper under it. Desktop: a light veil under the header. */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1/4 bg-linear-to-t from-paper to-paper/0 lg:hidden" />
-        <div className="pointer-events-none absolute inset-0 z-[2] hidden bg-linear-to-r from-paper/90 from-0% via-paper/55 via-35% to-paper/0 to-58% lg:block" />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] hidden h-40 bg-linear-to-b from-paper/55 to-paper/0 lg:block" />
       </div>
 
       <div className="container-page relative z-[3] -mt-14 pb-24 lg:pointer-events-none lg:mt-0 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:pt-40 lg:pb-44 lg:*:pointer-events-auto">
-        <div className="max-w-xl">{children}</div>
+        {/* Desktop: the text on a frosted, leaf-cornered panel layered over the photo. */}
+        <div className="max-w-[37.5rem] lg:relative lg:rounded-[1.25rem_6rem_1.25rem_6rem] lg:bg-paper/72 lg:p-11 lg:pb-10 lg:shadow-[var(--shadow-float)] lg:ring-1 lg:ring-white/70 lg:backdrop-blur-xl xl:p-12 xl:pb-11">
+          {children}
 
-        {/* Campaign tabs, with the time left on the current one. */}
-        {slides.length > 1 && (
-          <div className="mt-10 grid max-w-md grid-cols-3 gap-4 lg:mt-12" role="group" aria-label="Elegir campaña">
-            {slides.map((s, i) => (
-              <button
-                key={s.src}
-                type="button"
-                onClick={() => go(i)}
-                aria-label={`Campaña ${i + 1} de ${slides.length}: ${s.title}`}
-                aria-current={i === index}
-                className="group text-left"
-              >
-                <span className="relative block h-0.5 overflow-hidden rounded-full bg-ink/15">
+          {/* Campaign tabs, with the time left on the current one. */}
+          {slides.length > 1 && (
+            <div className="mt-10 grid grid-cols-3 gap-5 lg:mt-9 lg:border-t lg:border-line lg:pt-7" role="group" aria-label="Elegir campaña">
+              {slides.map((s, i) => (
+                <button
+                  key={s.src}
+                  type="button"
+                  onClick={() => go(i)}
+                  aria-label={`Campaña ${i + 1} de ${slides.length}: ${s.title}`}
+                  aria-current={i === index}
+                  className="group text-left"
+                >
+                  <span className="relative block h-[3px] overflow-hidden rounded-full bg-ink/12">
                   <span
                     key={i === index ? `on-${index}` : 'off'}
                     className={`absolute inset-y-0 left-0 origin-left rounded-full bg-ink ${
@@ -118,14 +119,15 @@ export function HeroCarousel({ slides, children }: { slides: HeroSlide[]; childr
                     style={i === index && !reduced ? { animationDuration: `${INTERVAL}ms`, animationPlayState: paused ? 'paused' : 'running' } : undefined}
                   />
                 </span>
-                <span className={`mt-2.5 flex items-baseline gap-2 text-[0.8125rem] transition-colors ${i === index ? 'text-ink' : 'text-ink-muted group-hover:text-ink'}`}>
-                  <span className="tabular text-[0.6875rem]">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="truncate font-medium">{s.title}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
+                  <span className={`mt-3 flex items-baseline gap-2 transition-colors ${i === index ? 'text-ink' : 'text-ink-muted group-hover:text-ink'}`}>
+                    <span className={`tabular text-[0.8125rem] font-bold ${i === index ? 'text-accent-ink' : ''}`}>{String(i + 1).padStart(2, '0')}</span>
+                    <span className="truncate text-[0.9375rem] font-semibold">{s.title}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

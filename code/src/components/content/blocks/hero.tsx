@@ -1,5 +1,5 @@
 import type { BlockDataMap } from '@/server/services/content/blocks'
-import { ArrowRight, FaceScan } from '@/components/icons'
+import { ArrowRight, Check, Clock, FaceScan, Sparkle } from '@/components/icons'
 import { HeroCarousel, type HeroSlide } from '@/components/home/hero-carousel'
 import { buttonClasses } from '@/components/ui/button'
 import { Curve } from '@/components/ui/curve'
@@ -73,64 +73,89 @@ export async function HeroBlock({ data, ctx }: { data: BlockDataMap['hero']; ctx
         ? campaignSlides()
         : campaignSlides().slice(1, 2)
 
+  const notes = data.note ? data.note.split(/\s+·\s+/).filter(Boolean) : []
+  const step = (n: number) => ({ animationDelay: `${n * 90}ms` })
+
   return (
     // The header is sticky and translucent: on the first block the photo starts under it.
     <section className={`relative ${ctx.first ? '-mt-16 lg:-mt-[6.5rem]' : ''}`}>
       <HeroCarousel slides={slides}>
-        <div className="animate-rise">
-          {data.eyebrow && (
-            <p className="inline-flex items-center gap-2 rounded-full bg-paper/85 py-1.5 pl-1.5 pr-3.5 text-[0.8125rem] font-medium ring-1 ring-ink/5">
-              <span className="grid size-6 place-items-center rounded-full bg-accent text-paper">
-                <FaceScan size={14} />
-              </span>
-              {data.eyebrow}
-            </p>
-          )}
-          <Heading className={`font-display text-display-hero text-balance ${data.eyebrow ? 'mt-5' : ''}`}>{emphasis(data.title)}</Heading>
-          {data.subtitle && <p className="mt-5 max-w-md whitespace-pre-line text-lede text-ink-soft">{data.subtitle}</p>}
-          {((data.cta1Label && data.cta1Href) || (data.cta2Label && data.cta2Href)) && (
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              {data.cta1Label && data.cta1Href && (
-                <SmartLink href={data.cta1Href} className={buttonClasses('primary', 'lg', 'w-full sm:w-auto')}>
-                  {data.cta1Label}
-                  <ArrowRight size={18} />
-                </SmartLink>
-              )}
-              {data.cta2Label && data.cta2Href && (
-                <SmartLink href={data.cta2Href} className={buttonClasses('secondary', 'lg', 'w-full border-ink/15 bg-paper/75 sm:w-auto')}>
-                  {data.cta2Label}
-                </SmartLink>
-              )}
-            </div>
-          )}
-          {data.note && (
-            <p className="mt-8 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.75rem] font-medium uppercase tracking-[0.08em] text-ink-muted">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
-              {data.note.split(/\s+·\s+/).map((part, i) => (
-                <span key={i} className="inline-flex items-center gap-2.5">
-                  {i > 0 && (
-                    <span className="text-line-strong" aria-hidden="true">
-                      ·
-                    </span>
-                  )}
-                  {part}
+        {data.eyebrow && (
+          <p style={step(0)} className="animate-rise inline-flex items-center gap-2.5 rounded-full bg-paper py-1.5 pl-1.5 pr-4 text-[0.9375rem] font-semibold text-ink shadow-[var(--shadow-soft)] ring-1 ring-line">
+            <span className="grid size-8 place-items-center rounded-full bg-accent text-paper shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]">
+              <FaceScan size={18} />
+            </span>
+            {data.eyebrow}
+          </p>
+        )}
+        <Heading style={step(1)} className={`animate-rise font-display text-display-hero font-extrabold text-balance text-ink ${data.eyebrow ? 'mt-6' : ''}`}>
+          {emphasis(data.title)}
+        </Heading>
+        {data.subtitle && (
+          <p style={step(2)} className="animate-rise mt-6 max-w-lg whitespace-pre-line text-lede font-medium text-ink-soft">
+            {data.subtitle}
+          </p>
+        )}
+        {((data.cta1Label && data.cta1Href) || (data.cta2Label && data.cta2Href)) && (
+          <div style={step(3)} className="animate-rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {data.cta1Label && data.cta1Href && (
+              <SmartLink href={data.cta1Href} className={buttonClasses('primary', 'lg', 'group/cta w-full pl-2.5 sm:w-auto')}>
+                <span className="grid size-10 place-items-center rounded-full bg-paper/15 ring-1 ring-paper/20">
+                  <FaceScan size={22} />
                 </span>
-              ))}
-            </p>
-          )}
-        </div>
+                {data.cta1Label}
+                <ArrowRight size={20} className="transition-transform duration-300 group-hover/cta:translate-x-1" />
+              </SmartLink>
+            )}
+            {data.cta2Label && data.cta2Href && (
+              <SmartLink href={data.cta2Href} className={buttonClasses('secondary', 'lg', 'w-full border-ink/15 bg-paper/80 backdrop-blur sm:w-auto')}>
+                {data.cta2Label}
+              </SmartLink>
+            )}
+          </div>
+        )}
+        {notes.length > 0 && (
+          <ul style={step(4)} className="animate-rise mt-7 flex flex-wrap gap-2.5" aria-label="Sobre el diagnóstico">
+            {notes.map((part, i) => {
+              const NoteIcon = noteIcon(part)
+              return (
+                <li key={i} className="inline-flex items-center gap-2 rounded-full bg-paper/80 py-1.5 pl-1.5 pr-3.5 text-[0.9375rem] font-semibold text-ink-soft ring-1 ring-line">
+                  <span className="grid size-7 place-items-center rounded-full bg-accent-soft text-accent-ink">
+                    <NoteIcon size={16} />
+                  </span>
+                  {part}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </HeroCarousel>
       <Curve className="absolute inset-x-0 -bottom-px z-[4] text-paper" />
     </section>
   )
 }
 
-/** "Tu rutina, pensada para *tu* piel": the words between asterisks in italic. */
+/** The icon of a hero note: a clock for the time it takes, a check for the rest. */
+function noteIcon(text: string) {
+  const t = text.toLowerCase()
+  if (/minut|segund|hora/.test(t)) return Clock
+  if (/gratis|sin cargo/.test(t)) return Sparkle
+  return Check
+}
+
+/**
+ * "Tu rutina, pensada para *tu* piel": the words between asterisks in the
+ * accent colour, underlined by the terracotta stroke of the logo, drawn in
+ * once the page loads.
+ */
 export function emphasis(title: string) {
   return title.split(/(\*[^*]+\*)/g).map((part, i) =>
     part.startsWith('*') && part.endsWith('*') && part.length > 2 ? (
-      <span key={i} className="italic">
+      <span key={i} className="relative inline-block whitespace-nowrap text-accent-ink">
         {part.slice(1, -1)}
+        <svg aria-hidden="true" viewBox="0 0 200 16" preserveAspectRatio="none" className="absolute -bottom-[0.1em] left-[-2%] h-[0.2em] w-[104%] text-accent">
+          <path d="M3 12 C 55 3, 140 2, 197 9" pathLength={1} className="animate-draw" fill="none" stroke="currentColor" strokeWidth={4.5} strokeLinecap="round" />
+        </svg>
       </span>
     ) : (
       part

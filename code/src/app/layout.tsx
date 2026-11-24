@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from 'next'
-import { Newsreader } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
+import { RevealObserver } from '@/components/ui/reveal'
 import { getSettings } from '@/server/settings'
 import { mediaUrl } from '@/server/media'
 import './globals.css'
 
-// The site's display face, Newsreader, with its optical-size axis and the full
-// weight range (headings use 500). next/font downloads it at build time and
-// serves it from this site: no request to Google from the browser.
-const newsreader = Newsreader({
+// The site's typeface, Plus Jakarta Sans: one modern, highly legible family
+// for headings (bold, tight) and text (medium), variable weight 200 to 800.
+// next/font downloads it at build time and serves it from this site: no
+// request to Google from the browser.
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  axes: ['opsz'],
-  style: ['normal', 'italic'],
   display: 'swap',
-  variable: '--font-newsreader',
-  fallback: ['Georgia', 'serif'],
+  variable: '--font-jakarta',
+  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Arial', 'sans-serif'],
 })
 
 // Every page reads settings, the catalog or the session: rendered per request,
@@ -50,8 +50,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-AR" className={newsreader.variable}>
-      <body className="flex min-h-dvh flex-col overflow-x-clip">{children}</body>
+    // RevealObserver adds a class to <html> after hydration.
+    <html lang="es-AR" className={jakarta.variable} suppressHydrationWarning>
+      <body className="flex min-h-dvh flex-col overflow-x-clip">
+        {children}
+        <RevealObserver />
+      </body>
     </html>
   )
 }

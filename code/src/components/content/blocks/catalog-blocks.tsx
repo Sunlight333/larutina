@@ -9,7 +9,6 @@ import { getBrandLogos, getConcernCards, getRoutineTeasers } from '@/server/serv
 import { getCatalog } from '@/server/services/catalog/catalog'
 import { toCards } from '@/server/services/catalog/cards'
 import { concernPortrait, lifestyleImage } from '@/lib/images'
-import { Curve } from '@/components/ui/curve'
 import { SectionHeader, TextLink } from './shared'
 
 // Blocks filled from the catalog, in the approved design's sections. Each
@@ -30,9 +29,9 @@ export async function NeedsBlock({ data }: { data: BlockDataMap['needs'] }) {
         {cards.map((c, i) => {
           const img = concernPortrait(c.code, i)
           return (
-            <li key={c.code} className={`w-[72vw] max-w-[19rem] shrink-0 sm:w-[42vw] lg:w-auto lg:max-w-none ${i % 3 === 1 ? 'lg:translate-y-16' : ''}`}>
+            <li key={c.code} data-reveal="up" style={{ '--i': i % 3 } as React.CSSProperties} className={`w-[72vw] max-w-[19rem] shrink-0 sm:w-[42vw] lg:w-auto lg:max-w-none ${i % 3 === 1 ? 'lg:translate-y-16' : ''}`}>
               <Link href={c.href} className="group block">
-                <div className="shape-arch relative aspect-[3/4] overflow-hidden bg-sand">
+                <div className="shape-arch relative aspect-[3/4] overflow-hidden bg-sand transition-[box-shadow,translate] duration-500 ease-[var(--ease-out-soft)] group-hover:-translate-y-1.5 group-hover:shadow-[var(--shadow-float)]">
                   <Image
                     src={img.src}
                     alt=""
@@ -111,9 +110,9 @@ export async function FeaturedBlock({ data }: { data: BlockDataMap['featured'] }
       <div className="container-page">
         <SectionHeader eyebrow={data.eyebrow} title={data.title} link={<TextLink label={data.ctaLabel} href={data.ctaHref} />} />
       </div>
-      <ul className="scroller mt-10 flex gap-4 overflow-x-auto px-4 pb-2 sm:px-6 lg:mx-auto lg:grid lg:max-w-[76rem] lg:grid-cols-4 lg:gap-6 lg:overflow-visible lg:px-8">
-        {cards.map((p) => (
-          <li key={p.code} className="w-[62vw] max-w-[17rem] shrink-0 sm:w-[40vw] lg:w-auto lg:max-w-none">
+      <ul className="scroller mt-10 flex gap-4 overflow-x-auto px-4 pb-2 sm:px-6 lg:mx-auto lg:grid lg:max-w-[76rem] lg:grid-cols-4 lg:gap-6 lg:overflow-visible lg:px-8 lg:pb-8">
+        {cards.map((p, i) => (
+          <li key={p.code} data-reveal="up" style={{ '--i': i % 4 } as React.CSSProperties} className="w-[62vw] max-w-[17rem] shrink-0 sm:w-[40vw] lg:w-auto lg:max-w-none">
             <ProductCard product={p} sizes="(min-width: 1216px) 270px, (min-width: 1024px) 23vw, (min-width: 640px) 40vw, 62vw" />
           </li>
         ))}
@@ -128,8 +127,7 @@ export async function BrandsBlock({ data }: { data: BlockDataMap['brands'] }) {
   if (!brands.length) return null
   return (
     <section className="mt-20 md:mt-28" aria-label={data.title || 'Marcas'}>
-      <Curve className="text-shell" />
-      <div className="bg-shell">
+      <div className="curved-band tex-linen bg-shell">
         <div className="container-page py-12 text-center md:py-16">
           {(data.eyebrow || data.title) && (
             <div className="mx-auto max-w-2xl">
@@ -158,7 +156,6 @@ export async function BrandsBlock({ data }: { data: BlockDataMap['brands'] }) {
           )}
         </div>
       </div>
-      <Curve className="text-shell" flip />
     </section>
   )
 }

@@ -386,13 +386,15 @@ export function IconBadge({
   tone?: 'accent' | 'ink' | 'paper' | 'night' | 'sage'
   className?: string
 }) {
-  const sizes = { sm: 'size-9', md: 'size-12', lg: 'size-14', xl: 'size-[4.5rem]' }
+  // The icon fills half the badge whatever size it was asked for, so badges
+  // read clearly. Each tone is lifted: a light top edge and a soft shadow.
+  const sizes = { sm: 'size-10', md: 'size-13', lg: 'size-16', xl: 'size-20' }
   const tones = {
-    accent: 'bg-accent-soft text-accent-ink',
-    ink: 'bg-ink text-paper',
-    paper: 'bg-paper text-ink shadow-[0_6px_20px_-10px_rgb(40_30_20/0.35)]',
-    night: 'bg-white/10 text-paper ring-1 ring-white/15',
-    sage: 'bg-sage-soft text-sage-ink',
+    accent: 'bg-accent-soft text-accent-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.7),0_10px_20px_-12px_rgb(150_70_40/0.55)] ring-1 ring-accent/15',
+    ink: 'bg-ink text-paper shadow-[inset_0_1px_0_rgb(255_255_255/0.15),0_10px_20px_-10px_rgb(40_30_20/0.6)]',
+    paper: 'bg-paper text-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_10px_22px_-10px_rgb(40_30_20/0.4)]',
+    night: 'bg-white/10 text-paper ring-1 ring-white/15 shadow-[inset_0_1px_0_rgb(255_255_255/0.15)] backdrop-blur',
+    sage: 'bg-sage-soft text-sage-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.7),0_10px_20px_-12px_rgb(60_100_70/0.5)]',
   }
-  return <span className={`grid shrink-0 place-items-center rounded-full ${sizes[size]} ${tones[tone]} ${className}`}>{children}</span>
+  return <span className={`grid shrink-0 place-items-center rounded-full [&>svg]:size-1/2 ${sizes[size]} ${tones[tone]} ${className}`}>{children}</span>
 }

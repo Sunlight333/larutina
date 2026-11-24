@@ -85,8 +85,9 @@ export const BLOCK_DEFS = {
         kind: 'select',
         name: 'layout',
         label: 'Estilo',
-        help: 'Franja: los puntos con su ícono, en una fila. Mañana y noche: los dos primeros puntos como fotos de mañana y de noche. Ficha: una foto con el producto señalado y los puntos al lado.',
+        help: 'Automático: mañana y noche si son dos puntos sobre la mañana y la noche, ficha si el título habla de la ficha, si no la franja. Franja: los puntos con su ícono, en una fila. Mañana y noche: los dos primeros puntos como fotos de mañana y de noche. Ficha: una foto con el producto señalado y los puntos al lado.',
         options: [
+          { value: 'auto', label: 'Automático, según el contenido' },
           { value: 'icons', label: 'Franja con íconos' },
           { value: 'moments', label: 'Mañana y noche, con fotos' },
           { value: 'showcase', label: 'Ficha de producto, con foto' },
@@ -144,7 +145,7 @@ export const BLOCK_DEFS = {
     label: 'Diagnóstico',
     description: 'Invitación al diagnóstico: con la vista previa de una pregunta, o como cierre oscuro.',
     fields: [
-      { kind: 'select', name: 'variant', label: 'Estilo', options: [{ value: 'preview', label: 'Con vista previa de una pregunta' }, { value: 'dark', label: 'Cierre con fondo oscuro' }] },
+      { kind: 'select', name: 'variant', label: 'Estilo', options: [{ value: 'preview', label: 'Con vista previa de una pregunta' }, { value: 'dark', label: 'Cierre de noche (banda lavanda)' }] },
       eyebrow,
       title(),
       text,
@@ -267,7 +268,7 @@ export type BlockDataMap = {
   hero: { eyebrow: string; title: string; subtitle: string; cta1Label: string; cta1Href: string; cta2Label: string; cta2Href: string; note: string; imageDesktop: string; imageMobile: string; imageAlt: string; focusDesktop: Focal; focusMobile: Focal }
   carousel: { eyebrow: string; title: string; slides: (ListRow & { imageDesktop: string; imageMobile: string; alt: string; text: string; href: string })[] }
   features: {
-    layout: 'icons' | 'moments' | 'showcase' | 'cards'
+    layout: 'auto' | 'icons' | 'moments' | 'showcase' | 'cards'
     eyebrow: string
     title: string
     text: string

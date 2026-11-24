@@ -112,7 +112,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
             <div className="clear-both space-y-1">
               {sorts.map((s) => (
                 <label key={s.value} className="flex items-center gap-3 py-1.5 text-sm">
-                  <input type="radio" name="orden" value={s.value} checked={(local.orden ?? sort) === s.value} onChange={() => go({ ...local, orden: s.value })} className="size-4 accent-ink" />
+                  <input type="radio" name="orden" value={s.value} checked={(local.orden ?? sort) === s.value} onChange={() => go({ ...local, orden: s.value })} />
                   {s.label}
                 </label>
               ))}
@@ -135,7 +135,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
                           checked={checked}
                           disabled={o.count === 0 && !checked}
                           onChange={() => toggle(f.group, o.value)}
-                          className="size-4 shrink-0 rounded accent-ink"
+                          className="shrink-0"
                         />
                         <span className="flex-1">{o.label}</span>
                         <span className="tabular text-xs text-ink-muted" aria-label={`${o.count} ${o.count === 1 ? 'producto' : 'productos'}`}>
@@ -170,7 +170,7 @@ export function ListingFilters({ basePath, extra, state, facets, fragranceFree, 
                   checked={local.sinFragancia}
                   disabled={fragranceFree.count === 0 && !local.sinFragancia}
                   onChange={() => go({ ...local, sinFragancia: !local.sinFragancia })}
-                  className="size-4 shrink-0 rounded accent-ink"
+                  className="shrink-0"
                 />
                 <span className="flex-1 font-medium">Sin fragancia</span>
                 <span className="tabular text-xs text-ink-muted">{fragranceFree.count}</span>

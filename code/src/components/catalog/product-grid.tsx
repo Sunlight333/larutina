@@ -9,7 +9,7 @@ import { ProductCard } from './product-card'
 export async function DiagnosisBanner({ title = '¿No sabés qué elegir?', className = '' }: { title?: string; className?: string }) {
   const vars = await getCopyVariables()
   return (
-    <aside className={`grid items-center gap-6 overflow-hidden rounded-[2rem] bg-ink p-6 text-paper sm:grid-cols-[auto_1fr_auto] sm:p-8 ${className}`} aria-label="Diagnóstico">
+    <aside className={`grid items-center gap-6 overflow-hidden rounded-[1.5rem_4rem_1.5rem_4rem] bg-ink p-6 shadow-[var(--shadow-lift)] text-paper sm:grid-cols-[auto_1fr_auto] sm:p-8 ${className}`} aria-label="Diagnóstico">
       <span className="grid size-14 place-items-center rounded-full bg-paper/10 ring-1 ring-paper/15">
         <FaceScan size={26} />
       </span>
@@ -47,7 +47,7 @@ export function ProductGrid({
       {products.map((p, i) => (
         <Fragment key={p.code}>
           {banner && i === bannerAfter && <li className="col-span-full">{banner}</li>}
-          <li>
+          <li data-reveal="up" style={{ '--i': i % 4 } as React.CSSProperties}>
             <ProductCard product={p} eager={i < eagerFirst} headingLevel={headingLevel} />
           </li>
         </Fragment>

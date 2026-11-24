@@ -32,6 +32,7 @@ import {
 import { ProductImage } from '@/components/catalog/product-image'
 import { SignupForm } from '@/components/site/signup-form'
 import { Curve } from '@/components/ui/curve'
+import { Tilt } from '@/components/ui/tilt'
 import { Prose } from '../prose'
 import { ProductDot } from '../product-teaser'
 import { CtaButton, Lines, lookupImages, SectionHeader, SmartLink, TextLink, type BlockContext } from './shared'
@@ -78,10 +79,23 @@ const blurProps = (blur: string | undefined) => (blur ? ({ placeholder: 'blur', 
 
 export async function FeaturesBlock({ data, ctx }: { data: BlockDataMap['features']; ctx: BlockContext }) {
   if (!data.items.length) return null
-  if (data.layout === 'moments') return <MomentsSection data={data} />
-  if (data.layout === 'showcase') return <ShowcaseSection data={data} />
-  if (data.layout === 'cards') return <CardsSection data={data} />
+  const layout = data.layout === 'auto' ? autoLayout(data) : data.layout
+  if (layout === 'moments') return <MomentsSection data={data} />
+  if (layout === 'showcase') return <ShowcaseSection data={data} />
+  if (layout === 'cards') return <CardsSection data={data} />
   return <IconStrip data={data} ctx={ctx} />
+}
+
+/**
+ * The style of a block saved as "Automático": two points about the morning and
+ * the night get the two photographs; a block about the product page gets the
+ * product beside a portrait; anything else, the strip of icons.
+ */
+function autoLayout(data: BlockDataMap['features']): BlockDataMap['features']['layout'] {
+  const said = data.items.map((i) => `${i.icon} ${i.title}`.toLowerCase())
+  if (data.items.length === 2 && said.some((t) => /mañana|manana/.test(t)) && said.some((t) => /noche/.test(t))) return 'moments'
+  if (/\bficha/i.test(`${data.eyebrow} ${data.title}`)) return 'showcase'
+  return 'icons'
 }
 
 /** The strip of what the store does, with the icons up front; under the hero it overlaps its curve. */
@@ -97,20 +111,22 @@ function IconStrip({ data, ctx }: { data: BlockDataMap['features']; ctx: BlockCo
           <SectionHeader eyebrow={data.eyebrow} title={data.title} text={data.text} link={<TextLink label={data.ctaLabel} href={data.ctaHref} />} />
         </div>
       )}
-      <ul className={`grid grid-cols-2 gap-2 rounded-[2rem] bg-paper p-2 shadow-[0_30px_60px_-40px_rgb(40_30_20/0.45)] ring-1 ring-line/70 lg:gap-0 lg:p-3 ${cols}`}>
+      <ul className={`grid grid-cols-2 gap-2 rounded-[1.5rem_3rem_1.5rem_3rem] bg-paper p-2 shadow-[var(--shadow-float)] ring-1 ring-line/70 lg:gap-0 lg:p-3 ${cols}`}>
         {data.items.map((item, i) => {
           const I = itemIcon(item.icon, i)
           return (
             <li
               key={item._id}
+              data-reveal="up"
+              style={{ '--i': i } as React.CSSProperties}
               className={`flex flex-col gap-3 rounded-[1.5rem] p-4 lg:flex-row lg:items-center lg:gap-4 lg:rounded-none lg:p-5 ${i % 4 > 0 ? 'lg:border-l lg:border-line' : ''}`}
             >
               <IconBadge size="lg">
                 <I size={24} />
               </IconBadge>
               <div>
-                <p className="text-[0.9375rem] font-medium leading-snug">{item.title}</p>
-                {item.text && <p className="mt-0.5 text-[0.8125rem] leading-snug text-ink-muted">{item.text}</p>}
+                <p className="text-base font-bold leading-snug tracking-[-0.01em]">{item.title}</p>
+                {item.text && <p className="mt-1 text-[0.875rem] leading-snug text-ink-muted">{item.text}</p>}
               </div>
             </li>
           )
@@ -154,6 +170,8 @@ async function MomentsSection({ data }: { data: BlockDataMap['features'] }) {
           return (
             <article
               key={item._id}
+              data-reveal="up"
+              style={{ '--i': i } as React.CSSProperties}
               className={`relative flex min-h-[34rem] flex-col justify-end overflow-hidden p-6 text-paper sm:min-h-[38rem] sm:p-10 ${i % 2 === 0 ? 'shape-leaf' : 'shape-leaf-alt lg:mt-20'}`}
             >
               <Image src={img.src} alt="" fill sizes="(min-width: 1024px) 560px, 100vw" {...blurProps(img.blur)} className="object-cover object-top" />
@@ -198,7 +216,7 @@ async function ShowcaseSection({ data }: { data: BlockDataMap['features'] }) {
   return (
     <section className="container-page mt-24 grid items-center gap-16 md:mt-36 lg:grid-cols-2 lg:gap-20" aria-labelledby={`ficha-${first._id}`}>
       <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-        <div className="shape-blob relative aspect-[4/5] overflow-hidden bg-sand">
+        <div data-reveal="clip" className="shape-blob relative aspect-[4/5] overflow-hidden bg-sand">
           <Image src={img.src} alt={data.imageAlt || img.alt} fill sizes="(min-width: 1024px) 560px, 90vw" {...blurProps(img.blur)} className="object-cover" />
         </div>
         {product && (
@@ -210,7 +228,7 @@ async function ShowcaseSection({ data }: { data: BlockDataMap['features'] }) {
             <ProductImage image={product.image} alt="" step={product.routineStep} sizes="176px" />
           </SmartLink>
         )}
-        <div aria-hidden="true" className="absolute -left-2 top-6 flex max-w-[16rem] items-center gap-3 rounded-full bg-paper py-2 pl-2 pr-5 shadow-[0_24px_40px_-24px_rgb(40_30_20/0.55)] sm:-left-6">
+        <div aria-hidden="true" className="animate-float absolute -left-2 top-6 flex max-w-[17rem] items-center gap-3 rounded-full bg-paper py-2 pl-2 pr-5 shadow-[var(--shadow-float)] ring-1 ring-line/60 sm:-left-6">
           <IconBadge size="md">
             <FirstIcon size={22} />
           </IconBadge>
@@ -414,12 +432,12 @@ function DiagnosisPortrait({ total }: { total: number }) {
   const pct = Math.round((3 / total) * 100)
   return (
     <div className="relative mx-auto w-full max-w-[26rem] lg:max-w-none">
-      <div className="shape-arch relative aspect-[4/5] overflow-hidden bg-sand">
+      <div data-reveal="clip" className="shape-arch relative aspect-[4/5] overflow-hidden bg-sand">
         <Image src={img.src} alt="" fill sizes="(min-width: 1024px) 480px, 90vw" placeholder="blur" blurDataURL={img.blur} className="object-cover" />
       </div>
       <div
         aria-hidden="true"
-        className="absolute -right-2 bottom-[27%] w-[13.5rem] rounded-[1.75rem] bg-paper p-4 shadow-[0_30px_60px_-30px_rgb(40_30_20/0.55)] ring-1 ring-line/60 sm:-right-10 sm:bottom-auto sm:top-[14%] sm:w-[15.5rem]"
+        className="animate-float absolute -right-2 bottom-[27%] w-[13.5rem] rounded-[1.25rem_2.5rem_1.25rem_2.5rem] bg-paper p-4 shadow-[var(--shadow-float)] ring-1 ring-line/60 sm:-right-10 sm:bottom-auto sm:top-[14%] sm:w-[15.5rem]"
       >
         <div className="flex items-center justify-between text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-ink-muted">
           <span>
@@ -441,7 +459,7 @@ function DiagnosisPortrait({ total }: { total: number }) {
       </div>
       <div
         aria-hidden="true"
-        className="absolute -left-2 bottom-[4%] flex items-center gap-3 rounded-full bg-paper py-2.5 pl-2.5 pr-5 shadow-[0_30px_60px_-30px_rgb(40_30_20/0.55)] ring-1 ring-line/60 sm:-left-10 sm:bottom-[9%]"
+        className="animate-float-slow absolute -left-2 bottom-[4%] flex items-center gap-3 rounded-full bg-paper py-2.5 pl-2.5 pr-5 shadow-[var(--shadow-float)] ring-1 ring-line/60 sm:-left-10 sm:bottom-[9%]"
       >
         <IconBadge size="md">
           <Sparkle size={22} />
@@ -461,9 +479,7 @@ function DiagnosisPortrait({ total }: { total: number }) {
 function ShellBand({ children, label }: { children: React.ReactNode; label?: string }) {
   return (
     <section className="defer-render relative mt-16 md:mt-20" aria-labelledby={label}>
-      <Curve className="text-shell" />
-      <div className="bg-shell">{children}</div>
-      <Curve className="text-shell" flip />
+      <div className="curved-band tex-linen bg-shell">{children}</div>
     </section>
   )
 }
@@ -472,25 +488,25 @@ export function DiagnosisBlock({ data, ctx }: { data: BlockDataMap['diagnosis'];
   const label = data.ctaLabel || 'Hacer mi diagnóstico'
   const href = data.ctaHref || '/diagnostico'
   if (data.variant === 'dark') {
-    // H-26: the closing call, on the night campaign; on the Home it flows into the footer.
-    const night = lifestyleImage('noche')
+    // H-26: the closing call, on the night campaign, in a pale dusk band of its
+    // own, curved at both edges, so it never merges with the footer below.
+    // The friends under the arch in the evening light: the morning-and-night block already shows the night portrait.
+    const night = lifestyleImage('hero-3-phone')
     return (
-      <section className={`relative mt-28 md:mt-36 ${ctx.last ? '-mb-24' : ''}`}>
-        <Curve className="text-night-deep" />
-        <div className="relative overflow-hidden bg-night-deep text-paper">
-          <div aria-hidden="true" className="absolute right-[8%] top-1/2 size-[42rem] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(214_150_96/0.28),transparent)]" />
-          <div className={`container-page relative grid items-center gap-14 pt-12 md:pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20 ${ctx.last ? 'pb-28 lg:pb-32' : 'pb-16 lg:pb-20'}`}>
+      <section className="relative mt-16 md:mt-24">
+        <div className="curved-band tex-plaster relative bg-night-soft text-ink">
+          <div className="container-page relative grid items-center gap-14 pb-16 pt-12 md:pt-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20 lg:pb-20">
             <div className="max-w-xl">
-              <IconBadge size="lg" tone="night">
+              <IconBadge size="lg" tone="paper" className="text-night">
                 <Moon size={24} />
               </IconBadge>
-              {data.eyebrow && <p className="eyebrow mt-6 text-paper/60">{data.eyebrow}</p>}
+              {data.eyebrow && <p className="eyebrow mt-6">{data.eyebrow}</p>}
               <h2 className={`font-display text-display-lg text-balance ${data.eyebrow ? 'mt-3' : 'mt-6'}`}>{data.title}</h2>
-              {data.text && <p className="mt-5 max-w-md whitespace-pre-line text-lede text-paper/75">{data.text}</p>}
-              <CtaButton label={label} href={href} variant="inverse" size="lg" className="mt-9" />
+              {data.text && <p className="mt-5 max-w-md whitespace-pre-line text-lede text-ink-soft">{data.text}</p>}
+              <CtaButton label={label} href={href} size="lg" className="mt-9" />
             </div>
             <div className="relative mx-auto w-full max-w-[22rem] lg:mr-0 lg:max-w-[26rem]">
-              <div className="shape-arch relative aspect-[4/5] overflow-hidden ring-1 ring-white/10">
+              <div data-reveal="clip" className="shape-arch relative aspect-[4/5] overflow-hidden shadow-[var(--shadow-float)] ring-[6px] ring-paper">
                 <Image src={night.src} alt="" fill sizes="(min-width: 1024px) 416px, 352px" placeholder="blur" blurDataURL={night.blur} className="object-cover" />
               </div>
             </div>
@@ -518,42 +534,62 @@ export function DiagnosisBlock({ data, ctx }: { data: BlockDataMap['diagnosis'];
 
 const HOW_ICONS: IconComponent[] = [FaceScan, Layers, Bulb, Sparkle, ShieldCheck, Hand]
 
-/** How it works: the diagnosis on a portrait, with the steps as an icon timeline. */
-export function HowItWorksBlock({ data, ctx }: { data: BlockDataMap['howItWorks']; ctx: BlockContext }) {
+/**
+ * How it works: the steps as a path on the linen band. A terracotta thread
+ * runs through them; each step is a leaf-cornered paper card that rises a
+ * little further along the path, with its number large in the corner and its
+ * icon lifted on a dark badge. The cards lean towards the pointer.
+ */
+export function HowItWorksBlock({ data }: { data: BlockDataMap['howItWorks']; ctx: BlockContext }) {
   if (!data.steps.length) return null
-  const total = Number(ctx.vars.preguntas) || 8
+  const n = data.steps.length
+  const cols = n === 2 ? 'md:grid-cols-2' : n === 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'
+  // The thread climbs with the cards (each sits 2.5 rem higher than the last).
+  const lift = (i: number) => ({ '--i': i, '--lift': `${i * 2.5}rem` }) as React.CSSProperties
   return (
     <ShellBand>
-      <div className="container-page grid gap-16 py-14 md:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-24">
-        <DiagnosisPortrait total={total} />
-        <div>
+      <div className="container-page py-14 md:py-20">
+        <div className="mx-auto max-w-2xl text-center">
           {data.eyebrow && <p className="eyebrow">{data.eyebrow}</p>}
           {data.title && <h2 className={`font-display text-display-lg text-balance ${data.eyebrow ? 'mt-3' : ''}`}>{data.title}</h2>}
-          {data.text && <p className="mt-5 max-w-md whitespace-pre-line text-lede text-ink-soft">{data.text}</p>}
-          <ol className="relative mt-9 grid gap-3">
-            <span aria-hidden="true" className="absolute bottom-10 left-[2.2rem] top-10 border-l border-dashed border-line-strong" />
+          {data.text && <p className="mx-auto mt-5 max-w-xl whitespace-pre-line text-lede text-ink-soft">{data.text}</p>}
+        </div>
+        <div className="relative mt-14 md:mt-16">
+          {n > 1 && (
+            <svg aria-hidden="true" viewBox="0 0 1200 160" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-[6%] top-1/2 hidden h-40 w-[88%] -translate-y-1/2 text-accent md:block">
+              <path d="M0 140 C 260 150, 340 40, 600 80 S 960 10, 1200 20" pathLength={1} className="animate-draw" fill="none" stroke="currentColor" strokeWidth={2} strokeDasharray="0.012 0.012" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+            </svg>
+          )}
+          <ol className={`relative grid gap-5 md:items-end md:gap-6 ${cols}`}>
             {data.steps.map((s, i) => {
               const I = HOW_ICONS[i % HOW_ICONS.length]!
               return (
-                <li key={s._id} className="relative flex items-center gap-5 rounded-[2.25rem] bg-paper p-3 pr-6 shadow-[0_20px_40px_-32px_rgb(40_30_20/0.5)]">
-                  <span className="relative">
-                    <IconBadge size="xl" tone="ink">
-                      <I size={28} />
-                    </IconBadge>
-                    <span className="tabular absolute -right-1 -top-1 grid size-6 place-items-center rounded-full bg-accent text-[0.75rem] font-medium text-paper ring-2 ring-paper">
-                      {i + 1}
+                <li key={s._id} data-reveal="up" style={lift(i)} className="md:mb-[var(--lift)]">
+                  <Tilt max={5} className={`relative h-full bg-paper p-6 pt-7 shadow-[var(--shadow-lift)] ring-1 ring-line/70 sm:p-8 ${i % 2 ? 'rounded-[1.25rem_3.5rem_1.25rem_3.5rem]' : 'rounded-[3.5rem_1.25rem_3.5rem_1.25rem]'}`}>
+                    <span aria-hidden="true" className="tabular pointer-events-none absolute right-6 top-3 font-display text-[4.5rem] font-extrabold leading-none tracking-[-0.05em] text-accent/20">
+                      {String(i + 1).padStart(2, '0')}
                     </span>
-                  </span>
-                  <div>
-                    <h3 className="text-[1.0625rem] font-medium">{s.title}</h3>
-                    {s.text && <Lines text={s.text} className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft" />}
-                  </div>
+                    <span className="tilt-layer relative block w-fit">
+                      <IconBadge size="xl" tone="ink">
+                        <I size={30} />
+                      </IconBadge>
+                    </span>
+                    <h3 className="mt-6 font-display text-[1.375rem] leading-tight">
+                      <span className="sr-only">Paso {i + 1}: </span>
+                      {s.title}
+                    </h3>
+                    {s.text && <Lines text={s.text} className="mt-2 text-[0.9875rem] leading-relaxed text-ink-soft" />}
+                  </Tilt>
                 </li>
               )
             })}
           </ol>
-          <CtaButton label={data.ctaLabel} href={data.ctaHref} className="mt-9" />
         </div>
+        {data.ctaLabel && data.ctaHref && (
+          <div className="mt-12 flex justify-center">
+            <CtaButton label={data.ctaLabel} href={data.ctaHref} />
+          </div>
+        )}
       </div>
     </ShellBand>
   )

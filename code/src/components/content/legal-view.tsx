@@ -25,7 +25,7 @@ export function LegalView({
   const others = versions.filter((v) => v.version !== version?.version)
   return (
     <article>
-      <header className="bg-shell">
+      <header className="tex-linen bg-shell">
         <div className="container-page pb-12 pt-10 md:pb-16 md:pt-14">
           <div className="max-w-3xl">
             {notice}

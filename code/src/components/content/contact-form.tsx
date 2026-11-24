@@ -1,13 +1,15 @@
 'use client'
 
-import { useActionState, useEffect, useId, useRef, type ReactNode } from 'react'
+import { useActionState, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Plus } from '@/components/icons'
 import type { ContactState } from '@/app/(site)/contacto/actions'
+import { Select } from '@/components/ui/select'
 
 // CMS-03, AY-03: reason, contact details, message and up to four photos.
 // Errors are announced and shown next to each field; what was typed stays
 // when something needs fixing.
 
-const field = 'h-12 w-full rounded-xl border border-line-strong bg-paper px-4 text-base outline-none focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-accent/40 aria-[invalid=true]:border-[oklch(0.55_0.17_25)]'
+const field = 'h-13 w-full rounded-2xl border border-line-strong bg-paper px-5 text-base outline-none transition-[border-color,box-shadow] duration-200 hover:border-ink-muted focus-visible:border-ink focus-visible:shadow-[0_0_0_4px_var(--color-shell)] aria-[invalid=true]:border-[oklch(0.55_0.17_25)]'
 
 export function ContactForm({
   action,
@@ -26,6 +28,7 @@ export function ContactForm({
   const formRef = useRef<HTMLFormElement>(null)
   const id = useId()
   const errors = state?.fieldErrors ?? {}
+  const [photos, setPhotos] = useState<string[]>([])
 
   // React resets a form after its action; keep the fields when there is something to fix.
   useEffect(() => {
@@ -69,16 +72,13 @@ export function ContactForm({
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       <div>
         <Label name="reason">Motivo</Label>
-        <select id={`${id}-reason`} name="reason" required defaultValue="" aria-invalid={!!errors.reason} aria-describedby={describedBy('reason')} className={field}>
-          <option value="" disabled>
-            Elegí una opción
-          </option>
-          {reasons.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+        <Select
+          id={`${id}-reason`}
+          name="reason"
+          options={reasons.map((r) => ({ value: r, label: r }))}
+          invalid={!!errors.reason}
+          describedBy={describedBy('reason')}
+        />
         <FieldError name="reason" />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -119,23 +119,34 @@ export function ContactForm({
         <Label name="photos" optional>
           Fotos
         </Label>
-        <input
-          id={`${id}-photos`}
-          name="photos"
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp,image/avif"
-          aria-invalid={!!errors.photos}
-          aria-describedby={describedBy('photos', true)}
-          className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-shell file:px-4 file:py-2 file:text-sm file:font-medium"
-        />
+        {/* The site's own file picker: the real input sits invisibly over a panel that names what was chosen. */}
+        <div className="relative flex min-h-16 items-center gap-4 rounded-[1.25rem_2rem_1.25rem_2rem] border border-dashed border-line-strong bg-shell/60 p-2.5 pr-5 transition-colors focus-within:border-ink focus-within:shadow-[0_0_0_4px_var(--color-shell)] hover:border-ink-muted">
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-paper text-accent-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_8px_18px_-10px_rgb(40_30_20/0.45)]">
+            <Plus size={22} />
+          </span>
+          <span className="min-w-0 text-[0.9375rem]">
+            <span className="block font-semibold">{photos.length ? `${photos.length} ${photos.length === 1 ? 'foto elegida' : 'fotos elegidas'}` : 'Elegir fotos'}</span>
+            <span className="block truncate text-sm text-ink-muted">{photos.length ? photos.join(', ') : 'Tocá para sumar imágenes desde tu equipo'}</span>
+          </span>
+          <input
+            id={`${id}-photos`}
+            name="photos"
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            aria-invalid={!!errors.photos}
+            aria-describedby={describedBy('photos', true)}
+            onChange={(e) => setPhotos(Array.from(e.target.files ?? []).map((f) => f.name))}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </div>
         <p id={`${id}-photos-help`} className="mt-1.5 text-sm text-ink-muted">
           Si te llegó un producto dañado o distinto, sumá hasta {maxPhotos} fotos (JPG, PNG o WebP, hasta 10 MB cada una).
         </p>
         <FieldError name="photos" />
       </div>
       <div className="text-sm text-ink-muted">{privacy}</div>
-      <button type="submit" disabled={pending} className="h-12 rounded-full bg-ink px-8 font-medium text-paper hover:bg-ink-soft disabled:opacity-60">
+      <button type="submit" disabled={pending} className="h-14 rounded-full bg-ink px-9 font-semibold text-paper shadow-[var(--shadow-lift)] transition-[background-color,translate] duration-200 hover:-translate-y-0.5 hover:bg-ink-soft disabled:opacity-60">
         {pending ? 'Enviando…' : 'Enviar'}
       </button>
     </form>

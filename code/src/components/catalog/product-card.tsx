@@ -4,6 +4,7 @@ import { StepIcon } from '@/components/icons'
 import { ProductImage } from './product-image'
 import { Price } from './price'
 import { QuickAdd } from './quick-add'
+import { Tilt } from '@/components/ui/tilt'
 
 export const CARD_SIZES = '(min-width: 1216px) 270px, (min-width: 1024px) 23vw, (min-width: 640px) 31vw, 46vw'
 
@@ -19,6 +20,8 @@ export function ProductCard({ product, eager = false, headingLevel = 'h3', sizes
   const count = product.variants.length
   return (
     <article className="group relative">
+      {/* The arch tilts towards the pointer, its badges and button floating above the photo. */}
+      <Tilt className="relative rounded-t-full rounded-b-[var(--radius-image)] group-hover:shadow-[var(--shadow-float)]">
       <Link href={href} tabIndex={-1} aria-hidden="true" className="block rounded-t-full">
         <ProductImage
           image={product.image}
@@ -32,7 +35,7 @@ export function ProductCard({ product, eager = false, headingLevel = 'h3', sizes
         />
       </Link>
       {/* Same aspect as the image, so the badges and the button sit on the photo. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/5]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/5] [transform-style:preserve-3d]">
         {product.labels.length > 0 && (
           <span className="absolute left-1/2 top-5 flex -translate-x-1/2 flex-col items-center gap-1.5" aria-hidden="true">
             {product.labels.map((l) => (
@@ -42,11 +45,11 @@ export function ProductCard({ product, eager = false, headingLevel = 'h3', sizes
             ))}
           </span>
         )}
-        <span className="absolute bottom-3 left-3 inline-flex max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-full bg-paper/85 px-2.5 py-1 text-[0.75rem] font-medium backdrop-blur" aria-hidden="true">
+        <span className="tilt-layer absolute bottom-3 left-3 inline-flex max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-full bg-paper/85 px-2.5 py-1 text-[0.75rem] font-medium backdrop-blur" aria-hidden="true">
           <StepIcon type={product.routineStep} size={15} className="shrink-0" />
           <span className="truncate">{product.stepLabel}</span>
         </span>
-        <div className="pointer-events-auto absolute bottom-3 right-3">
+        <div className="tilt-layer pointer-events-auto absolute bottom-3 right-3">
           <QuickAdd
             variant="round"
             product={{
@@ -59,9 +62,10 @@ export function ProductCard({ product, eager = false, headingLevel = 'h3', sizes
           />
         </div>
       </div>
+      </Tilt>
       <div className="mt-4 px-0.5">
-        <p className="text-[0.8125rem] text-ink-muted">{product.brand.name}</p>
-        <Heading className="mt-0.5 font-display text-[1.2rem] leading-snug text-balance">
+        <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">{product.brand.name}</p>
+        <Heading className="mt-1 font-display text-[1.2rem] leading-snug tracking-[-0.02em] text-balance">
           <Link href={href} className="group-hover:underline group-hover:decoration-line-strong group-hover:underline-offset-4">
             {product.name}
           </Link>
