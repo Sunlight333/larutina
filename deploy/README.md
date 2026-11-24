@@ -89,6 +89,20 @@ Alerts go to `ALERT_WEBHOOK_URL` in `/opt/larutina/deploy/.env`: any URL that ac
 
 For an outside view as well (the server cannot report its own outage), point any uptime service at `https://larutinabeauty.com/api/health`.
 
+## Incidents
+
+A blocking incident is one that stops visitors from browsing or buying, stops payments from confirming, or exposes data. During the warranty the first response is within 2 hours (Anexo §15). Anything else is handled in the next working day.
+
+1. **Acknowledge.** Reply on the incident channel that it is being looked at, with the time.
+2. **Look.** `ssh larutina-vps larutina-deploy --status` (live version, recent deploys, containers, backups), `curl -s https://larutinabeauty.com/api/health`, and the logs: `ssh larutina-vps "cd /opt/larutina/deploy && docker compose logs --since 30m web"`.
+3. **Contain.**
+   - A deploy caused it: `ssh larutina-vps larutina-deploy --rollback`.
+   - The site must not be reached while it is fixed: switch on "Modo mantenimiento" in the panel (Configuración). The team still sees the site.
+   - A payment or shipping provider is down: the site keeps selling on its fallbacks; note the time window, since orders in it may need checking by hand.
+   - Data looks wrong: stop, take a backup (`/opt/larutina/deploy/backup.sh`), and only then repair. Restoring a backup is the last resort, because it loses everything written after it.
+4. **Fix and verify.** Deploy the fix, check `/api/health`, and walk the affected journey on the live site.
+5. **Report.** Within one working day, send LaRutina what happened, the time window, what was affected (orders, payments, customers), what was done, and what prevents it from happening again.
+
 ## SSH access
 
 Key-based only. A machine that should deploy by SSH needs its public key in `/root/.ssh/authorized_keys` on the server, and an entry like this in `~/.ssh/config`:
