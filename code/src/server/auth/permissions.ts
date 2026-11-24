@@ -18,6 +18,13 @@ export const PERMISSIONS = {
   'users.manage': 'Administrar usuarios del panel',
   'audit.view': 'Ver el registro de cambios',
   'ambassadors.manage': 'Administrar embajadoras',
+  'orders.view': 'Ver pedidos',
+  'orders.manage': 'Gestionar pedidos: estados, transferencias, envíos, arrepentimientos',
+  'orders.refund': 'Hacer reembolsos',
+  'reviews.moderate': 'Moderar reseñas',
+  'commerce.settings': 'Cupones, cajas y tarifas de envío',
+  'emails.edit': 'Editar los textos de los emails',
+  'stock.adjust': 'Ajustar stock',
 } as const
 export type Permission = keyof typeof PERMISSIONS
 
@@ -31,9 +38,9 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 
 const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
   ADMIN: Object.keys(PERMISSIONS) as Permission[],
-  CATALOG: ['catalog.view', 'catalog.edit', 'catalog.import', 'settings.catalog', 'media.manage'],
-  CONTENT: ['catalog.view', 'content.edit', 'settings.content', 'media.manage', 'subscribers.export'],
-  SUPPORT: ['catalog.view', 'messages.view'],
+  CATALOG: ['catalog.view', 'catalog.edit', 'catalog.import', 'settings.catalog', 'media.manage', 'stock.adjust'],
+  CONTENT: ['catalog.view', 'content.edit', 'settings.content', 'media.manage', 'subscribers.export', 'emails.edit'],
+  SUPPORT: ['catalog.view', 'messages.view', 'orders.view', 'orders.manage', 'reviews.moderate'],
   AMBASSADORS: ['catalog.view', 'ambassadors.manage'],
 }
 
