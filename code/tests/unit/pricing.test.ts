@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { allocate, priceCart, type PricingLine } from '@/lib/commerce/pricing'
 
 const ARS = (pesos: number) => pesos * 100
-const line = (key: string, pesos: number, quantity = 1, routineGroup?: string): PricingLine => ({ key, unitChargedCents: ARS(pesos), quantity, routineGroup })
+const line = (key: string, pesos: number, quantity = 1, routineGroup?: string | null): PricingLine => ({ key, unitChargedCents: ARS(pesos), quantity, routineGroup })
 
 describe('allocate', () => {
   it('splits in proportion and always adds up to the amount', () => {

@@ -117,3 +117,11 @@ export function formatCuit(cuit: string): string {
 }
 
 export const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim())
+
+/** The provinces a postcode can belong to: one for a CPA, a few for four digits. */
+export function provincesForPostcode(postcode: string): ProvinceCode[] {
+  const p = parsePostcode(postcode)
+  if (!p) return []
+  if (p.province) return [p.province]
+  return BY_FIRST_DIGIT[p.digits[0]!] ?? []
+}
