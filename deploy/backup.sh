@@ -8,19 +8,61 @@
 #   backup.sh --verify    restore the latest dump into a scratch database and check it
 #                         (weekly, larutina-restore-check.timer)
 #   backup.sh --list      list the backups, oldest first
+#   backup.sh --offsite   copy to R2 any backup not there yet (also runs after every backup)
+#
+# Off-site copies go to the R2 bucket in R2_BACKUP_BUCKET with the keys
+# R2_BACKUP_ACCESS_KEY_ID / R2_BACKUP_SECRET_ACCESS_KEY and R2_ENDPOINT from
+# deploy/.env. The bucket's lifecycle rule deletes them after 35 days.
 set -euo pipefail
 
 APP_DIR=/opt/larutina
 DIR=/var/backups/larutina
-COMPOSE=(docker compose -f "$APP_DIR/deploy/compose.yaml" --env-file "$APP_DIR/deploy/.env")
+ENV_FILE=$APP_DIR/deploy/.env
+STATE=/var/lib/larutina
+COMPOSE=(docker compose -f "$APP_DIR/deploy/compose.yaml" --env-file "$ENV_FILE")
+RCLONE_IMAGE=rclone/rclone:1.71.2
 DAILY_DAYS=14
 PREDEPLOY_KEEP=10
 MEDIA_DAYS=7
+
+env_get() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2- || true; }
+
+# Copies every local backup missing from the bucket. A failure is reported
+# but never fails the backup itself; the next run catches up.
+offsite() {
+  local bucket
+  bucket=$(env_get R2_BACKUP_BUCKET)
+  if [ -z "$bucket" ] || [ -z "$(env_get R2_BACKUP_ACCESS_KEY_ID)" ]; then
+    echo "[backup] off-site copy not configured"
+    return 0
+  fi
+  mkdir -p "$STATE"
+  # Values go to the container through the environment, never the command line.
+  if (
+    export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+    RCLONE_CONFIG_R2_ENDPOINT=$(env_get R2_ENDPOINT)
+    RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(env_get R2_BACKUP_ACCESS_KEY_ID)
+    RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$(env_get R2_BACKUP_SECRET_ACCESS_KEY)
+    export RCLONE_CONFIG_R2_ENDPOINT RCLONE_CONFIG_R2_ACCESS_KEY_ID RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+    docker run --rm -v "$DIR:/backups:ro" \
+      -e RCLONE_CONFIG_R2_TYPE -e RCLONE_CONFIG_R2_PROVIDER -e RCLONE_CONFIG_R2_ENDPOINT \
+      -e RCLONE_CONFIG_R2_ACCESS_KEY_ID -e RCLONE_CONFIG_R2_SECRET_ACCESS_KEY \
+      "$RCLONE_IMAGE" copy /backups "r2:$bucket" \
+      --include '*.dump' --include '*.tar.gz' --s3-no-check-bucket --stats-one-line -q
+  ); then
+    echo "$(date -u +%FT%TZ) ok r2:$bucket" > "$STATE/offsite"
+    echo "[backup] off-site copy up to date (r2:$bucket)"
+  else
+    echo "$(date -u +%FT%TZ) FAILED r2:$bucket" > "$STATE/offsite"
+    echo "[backup] off-site copy failed" >&2
+  fi
+}
 
 kind=daily
 case ${1:-} in
   "") ;;
   predeploy) kind=predeploy ;;
+  --offsite) offsite; exit 0 ;;
   --verify)
     # Restore rehearsal (INF-03, H1 "a backup has been restored"): the latest
     # dump goes into a scratch database next to the live one, a few checks
@@ -67,3 +109,4 @@ else
   ls -1t "$DIR"/larutina-predeploy-*.dump | tail -n +$((PREDEPLOY_KEEP + 1)) | xargs -r rm -f
 fi
 echo "[backup] $file ($(du -h "$file" | cut -f1))"
+offsite

@@ -13,15 +13,38 @@ visitor ─► Cloudflare (DNS, proxy) ─► VPS :443 Caddy (Let's Encrypt) ─
 | [`compose.yaml`](compose.yaml) | The stack: `web` (the app), `db` (PostgreSQL), `caddy` (HTTPS, `www` → apex redirect), and `migrate` (run by the deploy only) |
 | [`Caddyfile`](Caddyfile) | Domains (site, `admin.` panel, `www` redirect), certificates, reverse proxy |
 | [`deploy.sh`](deploy.sh) | Runs on the server: build, backup, migrations, switch, health check, automatic rollback |
-| [`backup.sh`](backup.sh) | Database dumps (nightly, and before every deploy that migrates), nightly media copy, weekly restore rehearsal |
+| [`backup.sh`](backup.sh) | Database dumps (nightly, and before every deploy that migrates), nightly media copy, off-site copy to Cloudflare R2, weekly restore rehearsal |
 | [`monitor.sh`](monitor.sh) | Every minute: site, app and database health, containers, disk, backup age; alerts on change |
 | [`admin.sh`](admin.sh) | `larutina-admin`: create panel users, reset a password or 2FA |
 | [`setup-server.sh`](setup-server.sh) | One-time server provisioning (Docker, firewall, fail2ban, clone, timer) |
 | [`systemd/`](systemd) | Timers: deploy within a minute of a push; nightly backup; weekly restore check; monitor every minute |
 
-On the server: code in `/opt/larutina`, settings in `/opt/larutina/deploy/.env` (git-ignored, readable by root only), deploy state in `/var/lib/larutina`, backups in `/var/backups/larutina`. The `.env` holds `SITE_DOMAIN`, the live image `TAG`, `POSTGRES_PASSWORD`, which the first deploy creates, and optionally `ALERT_WEBHOOK_URL` (see Monitoring). PostgreSQL takes that password when its data volume is created, so it must never be changed or removed from the file.
+On the server: code in `/opt/larutina`, settings in `/opt/larutina/deploy/.env` (git-ignored, readable by root only), deploy state in `/var/lib/larutina`, backups in `/var/backups/larutina`. The `.env` holds `SITE_DOMAIN`, the live image `TAG`, `POSTGRES_PASSWORD`, which the first deploy creates, optionally `ALERT_WEBHOOK_URL` (see Monitoring), and the Cloudflare R2 settings below. PostgreSQL takes that password when its data volume is created, so it must never be changed or removed from the file.
 
-Uploaded media (catalog images, contact attachments) live in the `larutina_media` volume, mounted at `/app/storage` in the app container.
+## File storage (Cloudflare R2)
+
+Uploaded files go to Cloudflare R2, through the S3 API:
+
+- `larutina-public`: catalog images and other public media. The site still serves them at `/media/…` (through next/image); the bucket is also reachable directly at `https://media.larutinabeauty.com/<month>/<file>`.
+- `larutina-private`: contact attachments, transfer receipts, ambassador documents. Never public; the panel reads them through the app.
+- `larutina-backups`: off-site copies of the backups (see Database). Its lifecycle rule deletes objects after 35 days.
+
+A storage key `public/<month>/<file>` is stored as `<month>/<file>` in `larutina-public`, and `private/…` likewise in `larutina-private`.
+
+The app uses one key limited to the public and private buckets; the backups use another limited to `larutina-backups`. Both live in `/opt/larutina/deploy/.env`:
+
+```
+R2_ENDPOINT=https://<account id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=…              # app key
+R2_SECRET_ACCESS_KEY=…
+R2_PUBLIC_BUCKET=larutina-public
+R2_PRIVATE_BUCKET=larutina-private
+R2_BACKUP_ACCESS_KEY_ID=…       # backup key
+R2_BACKUP_SECRET_ACCESS_KEY=…
+R2_BACKUP_BUCKET=larutina-backups
+```
+
+After changing them, run `larutina-deploy --force` so the app picks them up. Without the five app settings, the app falls back to the `larutina_media` volume, mounted at `/app/storage` (local development uses a `storage/` folder the same way).
 
 ## First admin and panel users
 
@@ -63,7 +86,13 @@ PostgreSQL 17 in the `db` container, data in the `larutina_db-data` volume. It p
 
 **Migrations** are the files in `code/prisma/migrations` (create them locally with `npm run db:migrate`). The deploy applies the new ones before switching, while the previous version is still serving, and a rollback returns to that previous version without undoing them. So a migration must work with the app version before it: add a column or table first, start using it, and drop the old one in a later deploy.
 
-**Backups** go to `/var/backups/larutina` as `pg_dump` files: one every night at 03:30 Buenos Aires time, kept 14 days, and one before each deploy that runs migrations, newest 10 kept. The media volume is archived nightly too, kept 7 days. Every Sunday the latest dump is restored into a scratch database and checked (`backup.sh --verify`); the result shows in `larutina-deploy --status`, and the monitor alerts if it fails. Backups are on the VPS only for now: encrypted off-site copies and point-in-time recovery need an object storage account.
+**Backups** go to `/var/backups/larutina` as `pg_dump` files: one every night at 03:30 Buenos Aires time, kept 14 days, and one before each deploy that runs migrations, newest 10 kept. The media volume is archived nightly too, kept 7 days. After every backup, any dump or archive not yet in R2 is copied to `larutina-backups` (rclone in a container, nothing installed on the server); a failed copy is reported and caught up by the next run. Every Sunday the latest dump is restored into a scratch database and checked (`backup.sh --verify`). The restore check and the last off-site copy both show in `larutina-deploy --status`, and the monitor alerts if the restore check fails.
+
+```bash
+ssh larutina-vps /opt/larutina/deploy/backup.sh --offsite  # copy missing backups to R2 now
+```
+
+To restore from R2 when the VPS copy is gone, download the dump from the `larutina-backups` bucket (Cloudflare dashboard → R2 → `larutina-backups`) and restore it as below.
 
 ```bash
 ssh larutina-vps /opt/larutina/deploy/backup.sh            # back up now

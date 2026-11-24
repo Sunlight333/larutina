@@ -24,6 +24,13 @@ services:
       DATABASE_URL: *database-url
       # Optional: where unhandled server errors are reported (INF-04); see monitor.sh.
       ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      # Uploaded files in Cloudflare R2. Without these the app keeps using the
+      # media volume below.
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_PUBLIC_BUCKET: ${R2_PUBLIC_BUCKET:-}
+      R2_PRIVATE_BUCKET: ${R2_PRIVATE_BUCKET:-}
     # Start order only: the app opens its database connection on first use.
     depends_on:
       - db

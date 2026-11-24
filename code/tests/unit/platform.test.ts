@@ -6,7 +6,7 @@ import { rateLimit } from '../../src/server/rate-limit'
 import { fillVariables } from '../../src/lib/copy-variables'
 import { defaultSettings, SETTINGS } from '../../src/server/settings/registry'
 import { safeFileName } from '../../src/server/media'
-import { LocalDiskStorage } from '../../src/server/storage'
+import { LocalDiskStorage, R2Storage, r2ConfigFromEnv } from '../../src/server/storage'
 import { moneyCents } from '../../src/server/admin/forms'
 
 describe('TOTP (RFC 6238)', () => {
@@ -100,5 +100,54 @@ describe('storage', () => {
     expect((await s.get('public/a/b.txt'))?.toString()).toBe('hola')
     expect(await s.get('public/none.txt')).toBeNull()
     await expect(s.get('../escape.txt')).rejects.toThrow()
+  })
+
+  const r2 = {
+    endpoint: 'https://acct.r2.cloudflarestorage.com/',
+    accessKeyId: 'id',
+    secretAccessKey: 'secret',
+    publicBucket: 'pub-bucket',
+    privateBucket: 'priv-bucket',
+  }
+
+  it('maps R2 keys to the public and private buckets and refuses others', () => {
+    const s = new R2Storage(r2)
+    expect(s.url('public/2026-11/ab12-Sérum 1.jpg')).toBe('https://acct.r2.cloudflarestorage.com/pub-bucket/2026-11/ab12-S%C3%A9rum%201.jpg')
+    expect(s.url('private/2026-11/doc.pdf')).toBe('https://acct.r2.cloudflarestorage.com/priv-bucket/2026-11/doc.pdf')
+    expect(() => s.url('other/x.jpg')).toThrow()
+    expect(() => s.url('public')).toThrow()
+    expect(() => s.url('public/../x')).toThrow()
+  })
+
+  it('signs R2 requests and treats a missing object as null', async () => {
+    const seen: { method: string; url: string; auth: string | null; type: string | null }[] = []
+    const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const req = new Request(input, init)
+      seen.push({ method: req.method, url: req.url, auth: req.headers.get('authorization'), type: req.headers.get('content-type') })
+      if (req.method === 'GET') return new Response(req.url.endsWith('/none.jpg') ? 'NoSuchKey' : 'hola', { status: req.url.endsWith('/none.jpg') ? 404 : 200 })
+      return new Response(null, { status: req.method === 'DELETE' ? 204 : 200 })
+    }
+    const original = globalThis.fetch
+    globalThis.fetch = fetchStub as typeof fetch
+    try {
+      const s = new R2Storage(r2)
+      await s.put('public/a/b.jpg', Buffer.from('x'), 'image/jpeg')
+      expect((await s.get('public/a/b.jpg'))?.toString()).toBe('hola')
+      expect(await s.get('public/a/none.jpg')).toBeNull()
+      await s.delete('private/a/c.pdf')
+    } finally {
+      globalThis.fetch = original
+    }
+    expect(seen.map((r) => r.method)).toEqual(['PUT', 'GET', 'GET', 'DELETE'])
+    expect(seen[0]?.type).toBe('image/jpeg')
+    expect(seen.every((r) => r.auth?.startsWith('AWS4-HMAC-SHA256 Credential=id/'))).toBe(true)
+    expect(seen[3]?.url).toBe('https://acct.r2.cloudflarestorage.com/priv-bucket/a/c.pdf')
+  })
+
+  it('uses R2 only when every setting is present', () => {
+    const full = { R2_ENDPOINT: 'e', R2_ACCESS_KEY_ID: 'a', R2_SECRET_ACCESS_KEY: 's', R2_PUBLIC_BUCKET: 'p', R2_PRIVATE_BUCKET: 'q' }
+    expect(r2ConfigFromEnv(full)?.publicBucket).toBe('p')
+    expect(r2ConfigFromEnv({ ...full, R2_SECRET_ACCESS_KEY: '' })).toBeNull()
+    expect(r2ConfigFromEnv({})).toBeNull()
   })
 })
