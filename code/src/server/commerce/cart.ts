@@ -88,6 +88,11 @@ export async function findCart(db: Db, token: string | undefined | null) {
   return db.cart.findUnique({ where: { token: hashCartToken(token) }, include: cartInclude })
 }
 
+export async function findCartById(db: Db, id: string | null | undefined) {
+  if (!id) return null
+  return db.cart.findUnique({ where: { id }, include: cartInclude })
+}
+
 export async function findCustomerCart(db: Db, customerId: string) {
   return db.cart.findFirst({ where: { customerId, convertedAt: null }, orderBy: { updatedAt: 'desc' }, include: cartInclude })
 }
