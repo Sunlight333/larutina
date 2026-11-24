@@ -18,6 +18,7 @@ export const NAV: NavGroup[] = [
       { href: '/necesidades', label: 'Necesidades', permission: 'catalog.view' },
       { href: '/ingredientes', label: 'Ingredientes', permission: 'catalog.view' },
       { href: '/sinonimos', label: 'Sinónimos del buscador', permission: 'catalog.view' },
+      { href: '/rutinas', label: 'Rutinas armadas', permission: 'catalog.view' },
     ],
   },
   {
@@ -31,10 +32,24 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    label: 'Ventas',
+    items: [
+      { href: '/pedidos', label: 'Pedidos', permission: 'orders.view' },
+      { href: '/arrepentimientos', label: 'Arrepentimientos', permission: 'orders.view' },
+      { href: '/resenas', label: 'Reseñas', permission: 'reviews.moderate' },
+      { href: '/cupones', label: 'Cupones', permission: 'commerce.settings' },
+      { href: '/envios', label: 'Cajas y tarifas de envío', permission: 'commerce.settings' },
+      { href: '/stock', label: 'Stock y avisos', permission: 'stock.adjust' },
+      { href: '/margenes', label: 'Márgenes', permission: 'catalog.cost' },
+      { href: '/emails', label: 'Emails', permission: 'emails.edit' },
+    ],
+  },
+  {
     label: 'Clientes',
     items: [
       { href: '/mensajes', label: 'Mensajes de contacto', permission: 'messages.view' },
       { href: '/suscriptores', label: 'Lista de espera y newsletter', permission: 'subscribers.export' },
+      { href: '/embajadoras', label: 'Embajadoras', permission: 'ambassadors.manage' },
     ],
   },
   {
